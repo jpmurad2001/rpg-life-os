@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icon-192.png" alt="RPG Life OS Logo" width="100"/>
+  <img src="assets/logo/logo.png" alt="RPG Life OS Logo" width="250"/>
 </p>
 
 <h1 align="center">⚔️ Shadow Slave — RPG Life OS</h1>
