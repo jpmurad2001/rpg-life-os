@@ -179,14 +179,18 @@ firebase deploy --only hosting
 
 ## 🛤️ Roadmap
 
-- [ ] Integração com Spotify (streaming de playlists)
-- [ ] Animações de idle para sprites de Boss
-- [ ] Notificações push para Quests pendentes
-- [ ] Multiplayer cooperativo (compartilhar campanhas)
-- [ ] Exportar/importar backup de dados
+### 💎 Pacote Diamond (v2.x) - Mecânicas de Punição e Foco
+A era Diamond é focada em trazer peso para as suas decisões e recompensar a disciplina absoluta.
 
----
+- **v2.1 - O Defeito (Sistema de Flaw/Falha)**: Punições severas no jogo para tarefas atrasadas ou hábitos ignorados. Cada falha na vida real cobra um preço na sua jornada.
+- **v2.2 - O Reino dos Sonhos (Pomodoro Hardcore)**: Um timer implacável para manter o seu "flow". Quebrar o foco durante uma missão de trabalho ou estudo trará penalidades imediatas.
+- **v2.3 - Habilidades de Aspecto (Árvore de Talentos)**: Uso da sua experiência acumulada para desbloquear passivas e habilidades que otimizam sua rotina e seus combates.
+- **v2.4 - Tear do Destino (Analytics Gamificado)**: Relatórios chatos viram arte. Seus dados de produtividade e finanças transformados em teias ou constelações, mostrando sua performance de forma visual e épica.
+- **v2.5 - Marcos do Despertar (Sistema de Conquistas)**: Badges e troféus para eternizar seus grandes feitos, streaks e chefões derrotados.
 
-## 📄 Licença
+### 🏆 Pacote Platina (v3.x) - Endgame e Sinergia
+O pacote Platina traz o ecossistema definitivo, adicionando camadas de profundidade, criação e ameaças constantes.
 
-Este projeto está licenciado sob [MIT License](LICENSE).
+- **v3.1 - A Forja de Memórias (Sistema de Crafting)**: Coleta de loot e recursos gerados pelas suas tarefas diárias para forjar itens, poções ou equipamentos virtuais.
+- **v3.2 - Sombras Corrompidas (Inimigos Dinâmicos)**: Além dos chefões fixos de cada bioma, ameaças aleatórias surgirão no seu mapa e exigirão ações específicas na vida real para serem expurgadas.
+- **v3.3 - Ressonância de Atributos (Sinergia Diária)**: Buffs combinados. Por exemplo: concluir um treino pesado (Força) e ler 20 páginas de um livro (Inteligência) no mesmo dia ativa uma "ressonância" que dobra seus ganhos no dia seguinte.
