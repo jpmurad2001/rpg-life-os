@@ -409,6 +409,9 @@ export function initAudioPlayer() {
 
   // ── Initial render ────────────────────────────────────────
   _updateUI(getState());
+  
+  // Esconde o player por padrão ao iniciar o app (pedido do user)
+  _hideBar();
 
   console.log('[AudioPlayer] Inicializado — v1.4 Ecos do Vazio');
 }
