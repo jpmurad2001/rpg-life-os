@@ -1,0 +1,282 @@
+/* ============================================================
+   RPG LIFE OS — Phase 3 CSS
+   Light theme, settings modal, radar chart, notification toggle.
+   ============================================================ */
+
+/* ============================================================
+   LIGHT THEME OVERRIDES
+   Applied when <html data-theme="light"> is set.
+   ============================================================ */
+[data-theme="light"] {
+    --color-bg-deepest: #ddd5c8;
+    --color-bg-body: #ede8e0;
+    --color-bg-panel: #f5f0e8;
+    --color-bg-element: #e8e0d0;
+    --color-bg-hover: #ddd5c0;
+
+    --text-primary: #1a1530;
+    --text-secondary: #3a3560;
+    --text-muted: #6a6590;
+    --text-gold: #b8860b;
+
+    --color-border: #b8b0a0;
+    --color-border-bright: #7a7260;
+    --color-border-glow: #c0aa80;
+
+    --color-sidebar-bg: #2d2040;
+    /* keep sidebar dark for contrast */
+    --color-nav-bg: #2d2040;
+}
+
+/* Light theme: keep sidebar always dark for readability */
+[data-theme="light"] .sidebar {
+    background: #1a1530;
+    border-color: #3a2860;
+}
+
+[data-theme="light"] .bottom-nav {
+    background: #1a1530;
+    border-color: #3a2860;
+}
+
+[data-theme="light"] body::before,
+[data-theme="light"] body::after {
+    opacity: 0.3;
+    /* weaken CRT on light mode */
+}
+
+/* Smooth transitions for everything affected by theme */
+body,
+.sidebar,
+.panel,
+.panel--dark,
+.card-rp,
+.modal-window,
+.day-card,
+.entry-item,
+.boss-card,
+.template-card,
+.achievement-card,
+.budget-bar-wrap,
+.quest-filter-bar {
+    transition:
+        background-color 0.3s ease,
+        border-color 0.25s ease,
+        color 0.25s ease;
+}
+
+/* ============================================================
+   SETTINGS MODAL CONTENT
+   ============================================================ */
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-bg-element);
+    border: var(--pixel-border-dark);
+}
+
+.settings-row__label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.settings-row__title {
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    color: var(--text-primary);
+    letter-spacing: 1px;
+}
+
+.settings-row__desc {
+    font-family: var(--font-display);
+    font-size: var(--fs-display);
+    color: var(--text-muted);
+}
+
+/* Toggle switch */
+.toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--color-bg-deepest);
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.2s steps(4);
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    left: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--text-muted);
+    transition: transform 0.2s steps(4), background 0.2s;
+}
+
+.toggle-switch input:checked+.toggle-slider {
+    background: var(--color-primary);
+    border-color: var(--color-primary-dark);
+}
+
+.toggle-switch input:checked+.toggle-slider::before {
+    transform: translate(22px, -50%);
+    background: var(--color-gold);
+}
+
+/* Volume slider */
+.volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100px;
+    height: 8px;
+    background: var(--color-bg-deepest);
+    border: 2px solid var(--color-border);
+    outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--color-gold);
+    border: 2px solid #000;
+    cursor: pointer;
+}
+
+/* ============================================================
+   RADAR CHART CANVAS
+   ============================================================ */
+.radar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-2) var(--space-2) var(--space-3);
+    gap: var(--space-1);
+}
+
+.radar-title {
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+#attr-radar {
+    image-rendering: pixelated;
+    opacity: 0.92;
+}
+
+/* ============================================================
+   NOTIFICATION BELL
+   ============================================================ */
+.bell-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: var(--space-1);
+    opacity: 0.6;
+    transition: opacity var(--transition-fast), transform 0.15s;
+    line-height: 1;
+}
+
+.bell-btn:hover {
+    opacity: 1;
+}
+
+.bell-btn.bell-active {
+    opacity: 1;
+    animation: bellRing 0.6s steps(5);
+}
+
+@keyframes bellRing {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    20% {
+        transform: rotate(-20deg);
+    }
+
+    40% {
+        transform: rotate(20deg);
+    }
+
+    60% {
+        transform: rotate(-10deg);
+    }
+
+    80% {
+        transform: rotate(10deg);
+    }
+}
+
+/* Gear button */
+.gear-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: var(--space-1);
+    opacity: 0.6;
+    transition: opacity var(--transition-fast), transform 0.3s linear;
+    line-height: 1;
+}
+
+.gear-btn:hover {
+    opacity: 1;
+    transform: rotate(60deg);
+}
+
+/* ============================================================
+   THEME TOGGLE BUTTON (sidebar footer)
+   ============================================================ */
+.theme-toggle-btn {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: var(--pixel-border-dark);
+    color: var(--text-secondary);
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    text-align: left;
+    letter-spacing: 1px;
+    margin-top: auto;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.theme-toggle-btn:hover {
+    border-color: var(--color-border-bright);
+    color: var(--text-primary);
+}

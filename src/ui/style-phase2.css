@@ -1,0 +1,764 @@
+/* ============================================================
+   RPG LIFE OS — Phase 2 CSS Extensions
+   Appended to style.css — do not duplicate :root definitions
+   ============================================================ */
+
+/* ============================================================
+   CRT / SCANLINES ENHANCED
+   ============================================================ */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(0deg,
+            rgba(0, 0, 0, 0.07) 0px,
+            rgba(0, 0, 0, 0.07) 1px,
+            transparent 1px,
+            transparent 3px);
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center,
+            transparent 60%,
+            rgba(0, 0, 0, 0.45) 100%);
+}
+
+/* ============================================================
+   FLOATING DAMAGE NUMBER
+   ============================================================ */
+.damage-float {
+    position: absolute;
+    font-family: var(--font-pixel);
+    font-size: var(--fs-md);
+    color: #ff4444;
+    text-shadow: 0 0 8px #ff0000, 2px 2px 0 #000;
+    pointer-events: none;
+    z-index: 500;
+    animation: floatDamage 1.4s ease-out forwards;
+    white-space: nowrap;
+}
+
+.damage-float--xp {
+    color: var(--color-xp);
+    text-shadow: 0 0 8px var(--color-xp-glow), 2px 2px 0 #000;
+    font-size: var(--fs-sm);
+}
+
+@keyframes floatDamage {
+    0% {
+        transform: translateY(0) scale(1.2);
+        opacity: 1;
+    }
+
+    30% {
+        transform: translateY(-20px) scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(-55px) scale(0.8);
+        opacity: 0;
+    }
+}
+
+/* ============================================================
+   BOSS DAMAGE SHAKE
+   ============================================================ */
+.boss-card.anim-hit {
+    animation: bossShake 0.4s steps(4);
+}
+
+@keyframes bossShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-6px);
+        filter: brightness(2) saturate(3);
+    }
+
+    40% {
+        transform: translateX(6px);
+    }
+
+    60% {
+        transform: translateX(-4px);
+    }
+
+    80% {
+        transform: translateX(4px);
+    }
+}
+
+.boss-hp-bar.anim-flash {
+    animation: hpFlash 0.5s steps(5);
+}
+
+@keyframes hpFlash {
+
+    0%,
+    100% {
+        border-color: #c62828;
+    }
+
+    50% {
+        border-color: #ffffff;
+        box-shadow: 0 0 12px #fff;
+    }
+}
+
+/* ============================================================
+   BOSS DEFEAT CONFETTI
+   ============================================================ */
+.confetti-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.confetti-piece {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    top: 0;
+    animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(-20px) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(400px) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* ============================================================
+   LEVEL-UP PARTICLES
+   ============================================================ */
+.level-up-box {
+    position: relative;
+    overflow: hidden;
+}
+
+.level-up-star {
+    position: absolute;
+    font-size: 1rem;
+    pointer-events: none;
+    animation: starBurst 1s ease-out forwards;
+}
+
+@keyframes starBurst {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 1;
+    }
+
+    60% {
+        transform: translate(var(--tx), var(--ty)) scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(var(--tx2), var(--ty2)) scale(0.5);
+        opacity: 0;
+    }
+}
+
+/* ============================================================
+   XP ANIMATED COUNTER
+   ============================================================ */
+.xp-gained-anim {
+    animation: xpPop 0.6s steps(4) forwards;
+    display: inline-block;
+}
+
+@keyframes xpPop {
+    0% {
+        transform: scale(1.8);
+        color: var(--color-xp);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+        color: inherit;
+    }
+}
+
+/* ============================================================
+   QUEST FILTER BAR
+   ============================================================ */
+.quest-filter-bar {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    background: transparent;
+    border: 2px solid var(--color-border);
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    transition: all var(--transition-fast);
+    text-transform: uppercase;
+}
+
+.filter-btn:hover {
+    border-color: var(--color-border-bright);
+    color: var(--text-primary);
+}
+
+.filter-btn--active {
+    color: #000;
+    border-color: transparent;
+}
+
+.filter-btn--all {
+    background: var(--color-ghost);
+    color: var(--text-primary);
+    border-color: var(--color-border-bright);
+}
+
+.filter-btn--INT.filter-btn--active {
+    background: var(--color-int);
+}
+
+.filter-btn--ART.filter-btn--active {
+    background: var(--color-art);
+}
+
+.filter-btn--AVE.filter-btn--active {
+    background: var(--color-ave);
+    color: #000;
+}
+
+/* ============================================================
+   WEEKLY PROGRESS BAR
+   ============================================================ */
+.week-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-family: var(--font-display);
+    font-size: var(--fs-display);
+    color: var(--text-secondary);
+}
+
+.week-progress__bar-wrapper {
+    flex: 1;
+    height: 8px;
+    background: var(--color-bg-deepest);
+    border: 2px solid var(--color-border);
+    overflow: hidden;
+    min-width: 80px;
+}
+
+.week-progress__bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-xp));
+    transition: width 0.3s steps(6);
+}
+
+/* ============================================================
+   TASK ITEM — DRAG STATES
+   ============================================================ */
+.task-item[draggable="true"] {
+    cursor: grab;
+}
+
+.task-item[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.task-item.drag-over {
+    border-color: var(--color-gold);
+    background: var(--color-bg-hover);
+    box-shadow: 0 0 0 2px var(--color-gold-dark);
+}
+
+.day-card.drag-target {
+    border-color: var(--color-border-glow);
+    box-shadow: 0 0 0 2px var(--color-border-glow), var(--pixel-shadow);
+}
+
+/* Task action buttons (edit/delete) */
+.task-actions {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.task-item:hover .task-actions {
+    opacity: 1;
+}
+
+.task-action-btn {
+    background: transparent;
+    border: none;
+    font-size: 0.65rem;
+    padding: 2px 4px;
+    color: var(--text-muted);
+    line-height: 1;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.task-action-btn:hover {
+    color: var(--text-primary);
+}
+
+.task-action-btn--delete:hover {
+    color: var(--color-danger);
+}
+
+/* ============================================================
+   REST TIMER
+   ============================================================ */
+.rest-timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--color-bg-deepest);
+    border: var(--pixel-border-dark);
+    margin: var(--space-3) 0;
+}
+
+.rest-timer__countdown {
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxl);
+    color: var(--color-xp);
+    text-shadow: 0 0 10px var(--color-xp-glow);
+    animation: countdownPulse 1s steps(2) infinite;
+}
+
+.rest-timer__countdown.finishing {
+    color: var(--color-hp);
+    text-shadow: 0 0 10px red;
+}
+
+@keyframes countdownPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.rest-timer__bar-wrap {
+    width: 100%;
+    height: 10px;
+    background: var(--color-bg-element);
+    border: 2px solid var(--color-border);
+    overflow: hidden;
+}
+
+.rest-timer__bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-xp-glow), var(--color-xp));
+    transition: width 1s linear;
+}
+
+.rest-timer__ding {
+    animation: timerDing 0.5s steps(4);
+}
+
+@keyframes timerDing {
+
+    0%,
+    100% {
+        box-shadow: none;
+    }
+
+    50% {
+        box-shadow: 0 0 20px 4px var(--color-ave);
+    }
+}
+
+/* ============================================================
+   EXERCISE EDITOR INLINE
+   ============================================================ */
+.exercise-editor {
+    background: var(--color-bg-deepest);
+    border: var(--pixel-border-dark);
+    padding: var(--space-3);
+    margin-top: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.exercise-editor__grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.exercise-row-actions {
+    display: flex;
+    gap: var(--space-1);
+    justify-content: flex-end;
+}
+
+/* Weight input in active session */
+.weight-input {
+    width: 64px;
+    background: var(--color-bg-deepest);
+    border: var(--pixel-border-dark);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: var(--fs-display);
+    padding: 2px 4px;
+    text-align: center;
+}
+
+.set-counter {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.set-btn {
+    background: var(--color-bg-element);
+    border: 2px solid var(--color-border);
+    color: var(--text-primary);
+    font-size: var(--fs-lg);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.set-btn:hover {
+    background: var(--color-bg-hover);
+}
+
+.set-btn.set-btn--done {
+    background: var(--color-success);
+    color: #000;
+    border-color: #2e7d32;
+}
+
+/* ============================================================
+   WORKOUT CHART (Canvas)
+   ============================================================ */
+.workout-chart-wrap {
+    padding: var(--space-3);
+    background: var(--color-bg-deepest);
+    border: var(--pixel-border-dark);
+}
+
+.workout-chart-title {
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+#workout-chart {
+    display: block;
+    image-rendering: pixelated;
+    width: 100%;
+    max-width: 500px;
+}
+
+/* ============================================================
+   TAVERNA CATEGORIES
+   ============================================================ */
+.category-tag {
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    padding: 2px 5px;
+    border: 1px solid;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.cat-moradia {
+    color: #90caf9;
+    border-color: #90caf9;
+}
+
+.cat-alimentacao {
+    color: #a5d6a7;
+    border-color: #a5d6a7;
+}
+
+.cat-saude {
+    color: #f48fb1;
+    border-color: #f48fb1;
+}
+
+.cat-lazer {
+    color: #ce93d8;
+    border-color: #ce93d8;
+}
+
+.cat-trabalho {
+    color: var(--color-gold);
+    border-color: var(--color-gold);
+}
+
+.cat-transporte {
+    color: #80deea;
+    border-color: #80deea;
+}
+
+.cat-outros {
+    color: var(--text-secondary);
+    border-color: var(--color-border);
+}
+
+/* Budget progress bar */
+.budget-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-bg-element);
+    border: var(--pixel-border-dark);
+}
+
+.budget-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+}
+
+.budget-bar {
+    width: 100%;
+    height: 16px;
+    background: var(--color-bg-deepest);
+    border: 2px solid var(--color-border);
+    overflow: hidden;
+}
+
+.budget-bar__fill {
+    height: 100%;
+    transition: width 0.4s steps(8), background-color 0.4s;
+}
+
+.budget-bar__fill.budget-ok {
+    background: linear-gradient(90deg, #2e7d32, var(--color-success));
+}
+
+.budget-bar__fill.budget-warn {
+    background: linear-gradient(90deg, #e65100, var(--color-warning));
+}
+
+.budget-bar__fill.budget-danger {
+    background: linear-gradient(90deg, #b71c1c, var(--color-danger));
+}
+
+/* Inline entry edit mode */
+.entry-item--editing {
+    border-color: var(--color-border-bright);
+    background: var(--color-bg-hover);
+}
+
+.entry-edit-input {
+    background: var(--color-bg-deepest);
+    border: 1px solid var(--color-border);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: var(--fs-display);
+    padding: 2px 6px;
+    width: 100%;
+}
+
+/* ============================================================
+   ACHIEVEMENT UNLOCK TOAST (special)
+   ============================================================ */
+.toast--achievement {
+    border-color: var(--color-gold);
+    background: var(--color-bg-panel);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-4);
+    gap: var(--space-2);
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.4), var(--pixel-shadow);
+    min-width: 240px;
+}
+
+.toast--achievement .toast-icon {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 0 4px var(--color-gold));
+}
+
+.toast--achievement .toast-title {
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xs);
+    color: var(--text-gold);
+    line-height: 1.5;
+}
+
+.toast--achievement .toast-body {
+    font-family: var(--font-display);
+    font-size: var(--fs-display);
+    color: var(--text-secondary);
+}
+
+/* Achievement card unlock animation */
+.achievement-card.newly-unlocked {
+    animation: achieveUnlock 0.8s steps(6);
+}
+
+@keyframes achieveUnlock {
+
+    0%,
+    100% {
+        box-shadow: var(--pixel-shadow);
+    }
+
+    30% {
+        box-shadow: 0 0 24px rgba(255, 215, 0, 0.8), var(--pixel-shadow);
+        transform: scale(1.05);
+    }
+
+    60% {
+        box-shadow: 0 0 12px rgba(255, 215, 0, 0.4), var(--pixel-shadow);
+        transform: scale(1.02);
+    }
+}
+
+/* ============================================================
+   NAV BADGE
+   ============================================================ */
+.nav-btn {
+    position: relative;
+}
+
+.nav-badge {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: var(--color-danger);
+    color: #fff;
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    border: 1px solid #000;
+    animation: blink 1.2s steps(1) infinite;
+}
+
+.bottom-nav__btn {
+    position: relative;
+}
+
+/* ============================================================
+   PLAYER PROFILE MODAL CONTENT
+   ============================================================ */
+.profile-avatar-big {
+    font-size: 3rem;
+    text-align: center;
+    padding: var(--space-4);
+    background: var(--color-bg-deepest);
+    border: var(--pixel-border-bright);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+}
+
+.profile-avatar-big:hover {
+    border-color: var(--color-gold);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+}
+
+.stat-box {
+    background: var(--color-bg-element);
+    border: var(--pixel-border-dark);
+    padding: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    text-align: center;
+}
+
+.stat-box__value {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    color: var(--text-gold);
+    line-height: 1;
+}
+
+.stat-box__label {
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* ============================================================
+   SIDEBAR PROFILE BUTTON
+   ============================================================ */
+.sidebar__player-card {
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+}
+
+.sidebar__player-card:hover {
+    border-color: var(--color-gold-dark);
+}
+
+.sidebar__player-card:hover .player-name::after {
+    content: ' ▶';
+    font-size: var(--fs-xxs);
+    color: var(--color-gold);
+}

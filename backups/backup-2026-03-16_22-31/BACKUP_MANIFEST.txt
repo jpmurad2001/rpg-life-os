@@ -1,0 +1,6 @@
+RPG Life OS — Backup Manifesto
+Gerado em   : 2026-03-16T22:31:09.900246
+Origem      : D:\antigravity\rpg_life_os
+Arquivos    : 21
+Tamanho     : 1.0 MB
+Fase atual  : Pré-Refatoração Shadow Slave (Phase 4)

@@ -1,0 +1,866 @@
+/* ============================================================
+   RPG LIFE OS — Phase 3 CSS
+   Light theme, settings modal, radar chart, notification toggle.
+   ============================================================ */
+
+/* ============================================================
+   LIGHT THEME OVERRIDES — Pure White / Clinical Minimal
+   Applied when <html data-theme="light"> is set.
+   All backgrounds go white. No dark exceptions.
+   ============================================================ */
+[data-theme="light"] {
+    /* ---- Backgrounds (white spectrum) ----
+       Override ALL background variables used in style.css */
+    --color-bg-deepest:  #e5e7eb;
+    --color-bg-base:     #ffffff;   /* body background */
+    --color-bg-body:     #ffffff;
+    --color-bg-surface:  #f8f9fa;   /* used in some panels */
+    --color-bg-panel:    #f8f9fa;   /* sidebar, cards */
+    --color-bg-element:  #f1f5f9;   /* inputs, rows */
+    --color-bg-hover:    #e2e8f0;
+
+    /* ---- Text (near-black for max legibility) ---- */
+    --text-primary:      #111827;
+    --text-secondary:    #4b5563;
+    --text-muted:        #6b7280;
+    --text-gold:         #92400e;
+
+    /* ---- Borders (crisp grey — maintains RPG window frame) ---- */
+    --color-border:        #9ca3af;
+    --color-border-bright: #374151;
+    --color-border-glow:   #6b7280;
+
+    /* ---- Sidebar / nav tokens ---- */
+    --color-sidebar-bg: #f8f9fa;
+    --color-nav-bg:     #f1f5f9;
+
+    /* ---- Keep accents vivid ---- */
+    --color-primary:      #6d28d9;
+    --color-primary-dark: #4c1d95;
+    --color-gold:         #d97706;
+    --color-danger:       #dc2626;
+
+    /* ---- Pixel borders use variables — override them too ---- */
+    --pixel-shadow: 4px 4px 0px #c8c8d8;
+    --pixel-shadow-lg: 6px 6px 0px #c8c8d8, 8px 8px 0px rgba(0,0,0,0.15);
+}
+
+/* ---- Body background (uses --color-bg-base) ---- */
+[data-theme="light"] body {
+    background-color: #ffffff;
+    color: #111827;
+}
+
+/* ---- Sidebar: white, dark text ---- */
+[data-theme="light"] .sidebar {
+    background-color: #f8f9fa !important;
+    border-color: #9ca3af !important;
+    color: #111827;
+}
+
+/* ---- Main content area ---- */
+[data-theme="light"] .main-content,
+[data-theme="light"] #main-content {
+    background-color: #ffffff;
+}
+
+/* ---- Page header ---- */
+[data-theme="light"] .page-header {
+    background: #ffffff !important;
+    border-color: #9ca3af !important;
+}
+
+/* ---- All panels and cards ---- */
+[data-theme="light"] .panel,
+[data-theme="light"] .panel--dark,
+[data-theme="light"] .card-rp,
+[data-theme="light"] .day-card,
+[data-theme="light"] .boss-card,
+[data-theme="light"] .template-card,
+[data-theme="light"] .achievement-card,
+[data-theme="light"] .entry-item,
+[data-theme="light"] .budget-bar-wrap {
+    background-color: #f8f9fa !important;
+    border-color: #9ca3af !important;
+}
+
+/* ---- Modal ---- */
+[data-theme="light"] .modal-window,
+[data-theme="light"] .modal-backdrop {
+    background-color: #ffffff !important;
+    border-color: #9ca3af !important;
+}
+[data-theme="light"] .modal-backdrop {
+    background-color: rgba(0,0,0,0.35) !important;
+}
+
+/* ---- Quest filter bar ---- */
+[data-theme="light"] .quest-filter-bar {
+    background: #f1f5f9 !important;
+    border-color: #9ca3af !important;
+}
+
+/* ---- Week header / week progress ---- */
+[data-theme="light"] .week-header,
+[data-theme="light"] .week-progress {
+    background: transparent;
+    color: #111827;
+}
+
+/* ---- Nav buttons ---- */
+[data-theme="light"] .nav-btn {
+    color: #4b5563;
+    background: transparent;
+}
+[data-theme="light"] .nav-btn--active {
+    color: #6d28d9;
+    background: #ede9fe;
+    border-left-color: #6d28d9;
+}
+[data-theme="light"] .nav-label {
+    color: inherit;
+}
+[data-theme="light"] .nav-icon {
+    opacity: 0.8;
+}
+
+/* ---- Bottom nav ---- */
+[data-theme="light"] .bottom-nav {
+    background: #f8f9fa !important;
+    border-color: #9ca3af !important;
+    color: #111827;
+}
+[data-theme="light"] .bottom-nav__btn {
+    color: #4b5563;
+}
+
+/* ---- Sidebar text elements ---- */
+[data-theme="light"] .player-name,
+[data-theme="light"] .player-level,
+[data-theme="light"] .player-title,
+[data-theme="light"] .attr-name,
+[data-theme="light"] .attr-value,
+[data-theme="light"] .label-xp,
+[data-theme="light"] .label-hp,
+[data-theme="light"] .rank-bar-label,
+[data-theme="light"] .version-badge {
+    color: #111827;
+}
+[data-theme="light"] .xp-text,
+[data-theme="light"] .hp-text {
+    color: #4b5563;
+}
+
+/* ---- XP and HP bar tracks ---- */
+[data-theme="light"] .xp-bar,
+[data-theme="light"] .rank-bar,
+[data-theme="light"] .hp-bar {
+    background-color: #e5e7eb !important;
+    border-color: #9ca3af !important;
+}
+
+/* ---- View sections ---- */
+[data-theme="light"] .view,
+[data-theme="light"] .view-inner {
+    background: transparent;
+}
+
+/* ---- Sidebar root background ---- */
+[data-theme="light"] .sidebar {
+    background-color: #f8fafc !important;
+    border-right-color: #9ca3af !important;
+}
+
+/* ---- Version badge ---- */
+[data-theme="light"] .version-badge {
+    color: #6b7280 !important;
+}
+
+/* ---- Nav buttons ---- */
+[data-theme="light"] .nav-btn {
+    color: #374151 !important;
+}
+[data-theme="light"] .nav-btn:hover,
+[data-theme="light"] .nav-btn--active {
+    background: #e0e7ff !important;
+    color: #4338ca !important;
+}
+[data-theme="light"] .nav-label {
+    color: inherit !important;
+}
+
+/* ============================================================
+   SIDEBAR HUD — LIGHT THEME (overrides completos com classes exatas)
+   ============================================================ */
+
+/* Player card */
+[data-theme="light"] .sidebar__player-card,
+[data-theme="light"] .sidebar__profile {
+    background: #f1f5f9 !important;
+    border-color: #9ca3af !important;
+}
+
+/* Nome, título, rank-tag do player */
+[data-theme="light"] .player-name {
+    color: #7c3aed !important;  /* roxo legível no fundo claro */
+}
+[data-theme="light"] .player-title {
+    color: #4b5563 !important;
+}
+[data-theme="light"] .player-level,
+[data-theme="light"] .rank-tag {
+    color: #374151 !important;
+    background: #e5e7eb !important;
+    border-color: #9ca3af !important;
+}
+
+/* Rank bar wrapper + label */
+[data-theme="light"] .rank-bar-wrap {
+    background: transparent !important;
+}
+[data-theme="light"] .rank-bar-label,
+[data-theme="light"] #rank-bar-label-text,
+[data-theme="light"] #rank-bar-pct {
+    color: #374151 !important;
+}
+[data-theme="light"] .rank-bar {
+    background: #e5e7eb !important;
+    border-color: #9ca3af !important;
+}
+
+/* XP bar + HP bar wrappers */
+[data-theme="light"] .xp-bar-wrapper,
+[data-theme="light"] .hp-bar-wrapper {
+    background: transparent !important;
+}
+[data-theme="light"] .label-xp {
+    color: #0369a1 !important;  /* azul escuro legível */
+}
+[data-theme="light"] .label-hp {
+    color: #b91c1c !important;  /* vermelho escuro legível */
+}
+[data-theme="light"] .xp-bar,
+[data-theme="light"] .hp-bar {
+    background: #e5e7eb !important;
+    border-color: #9ca3af !important;
+}
+[data-theme="light"] .xp-text,
+[data-theme="light"] .hp-text,
+[data-theme="light"] #sidebar-xp-text,
+[data-theme="light"] #sidebar-hp-text {
+    color: #374151 !important;
+}
+
+/* Attributes panel */
+[data-theme="light"] .attributes-panel,
+[data-theme="light"] .attr-row-container {
+    background: #f1f5f9 !important;
+    border-color: #9ca3af !important;
+}
+[data-theme="light"] .attr-name {
+    color: #374151 !important;
+}
+[data-theme="light"] .attr-value {
+    color: #7c3aed !important;
+}
+
+/* Radar chart wrap */
+[data-theme="light"] .radar-wrap {
+    background: #f1f5f9 !important;
+    border-color: #9ca3af !important;
+}
+[data-theme="light"] .radar-title {
+    color: #374151 !important;
+}
+/* O canvas do radar usa JS para desenhar — adicionar classe ao html
+   e verificar no renderAttributeRadar se está em light mode */
+[data-theme="light"] #attr-radar {
+    filter: invert(1) hue-rotate(180deg) saturate(1.4) brightness(0.85);
+}
+
+/* Rank bar fill */
+[data-theme="light"] .rank-bar__fill {
+    filter: saturate(0.85) brightness(0.92);
+}
+
+/* ---- Form inputs, selects, labels ---- */
+[data-theme="light"] .form-input,
+[data-theme="light"] .form-select {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border-color: #9ca3af !important;
+}
+[data-theme="light"] .form-label {
+    color: #374151 !important;
+}
+[data-theme="light"] .modal-title {
+    color: #111827 !important;
+}
+
+/* ---- Modal body text ---- */
+[data-theme="light"] .modal-body,
+[data-theme="light"] #modal-body {
+    color: #111827;
+}
+[data-theme="light"] #modal-body label,
+[data-theme="light"] #modal-body p,
+[data-theme="light"] #modal-body small,
+[data-theme="light"] #modal-body span {
+    color: #374151;
+}
+
+/* ---- Page-header title ---- */
+[data-theme="light"] .page-title {
+    color: #111827 !important;
+}
+[data-theme="light"] .page-header__left,
+[data-theme="light"] .page-header__right {
+    color: #374151;
+}
+
+/* ---- Boss topbar on campaign map ---- */
+[data-theme="light"] .map-boss-topbar {
+    background: #f1f5f9 !important;
+    border-color: #9ca3af !important;
+    color: #111827 !important;
+}
+[data-theme="light"] .map-boss-topbar__name,
+[data-theme="light"] .map-boss-topbar__hp-text {
+    color: #111827 !important;
+}
+
+/* ---- Campaign cards ---- */
+[data-theme="light"] .campaign-card {
+    background-color: #f8f9fa !important;
+    border-color: #9ca3af !important;
+    color: #111827 !important;
+}
+[data-theme="light"] .campaign-card h3,
+[data-theme="light"] .campaign-card p,
+[data-theme="light"] .campaign-card span {
+    color: #374151 !important;
+}
+
+/* ---- Audio player bar ---- */
+[data-theme="light"] .audio-bar {
+    background: rgba(248,249,250,0.97) !important;
+    border-color: #9ca3af !important;
+    color: #111827;
+}
+[data-theme="light"] .audio-track-name,
+[data-theme="light"] .audio-time {
+    color: #374151 !important;
+}
+
+/* ---- Gallery list items (modal) ---- */
+[data-theme="light"] .gallery-list-item {
+    border-color: #d1d5db !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+}
+[data-theme="light"] .gallery-list-item:hover {
+    background: #f3f4f6 !important;
+}
+
+/* ---- Kill CRT scanlines ---- */
+[data-theme="light"] body::before,
+[data-theme="light"] body::after {
+    opacity: 0 !important;
+    display: none;
+}
+
+/* Smooth transitions for everything affected by theme */
+body,
+.sidebar,
+.panel,
+.panel--dark,
+.card-rp,
+.modal-window,
+.day-card,
+.entry-item,
+.boss-card,
+.template-card,
+.achievement-card,
+.budget-bar-wrap,
+.quest-filter-bar {
+    transition:
+        background-color 0.3s ease,
+        border-color 0.25s ease,
+        color 0.25s ease;
+}
+
+/* ============================================================
+   SETTINGS MODAL CONTENT
+   ============================================================ */
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-bg-element);
+    border: var(--pixel-border-dark);
+}
+
+.settings-row__label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.settings-row__title {
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    color: var(--text-primary);
+    letter-spacing: 1px;
+}
+
+.settings-row__desc {
+    font-family: var(--font-display);
+    font-size: var(--fs-display);
+    color: var(--text-muted);
+}
+
+/* Toggle switch */
+.toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--color-bg-deepest);
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.2s steps(4);
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    left: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--text-muted);
+    transition: transform 0.2s steps(4), background 0.2s;
+}
+
+.toggle-switch input:checked+.toggle-slider {
+    background: var(--color-primary);
+    border-color: var(--color-primary-dark);
+}
+
+.toggle-switch input:checked+.toggle-slider::before {
+    transform: translate(22px, -50%);
+    background: var(--color-gold);
+}
+
+/* Volume slider */
+.volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100px;
+    height: 8px;
+    background: var(--color-bg-deepest);
+    border: 2px solid var(--color-border);
+    outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--color-gold);
+    border: 2px solid #000;
+    cursor: pointer;
+}
+
+/* ============================================================
+   RADAR CHART CANVAS
+   ============================================================ */
+.radar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-2) var(--space-2) var(--space-3);
+    gap: var(--space-1);
+}
+
+.radar-title {
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+#attr-radar {
+    image-rendering: pixelated;
+    opacity: 0.92;
+}
+
+/* ============================================================
+   NOTIFICATION BELL
+   ============================================================ */
+.bell-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: var(--space-1);
+    opacity: 0.6;
+    transition: opacity var(--transition-fast), transform 0.15s;
+    line-height: 1;
+}
+
+.bell-btn:hover {
+    opacity: 1;
+}
+
+.bell-btn.bell-active {
+    opacity: 1;
+    animation: bellRing 0.6s steps(5);
+}
+
+@keyframes bellRing {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    20% {
+        transform: rotate(-20deg);
+    }
+
+    40% {
+        transform: rotate(20deg);
+    }
+
+    60% {
+        transform: rotate(-10deg);
+    }
+
+    80% {
+        transform: rotate(10deg);
+    }
+}
+
+/* Gear button */
+.gear-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: var(--space-1);
+    opacity: 0.6;
+    transition: opacity var(--transition-fast), transform 0.3s linear;
+    line-height: 1;
+}
+
+.gear-btn:hover {
+    opacity: 1;
+    transform: rotate(60deg);
+}
+
+/* ============================================================
+   THEME TOGGLE BUTTON (sidebar footer)
+   ============================================================ */
+.theme-toggle-btn {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: var(--pixel-border-dark);
+    color: var(--text-secondary);
+    font-family: var(--font-pixel);
+    font-size: var(--fs-xxs);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    text-align: left;
+    letter-spacing: 1px;
+    margin-top: auto;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.theme-toggle-btn:hover {
+    border-color: var(--color-border-bright);
+    color: var(--text-primary);
+}
+
+/* ============================================================
+   MODAL HEADER & FOOTER — LIGHT THEME
+   (barras escuras do título e dos botões nos modais)
+   ============================================================ */
+[data-theme="light"] .modal-header {
+    background: #e2e8f0 !important;
+    border-color: #9ca3af !important;
+}
+[data-theme="light"] .modal-title {
+    color: #4c1d95 !important;
+}
+[data-theme="light"] .modal-close {
+    color: #374151 !important;
+}
+[data-theme="light"] .modal-footer {
+    background: #e2e8f0 !important;
+    border-color: #9ca3af !important;
+}
+[data-theme="light"] .modal-body {
+    background: #ffffff !important;
+    color: #111827 !important;
+}
+[data-theme="light"] .modal-window {
+    background: #ffffff !important;
+    border-color: #9ca3af !important;
+}
+
+/* ============================================================
+   TAVERNA — FINANCE CARDS (cards de resumo escuros)
+   ============================================================ */
+[data-theme="light"] .finance-card {
+    background: #f1f5f9 !important;
+    border-color: #9ca3af !important;
+    color: #111827 !important;
+}
+[data-theme="light"] .finance-card--balance {
+    background: #e0e7ff !important;
+    border-color: #6d28d9 !important;
+}
+[data-theme="light"] .finance-label {
+    color: #4b5563 !important;
+}
+[data-theme="light"] .finance-value {
+    color: #92400e !important;
+}
+[data-theme="light"] .month-label {
+    color: #374151 !important;
+}
+[data-theme="light"] .budget-bar {
+    background: #e5e7eb !important;
+    border-color: #9ca3af !important;
+}
+
+/* ============================================================
+   PLAYER CARD AVATAR & PROFILE — LIGHT THEME
+   ============================================================ */
+[data-theme="light"] .player-avatar-wrap,
+[data-theme="light"] .avatar-container,
+[data-theme="light"] #player-avatar-container {
+    background: #e0e7ff !important;
+    border-color: #6d28d9 !important;
+}
+[data-theme="light"] .player-name {
+    color: #4c1d95 !important;
+}
+[data-theme="light"] .player-rank-badge {
+    color: #374151 !important;
+    border-color: #9ca3af !important;
+}
+/* Stats do perfil (grade com Fragmentos, Quests, etc.) */
+[data-theme="light"] .stat-grid-item,
+[data-theme="light"] .profile-stat-box {
+    background: #f1f5f9 !important;
+    border-color: #9ca3af !important;
+    color: #111827 !important;
+}
+[data-theme="light"] .stat-grid-item .stat-value,
+[data-theme="light"] .profile-stat-box .stat-value {
+    color: #92400e !important;
+}
+[data-theme="light"] .stat-grid-item .stat-label,
+[data-theme="light"] .profile-stat-box .stat-label {
+    color: #6b7280 !important;
+}
+
+/* ============================================================
+   MEMORY CARDS (Inventário) — LIGHT THEME
+   ============================================================ */
+[data-theme="light"] .memory-card {
+    background: #f1f5f9 !important;
+    border-color: #9ca3af !important;
+    color: #111827 !important;
+}
+[data-theme="light"] .memory-card:hover {
+    background: #e2e8f0 !important;
+    border-color: #6d28d9 !important;
+}
+[data-theme="light"] .memory-card__name {
+    color: #111827 !important;
+}
+[data-theme="light"] .memory-card__type {
+    color: #4b5563 !important;
+}
+[data-theme="light"] .inventory-grid,
+[data-theme="light"] #inventory-grid {
+    background: transparent !important;
+}
+[data-theme="light"] .inventory-empty {
+    color: #6b7280 !important;
+}
+
+/* ============================================================
+   LIGHT THEME — COBERTURA TOTAL DE MÓDULOS
+   Garante que absolutamente TUDO fique claro quando
+   data-theme="light" está ativo.
+   ============================================================ */
+
+/* 1. RESET UNIVERSAL: qualquer elemento com cor de texto escura no tema padrão
+      que ainda use a variável --text-* já está coberto pelas variáveis no :root.
+      Aqui cobrimos os que usam cores hardcoded. */
+[data-theme="light"] *:not(img):not(canvas):not(.xp-bar__fill):not(.hp-bar__fill):not(.rank-bar__fill):not(.boss-sprite-topbar):not(.boss-sprite-card-overlay):not(.category-tag):not(.status-badge) {
+    border-color: #d1d5db;
+}
+
+/* 2. HEADERS E TOPBARS */
+[data-theme="light"] .topbar,
+[data-theme="light"] .page-topbar,
+[data-theme="light"] .view-header,
+[data-theme="light"] .section-header {
+    background: #ffffff !important;
+    border-color: #9ca3af !important;
+    color: #111827 !important;
+}
+
+/* 3. LISTAS E ITENS — todos os módulos */
+[data-theme="light"] .quest-item,
+[data-theme="light"] .quest-card,
+[data-theme="light"] .subtask-item,
+[data-theme="light"] .day-section,
+[data-theme="light"] .battle-log-item,
+[data-theme="light"] .exercise-item,
+[data-theme="light"] .template-item,
+[data-theme="light"] .boss-card,
+[data-theme="light"] .inventory-item,
+[data-theme="light"] .loot-item,
+[data-theme="light"] .entry-item,
+[data-theme="light"] .entry-item--receipt,
+[data-theme="light"] .entry-item--expense-paid,
+[data-theme="light"] .entry-item--expense-pending {
+    background-color: #f8f9fa !important;
+    color: #111827 !important;
+    border-color: #9ca3af !important;
+}
+
+[data-theme="light"] .quest-item:hover,
+[data-theme="light"] .quest-card:hover,
+[data-theme="light"] .inventory-item:hover {
+    background-color: #f1f5f9 !important;
+}
+
+/* 4. TAVERNA */
+[data-theme="light"] .taverna-card,
+[data-theme="light"] .taverna-panel,
+[data-theme="light"] .taverna-summary,
+[data-theme="light"] .budget-bar-wrap {
+    background: #f8f9fa !important;
+    color: #111827 !important;
+    border-color: #9ca3af !important;
+}
+
+[data-theme="light"] .budget-bar-wrap label,
+[data-theme="light"] .budget-bar-wrap span,
+[data-theme="light"] #budget-bar-pct {
+    color: #374151 !important;
+}
+
+/* 5. TREINO / BATTLE */
+[data-theme="light"] .battle-section,
+[data-theme="light"] .battle-panel,
+[data-theme="light"] .stat-box,
+[data-theme="light"] .exercise-log-wrap {
+    background: #f8f9fa !important;
+    color: #111827 !important;
+    border-color: #9ca3af !important;
+}
+
+/* 6. INVENTÁRIO */
+[data-theme="light"] .inventory-panel,
+[data-theme="light"] .loot-grid,
+[data-theme="light"] .item-detail-panel {
+    background: #f8f9fa !important;
+    color: #111827 !important;
+}
+
+/* 7. TEXTOS GERAIS que ficam difíceis de ler */
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] p,
+[data-theme="light"] span:not(.category-tag):not(.status-badge):not([class*="color"]):not(.nav-icon) {
+    color: inherit;
+}
+
+[data-theme="light"] .section-title,
+[data-theme="light"] .view-title,
+[data-theme="light"] .panel-title,
+[data-theme="light"] .card-title {
+    color: #111827 !important;
+}
+
+[data-theme="light"] .text-muted,
+[data-theme="light"] .hint-text,
+[data-theme="light"] small {
+    color: #6b7280 !important;
+}
+
+/* 8. EMPTY STATES */
+[data-theme="light"] .empty-state,
+[data-theme="light"] .empty-state p {
+    color: #6b7280 !important;
+}
+
+/* 9. SCROLLBARS */
+[data-theme="light"]::-webkit-scrollbar-track,
+[data-theme="light"] *::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+[data-theme="light"]::-webkit-scrollbar-thumb,
+[data-theme="light"] *::-webkit-scrollbar-thumb {
+    background: #9ca3af;
+}
+
+/* 10. CAMPAIGN MAP — topbar precisa de contraste mesmo em light mode
+    pois o mapa tem background de imagem escura */
+[data-theme="light"] .campaign-map-view .map-boss-topbar {
+    background: rgba(241,245,249,0.97) !important;
+    color: #111827 !important;
+    border-color: #9ca3af !important;
+}
+
+[data-theme="light"] .map-boss-topbar__name {
+    color: #111827 !important;
+}
+
+/* 11. BOTTOM NAV MOBILE */
+[data-theme="light"] .bottom-nav {
+    background: #f8f9fa !important;
+    border-color: #9ca3af !important;
+}
+
+[data-theme="light"] .bottom-nav__item {
+    color: #4b5563 !important;
+}
+
+[data-theme="light"] .bottom-nav__item--active {
+    color: #6d28d9 !important;
+}

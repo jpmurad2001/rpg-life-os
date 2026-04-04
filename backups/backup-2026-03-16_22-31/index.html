@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="RPG Life OS - Gerencie sua vida como um herói de RPG 16-bits" />
+  <meta name="theme-color" content="#0d0d1a" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <title>RPG Life OS</title>
+
+  <!-- Google Fonts: Pixel-style font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap"
+    rel="stylesheet" />
+
+  <link rel="stylesheet" href="src/ui/style.css" />
+  <link rel="stylesheet" href="src/ui/style-phase2.css" />
+  <link rel="stylesheet" href="src/ui/style-phase3.css" />
+  <link rel="icon" type="image/png" href="assets/sprites/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/sprites/icon-192.png" />
+</head>
+
+<body class="theme-dark">
+
+  <!-- ============================================================
+       DESKTOP SIDEBAR NAV (hidden on mobile)
+       ============================================================ -->
+  <aside id="sidebar" class="sidebar" role="navigation" aria-label="Menu Principal">
+    <!-- Player Card -->
+    <div class="sidebar__player-card">
+      <div class="player-avatar" id="sidebar-avatar" aria-label="Avatar do jogador">
+        <div class="pixel-char">⚔️</div>
+      </div>
+      <div class="player-info">
+        <p class="player-name" id="sidebar-player-name">Herói</p>
+        <p class="player-level" id="sidebar-player-level">Nível 1</p>
+      </div>
+    </div>
+
+    <!-- XP Bar -->
+    <div class="xp-bar-wrapper" aria-label="Barra de XP">
+      <label class="label-xp">XP</label>
+      <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+        <div class="xp-bar__fill" id="sidebar-xp-fill" style="width:0%"></div>
+      </div>
+      <span class="xp-text" id="sidebar-xp-text">0 / 100</span>
+    </div>
+
+    <!-- HP Bar -->
+    <div class="hp-bar-wrapper" aria-label="Barra de HP">
+      <label class="label-hp">HP</label>
+      <div class="hp-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+        <div class="hp-bar__fill" id="sidebar-hp-fill" style="width:100%"></div>
+      </div>
+      <span class="hp-text" id="sidebar-hp-text">100 / 100</span>
+    </div>
+
+    <!-- Attributes -->
+    <div class="attributes-panel">
+      <div class="attr-row">
+        <span class="attr-icon">🧠</span>
+        <span class="attr-name">INT</span>
+        <span class="attr-value" id="attr-int">1</span>
+      </div>
+      <div class="attr-row">
+        <span class="attr-icon">🎨</span>
+        <span class="attr-name">ART</span>
+        <span class="attr-value" id="attr-art">1</span>
+      </div>
+      <div class="attr-row">
+        <span class="attr-icon">🗡️</span>
+        <span class="attr-name">AVE</span>
+        <span class="attr-value" id="attr-ave">1</span>
+      </div>
+    </div>
+
+    <!-- Radar Chart -->
+    <div class="radar-wrap">
+      <div class="radar-title">Atributos</div>
+      <canvas id="attr-radar" width="160" height="160" aria-label="Radar de atributos"></canvas>
+    </div>
+
+    <!-- Navigation Menu (Final Fantasy style) -->
+    <nav class="sidebar__nav" id="desktop-nav">
+      <button class="nav-btn nav-btn--active" id="nav-quests" data-view="quests" aria-current="page">
+        <span class="nav-icon">📜</span>
+        <span class="nav-label">Quests</span>
+      </button>
+      <button class="nav-btn" id="nav-battle" data-view="battle" aria-current="false">
+        <span class="nav-icon">⚔️</span>
+        <span class="nav-label">Treino</span>
+      </button>
+      <button class="nav-btn" id="nav-taverna" data-view="taverna" aria-current="false">
+        <span class="nav-icon">🏰</span>
+        <span class="nav-label">Taverna</span>
+      </button>
+      <button class="nav-btn" id="nav-bosses" data-view="bosses" aria-current="false">
+        <span class="nav-icon">🐉</span>
+        <span class="nav-label">Bosses</span>
+      </button>
+      <button class="nav-btn" id="nav-achievements" data-view="achievements" aria-current="false">
+        <span class="nav-icon">🏆</span>
+        <span class="nav-label">Conquistas</span>
+      </button>
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar__footer">
+      <span class="version-badge">v3.0.0</span>
+      <button class="theme-toggle-btn" id="btn-theme-toggle" aria-label="Trocar tema">☀️ Light Mode</button>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN CONTENT AREA
+       ============================================================ -->
+  <main id="main-content" class="main-content" role="main">
+
+    <!-- Page Header (visible on all views) -->
+    <header class="page-header" id="page-header">
+      <div class="page-header__left">
+        <!-- Mobile: hamburger / Desktop: page title -->
+        <button class="btn-icon mobile-only" id="btn-mobile-menu" aria-label="Menu">☰</button>
+        <h1 class="page-title" id="page-title">📜 Quests Semanais</h1>
+      </div>
+      <div class="page-header__right">
+        <button class="bell-btn" id="btn-bell" aria-label="Notificações">🔔</button>
+        <button class="gear-btn" id="btn-settings" aria-label="Configurações">⚙️</button>
+      </div>
+    </header>
+
+    <!-- ---- VIEW: QUESTS SEMANAIS ---- -->
+    <section id="view-quests" class="view view--active" data-view="quests" aria-label="Missões Semanais">
+      <div class="view-inner">
+        <div class="week-header">
+          <button class="btn-rp btn-rp--ghost" id="btn-prev-week" aria-label="Semana anterior">◀</button>
+          <h2 class="week-label" id="week-label">Semana 10 · 2026</h2>
+          <button class="btn-rp btn-rp--ghost" id="btn-next-week" aria-label="Próxima semana">▶</button>
+          <button class="btn-rp btn-rp--danger" id="btn-weekly-reset" aria-label="Reset Semanal">🔄 Reset</button>
+        </div>
+
+        <!-- Weekly Progress -->
+        <div class="week-progress" id="week-progress">
+          <span id="week-progress-text">0 / 0 quests</span>
+          <div class="week-progress__bar-wrapper">
+            <div class="week-progress__bar-fill" id="week-progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Attribute Filter Bar -->
+        <div class="quest-filter-bar" id="quest-filter-bar">
+          <button class="filter-btn filter-btn--all filter-btn--active" data-filter="ALL" id="filter-all">Todos</button>
+          <button class="filter-btn filter-btn--INT" data-filter="INT" id="filter-int">🧠 INT</button>
+          <button class="filter-btn filter-btn--ART" data-filter="ART" id="filter-art">🎨 ART</button>
+          <button class="filter-btn filter-btn--AVE" data-filter="AVE" id="filter-ave">🗡️ AVE</button>
+        </div>
+
+        <!-- Days Grid: Mon-Sun -->
+        <div class="days-grid" id="days-grid">
+          <!-- Cards rendered by JS -->
+        </div>
+
+        <!-- Add Task Button -->
+        <button class="btn-rp btn-rp--primary btn-add-task" id="btn-add-task">+ Nova Quest</button>
+      </div>
+    </section>
+
+    <!-- ---- VIEW: BATTLE GROUND (TREINO) ---- -->
+    <section id="view-battle" class="view" data-view="battle" aria-label="Battle Ground - Treino" hidden>
+      <div class="view-inner">
+        <div class="panel-row">
+          <!-- Template List -->
+          <div class="panel panel--dark" id="panel-templates">
+            <h2 class="panel-title">Templates de Treino</h2>
+            <div id="template-list"><!-- Rendered by JS --></div>
+            <button class="btn-rp btn-rp--primary" id="btn-new-template">+ Novo Template</button>
+          </div>
+
+          <!-- Active Session -->
+          <div class="panel panel--dark" id="panel-active-session">
+            <h2 class="panel-title">⚔️ Sessão Ativa</h2>
+            <div id="active-session-content">
+              <p class="empty-state">Selecione um template para começar a batalha!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session History + Workout Chart -->
+        <div class="panel panel--dark" id="panel-history">
+          <h2 class="panel-title">📋 Histórico de Treinos</h2>
+          <div class="workout-chart-wrap">
+            <div class="workout-chart-title">⚔️ Frequência — Últimos 7 dias</div>
+            <canvas id="workout-chart" height="80"></canvas>
+          </div>
+          <div id="session-history"><!-- Rendered by JS --></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- VIEW: TAVERNA (FINANÇAS) ---- -->
+    <section id="view-taverna" class="view" data-view="taverna" aria-label="Taverna - Finanças" hidden>
+      <div class="view-inner">
+        <!-- Summary Card -->
+        <div class="finance-summary" id="finance-summary">
+          <div class="finance-card finance-card--income">
+            <span class="finance-label">💰 Receitas</span>
+            <span class="finance-value" id="total-receipts">R$ 0,00</span>
+          </div>
+          <div class="finance-card finance-card--paid">
+            <span class="finance-label">✅ Pago</span>
+            <span class="finance-value" id="total-paid">R$ 0,00</span>
+          </div>
+          <div class="finance-card finance-card--pending">
+            <span class="finance-label">⏳ Previsto</span>
+            <span class="finance-value" id="total-pending">R$ 0,00</span>
+          </div>
+          <div class="finance-card finance-card--balance">
+            <span class="finance-label">⚖️ Saldo Livre</span>
+            <span class="finance-value" id="free-balance">R$ 0,00</span>
+          </div>
+        </div>
+
+        <!-- Month selector -->
+        <div class="month-selector">
+          <button class="btn-rp btn-rp--ghost" id="btn-prev-month">◄</button>
+          <span class="month-label" id="month-label">Março 2026</span>
+          <button class="btn-rp btn-rp--ghost" id="btn-next-month">►</button>
+        </div>
+
+        <!-- Budget Progress Bar -->
+        <div class="budget-bar-wrap" id="budget-bar-wrap">
+          <div class="budget-bar-label">
+            <span>Orçamento comprometido</span>
+            <span id="budget-bar-pct">0%</span>
+          </div>
+          <div class="budget-bar">
+            <div class="budget-bar__fill budget-ok" id="budget-bar-fill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Lists -->
+        <div class="panel-row">
+          <div class="panel panel--dark">
+            <h2 class="panel-title">Receitas</h2>
+            <div id="receipts-list"><!-- Rendered by JS --></div>
+            <button class="btn-rp btn-rp--primary" id="btn-add-receipt">+ Receita</button>
+          </div>
+          <div class="panel panel--dark">
+            <h2 class="panel-title">Despesas</h2>
+            <div id="expenses-list"><!-- Rendered by JS --></div>
+            <button class="btn-rp btn-rp--danger" id="btn-add-expense">+ Despesa</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- VIEW: BOSSES ---- -->
+    <section id="view-bosses" class="view" data-view="bosses" aria-label="Bosses - Projetos Épicos" hidden>
+      <div class="view-inner">
+        <div class="bosses-grid" id="bosses-grid">
+          <!-- Boss cards rendered by JS -->
+        </div>
+        <button class="btn-rp btn-rp--primary" id="btn-new-boss">+ Invocar Boss</button>
+      </div>
+    </section>
+
+    <!-- ---- VIEW: ACHIEVEMENTS ---- -->
+    <section id="view-achievements" class="view" data-view="achievements" aria-label="Conquistas" hidden>
+      <div class="view-inner">
+        <div class="achievements-grid" id="achievements-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       MOBILE BOTTOM NAV BAR
+       ============================================================ -->
+  <nav class="bottom-nav mobile-only" id="bottom-nav" role="navigation" aria-label="Menu Mobile">
+    <button class="bottom-nav__btn bottom-nav__btn--active" data-view="quests" id="m-nav-quests">
+      <span class="bottom-nav__icon">📜</span>
+      <span class="bottom-nav__label">Quests</span>
+    </button>
+    <button class="bottom-nav__btn" data-view="battle" id="m-nav-battle">
+      <span class="bottom-nav__icon">⚔️</span>
+      <span class="bottom-nav__label">Treino</span>
+    </button>
+    <button class="bottom-nav__btn" data-view="taverna" id="m-nav-taverna">
+      <span class="bottom-nav__icon">🏰</span>
+      <span class="bottom-nav__label">Taverna</span>
+    </button>
+    <button class="bottom-nav__btn" data-view="bosses" id="m-nav-bosses">
+      <span class="bottom-nav__icon">🐉</span>
+      <span class="bottom-nav__label">Bosses</span>
+    </button>
+    <button class="bottom-nav__btn" data-view="achievements" id="m-nav-achievements">
+      <span class="bottom-nav__icon">🏆</span>
+      <span class="bottom-nav__label">Conquistas</span>
+    </button>
+  </nav>
+
+  <!-- ============================================================
+       MODALS (shared overlay)
+       ============================================================ -->
+  <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" hidden>
+    <div class="modal-window pixel-panel" id="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title">Modal</h3>
+        <button class="btn-icon modal-close" id="modal-close" aria-label="Fechar">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Dynamic content injected by JS -->
+      </div>
+      <div class="modal-footer" id="modal-footer">
+        <button class="btn-rp btn-rp--ghost" id="modal-cancel">Cancelar</button>
+        <button class="btn-rp btn-rp--primary" id="modal-confirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       TOAST NOTIFICATION
+       ============================================================ -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ============================================================
+       LEVEL UP OVERLAY
+       ============================================================ -->
+  <div id="level-up-overlay" class="level-up-overlay" hidden>
+    <div class="level-up-box pixel-panel">
+      <p class="level-up-text">✨ LEVEL UP! ✨</p>
+      <p class="level-up-new" id="level-up-new">Nível 2</p>
+      <button class="btn-rp btn-rp--primary" id="btn-level-up-ok">OK</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCRIPTS
+       ============================================================ -->
+  <script type="module" src="src/engine/core.js"></script>
+  <script type="module" src="src/engine/gamification.js"></script>
+  <script type="module" src="src/modules/quests.js"></script>
+  <script type="module" src="src/modules/battle.js"></script>
+  <script type="module" src="src/modules/taverna.js"></script>
+  <script type="module" src="src/modules/bosses.js"></script>
+  <script type="module" src="src/ui/app.js"></script>
+</body>
+
+</html>

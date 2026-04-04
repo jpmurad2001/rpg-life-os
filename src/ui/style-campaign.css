@@ -1,0 +1,842 @@
+/* ============================================================
+   CAMPAIGN MAP STYLES — RPG Life OS v1.3
+   O Mapa do Pesadelo
+   ============================================================ */
+
+/* ============================================================
+   LISTA DE CAMPANHAS
+   ============================================================ */
+.campaign-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.campaign-card {
+  position: relative;
+  background: var(--color-bg-panel);
+  border: var(--pixel-border-dark);
+  box-shadow: var(--pixel-shadow);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 120ms steps(2), box-shadow 120ms steps(2);
+  display: grid;
+  grid-template-columns: 140px 1fr auto;
+  min-height: 90px;
+}
+
+.campaign-card:hover {
+  border-color: var(--color-gold-dark);
+  box-shadow: var(--pixel-shadow), 0 0 16px rgba(184, 134, 11, 0.3);
+}
+
+.campaign-card--defeated {
+  opacity: 0.6;
+  border-color: var(--color-border);
+  cursor: default;
+}
+
+.campaign-card__thumb {
+  width: 140px;
+  height: 90px;
+  object-fit: cover;
+  opacity: 0.65;
+  display: block;
+  background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2a 50%, #0a1a0a 100%);
+  flex-shrink: 0;
+}
+
+.campaign-card__thumb-placeholder {
+  width: 140px;
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2a 100%);
+  flex-shrink: 0;
+}
+
+.campaign-card__info {
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  justify-content: center;
+  overflow: hidden;
+}
+
+.campaign-card__name {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--text-gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.campaign-card__desc {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-secondary);
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.campaign-card__meta {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.campaign-card__hp-wrap {
+  flex: 1;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.campaign-card__hp-label {
+  font-size: var(--fs-xxs);
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  font-family: var(--font-pixel);
+}
+
+.campaign-card__hp-bar {
+  height: 6px;
+  background: var(--color-bg-deepest);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.campaign-card__hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7b0000, var(--color-hp));
+  transition: width 300ms;
+}
+
+.campaign-card__nodes-badge {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.campaign-card__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  border-left: var(--pixel-border-dark);
+}
+
+/* ============================================================
+   MAP VIEW — WRAPPER
+   ============================================================ */
+.campaign-map-view {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--header-height));
+  overflow: hidden;
+}
+
+/* Boss HP Topbar */
+.map-boss-topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: rgba(5, 5, 16, 0.95);
+  border-bottom: 2px solid var(--color-hp);
+  flex-shrink: 0;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+.map-boss-topbar__name {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--text-gold);
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-boss-topbar__sprite {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.map-boss-topbar__hp {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 120px;
+}
+
+.map-boss-topbar__hp-text {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--color-hp);
+}
+
+.map-boss-topbar__hp-bar {
+  width: 120px;
+  height: 8px;
+  background: var(--color-bg-deepest);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.map-boss-topbar__hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7b0000, var(--color-hp));
+  transition: width 600ms ease-out;
+}
+
+/* ============================================================
+   CAMPAIGN MAP CANVAS — O Mapa Principal
+   ============================================================ */
+.campaign-map {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  background: var(--color-bg-deepest);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  /* Pixel scanlines effect on map */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.12) 2px,
+      rgba(0, 0, 0, 0.12) 4px
+    );
+}
+
+.campaign-map--no-image {
+  background-color: #050510;
+  background-image:
+    radial-gradient(ellipse at 80% 20%, rgba(100, 0, 0, 0.25) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 80%, rgba(0, 0, 80, 0.3) 0%, transparent 60%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.12) 2px,
+      rgba(0, 0, 0, 0.12) 4px
+    );
+}
+
+/* Fog / vignette overlay */
+.campaign-map::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(5, 5, 16, 0.7) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* SVG overlay — cobre o mapa inteiro */
+.campaign-map__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+}
+
+/* ============================================================
+   LINHAS SVG DE CONEXÃO
+   ============================================================ */
+.map-line {
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.map-line--locked {
+  stroke: #3b3b6b;
+  stroke-dasharray: 6 5;
+  opacity: 0.45;
+}
+
+.map-line--active {
+  stroke: var(--color-xp);
+  stroke-dasharray: none;
+  opacity: 0.7;
+}
+
+.map-line--done {
+  stroke: var(--color-gold);
+  stroke-dasharray: none;
+  filter: drop-shadow(0 0 4px var(--color-gold));
+  animation: line-glow 2.5s ease-in-out infinite;
+}
+
+.map-line--boss {
+  stroke: var(--color-hp);
+  stroke-dasharray: none;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 6px var(--color-hp));
+}
+
+@keyframes line-glow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+/* ============================================================
+   NÓS DO MAPA
+   ============================================================ */
+.map-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  background: var(--color-bg-panel);
+  border: 2px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 120ms steps(2), border-color 120ms steps(2);
+  box-shadow: var(--pixel-shadow);
+}
+
+.map-node:hover {
+  transform: translate(-50%, -50%) scale(1.18);
+}
+
+/* Status variants */
+.map-node--active {
+  border-color: var(--color-xp);
+  background: rgba(2, 136, 209, 0.1);
+  box-shadow: 0 0 10px var(--color-xp), var(--pixel-shadow);
+  animation: node-pulse 1.6s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.map-node--active:hover {
+  transform: translate(-50%, -50%) scale(1.22);
+}
+
+.map-node--completed {
+  border-color: var(--color-hp-safe);
+  background: rgba(102, 187, 106, 0.1);
+  opacity: 0.7;
+  cursor: default;
+}
+
+.map-node--completed:hover {
+  transform: translate(-50%, -50%); /* no scale on completed */
+}
+
+.map-node--locked {
+  opacity: 0.3;
+  cursor: not-allowed;
+  filter: grayscale(1) brightness(0.5);
+  border-color: var(--color-border);
+}
+
+.map-node--locked:hover {
+  transform: translate(-50%, -50%); /* no scale on locked */
+}
+
+.map-node--boss {
+  width: 60px;
+  height: 60px;
+  border-color: var(--color-hp);
+  background: rgba(198, 40, 40, 0.2);
+  box-shadow: 0 0 18px var(--color-hp), var(--pixel-shadow);
+  animation: boss-node-pulse 2s ease-in-out infinite;
+  cursor: default;
+  z-index: 4;
+}
+
+.map-node--boss-clickable {
+  cursor: pointer !important;
+}
+
+.map-node--boss-defeated {
+  border-color: var(--color-hp-safe);
+  background: rgba(102, 187, 106, 0.15);
+  box-shadow: 0 0 18px var(--color-hp-safe), var(--pixel-shadow);
+  animation: none;
+  cursor: default;
+}
+
+@keyframes node-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--color-xp), var(--pixel-shadow);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--color-xp), 0 0 36px rgba(79, 195, 247, 0.35), var(--pixel-shadow);
+  }
+}
+
+@keyframes boss-node-pulse {
+  0%, 100% {
+    box-shadow: 0 0 14px var(--color-hp), var(--pixel-shadow);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    box-shadow: 0 0 30px var(--color-hp), 0 0 48px rgba(239, 83, 80, 0.3);
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+.map-node__icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.map-node__check {
+  font-size: 0.8rem;
+  color: var(--color-hp-safe);
+}
+
+/* Label abaixo do nó */
+.map-node__label {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.38rem;
+  font-family: var(--font-pixel);
+  white-space: nowrap;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  letter-spacing: 0.5px;
+}
+
+.map-node--boss .map-node__label {
+  bottom: -22px;
+  color: var(--text-hp);
+  font-size: 0.42rem;
+}
+
+.map-node--active .map-node__label {
+  color: var(--color-xp);
+}
+
+/* ============================================================
+   DAMAGE FLOAT (no mapa)
+   ============================================================ */
+.map-damage-float {
+  position: absolute;
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--color-hp);
+  pointer-events: none;
+  z-index: 20;
+  text-shadow: 0 0 8px var(--color-hp);
+  animation: map-damage-rise 1.4s ease-out forwards;
+}
+
+@keyframes map-damage-rise {
+  0%   { opacity: 1; transform: translateY(0); }
+  80%  { opacity: 1; transform: translateY(-40px); }
+  100% { opacity: 0; transform: translateY(-56px); }
+}
+
+/* ============================================================
+   MAP BOTTOM TOOLBAR
+   ============================================================ */
+.map-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(13, 13, 26, 0.97);
+  border-top: var(--pixel-border-dark);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.map-toolbar__nodes-info {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+/* ============================================================
+   MINI-MAP POSITIONER (no modal de adicionar nó)
+   ============================================================ */
+.minimap-positioner {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: linear-gradient(135deg, #050510 0%, #0d0a1a 100%);
+  border: var(--pixel-border-dark);
+  cursor: crosshair;
+  overflow: hidden;
+  user-select: none;
+}
+
+
+.minimap-node-preview {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: var(--color-xp);
+  border: 2px solid #fff;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 0 8px var(--color-xp);
+}
+
+.minimap-existing-node {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--color-border-bright);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.minimap-boss-marker {
+  /* posição vem do inline style — não definir right/top aqui */
+  font-size: 1rem;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px var(--color-hp));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Texto central de dica (substitui o ::after removível) */
+.minimap-hint-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-muted);
+  pointer-events: none;
+  text-align: center;
+  transition: opacity 200ms;
+}
+
+.minimap-positioner.has-pos .minimap-hint-text {
+  opacity: 0;
+}
+
+/* ============================================================
+   EMPTY STATE DO MAPA
+   ============================================================ */
+.map-empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  z-index: 5;
+  text-align: center;
+  padding: var(--space-5);
+}
+
+.map-empty-state__icon {
+  font-size: 3rem;
+  opacity: 0.5;
+  animation: float-icon 3s ease-in-out infinite;
+}
+
+.map-empty-state__text {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  line-height: 1.8;
+}
+
+@keyframes float-icon {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+/* ============================================================
+   CAMPAIGN DEFEATED OVERLAY (dentro do mapa)
+   ============================================================ */
+.map-defeated-banner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 5, 16, 0.75);
+  z-index: 15;
+  text-align: center;
+}
+
+.map-defeated-banner__title {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-lg);
+  color: var(--color-gold);
+  text-shadow: 0 0 20px var(--color-gold);
+  animation: blink var(--blink-rate);
+  letter-spacing: 3px;
+}
+
+.map-defeated-banner__sub {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-3);
+}
+
+/* ============================================================
+   NODE TOOLTIP (hover)
+   ============================================================ */
+.map-node-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 12px));
+  background: var(--color-bg-panel);
+  border: var(--pixel-border-dark);
+  padding: var(--space-2) var(--space-3);
+  box-shadow: var(--pixel-shadow);
+  pointer-events: none;
+  z-index: 30;
+  min-width: 140px;
+  max-width: 200px;
+}
+
+.map-node-tooltip__title {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--space-1);
+}
+
+.map-node-tooltip__meta {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 767px) {
+  .campaign-card {
+    grid-template-columns: 80px 1fr;
+  }
+
+  .campaign-card__thumb,
+  .campaign-card__thumb-placeholder {
+    width: 80px;
+    min-height: 80px;
+  }
+
+  .campaign-card__action {
+    display: none; /* botão fica no próprio card clickable */
+  }
+
+  .map-boss-topbar__hp-bar {
+    width: 80px;
+  }
+
+  .map-node {
+    width: 36px;
+    height: 36px;
+  }
+
+  .map-node--boss {
+    width: 48px;
+    height: 48px;
+  }
+
+  .map-node__icon { font-size: 0.9rem; }
+  .map-node__label { font-size: 0.32rem; }
+}
+
+/* ============================================================
+   GAME FEEL — Boss Hit & Line Flow Animations
+   ============================================================ */
+
+/* Topbar flash vermelha ao receber dano */
+.map-boss-topbar--hit {
+  animation: boss-topbar-flash 0.55s ease-out forwards;
+}
+
+@keyframes boss-topbar-flash {
+  0%   { background: rgba(239, 83, 80, 0.55); border-bottom-color: #ff5252; }
+  40%  { background: rgba(239, 83, 80, 0.35); border-bottom-color: #ff5252; }
+  100% { background: rgba(5, 5, 16, 0.95);    border-bottom-color: var(--color-hp); }
+}
+
+/* Sprite do Boss — shake ao tomar dano */
+.map-boss-topbar__sprite--hit {
+  display: inline-block;
+  animation: boss-sprite-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+}
+
+@keyframes boss-sprite-shake {
+  0%   { transform: translateX(0)     rotate(0deg); }
+  12%  { transform: translateX(-5px)  rotate(-6deg); }
+  25%  { transform: translateX(5px)   rotate(6deg); }
+  37%  { transform: translateX(-4px)  rotate(-4deg); }
+  50%  { transform: translateX(4px)   rotate(4deg); }
+  62%  { transform: translateX(-2px)  rotate(-2deg); }
+  75%  { transform: translateX(2px)   rotate(2deg); }
+  87%  { transform: translateX(-1px)  rotate(-1deg); }
+  100% { transform: translateX(0)     rotate(0deg); }
+}
+
+/* HP bar transition (declínio suave após hit) */
+.map-boss-topbar__hp-fill {
+  transition: width 650ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Linha SVG — efeito de energia fluindo ao ser desbloqueada */
+.map-line--flowing {
+  stroke: var(--color-xp);
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  filter: drop-shadow(0 0 5px var(--color-xp));
+  animation: line-flow-draw 0.75s ease-out forwards;
+}
+
+@keyframes line-flow-draw {
+  0%   {
+    stroke-dashoffset: 120;
+    stroke: var(--color-xp);
+    filter: drop-shadow(0 0 8px var(--color-xp));
+  }
+  70%  {
+    stroke-dashoffset: 0;
+    stroke: var(--color-xp);
+  }
+  100% {
+    stroke-dashoffset: 0;
+    stroke: var(--color-gold);
+    filter: drop-shadow(0 0 5px var(--color-gold));
+  }
+}
+
+/* ============================================================
+   BOSS SPRITE IMAGES — Pixel Art 16-bit
+   image-rendering: pixelated garante que o art não fique embaçado
+   ============================================================ */
+
+/* Sprite na Topbar do mapa */
+.boss-sprite-topbar {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;        /* Firefox */
+  image-rendering: -webkit-optimize-contrast; /* Safari legado */
+  flex-shrink: 0;
+  display: block;
+}
+
+/* Sprite no card da campanha quando não há background image */
+.boss-sprite-card-thumb {
+  width: 65%;
+  height: 65%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Container para thumb com background + overlay do boss */
+.campaign-card__thumb-wrap {
+  position: relative;
+  width: 140px;
+  min-height: 90px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.campaign-card__thumb-wrap .campaign-card__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.65;
+  display: block;
+}
+
+/* Sprite do Boss sobreposto no canto inferior-direito do thumbnail */
+.boss-sprite-card-overlay {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.9));
+}
+
+/* Sprite do Boss no nó do Mapa */
+.boss-sprite-map-node {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  display: block;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .campaign-card__thumb-wrap {
+    width: 80px;
+    min-height: 80px;
+  }
+
+  .boss-sprite-card-overlay {
+    width: 26px;
+    height: 26px;
+  }
+
+  .boss-sprite-topbar {
+    width: 22px;
+    height: 22px;
+  }
+}

@@ -1,0 +1,24 @@
+# Dependências e cache do Sistema Operacional
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Firebase local cache
+.firebase/
+.firebaserc.bak
+
+# Segredos e variáveis de ambiente (NUNCA suba isso!)
+.env
+.env.local
+*.secret.js
+
+# Arquivos temporários do projeto
+tmp/
+*.tmp
+
+# VS Code / Editor configs locais
+.vscode/settings.json
+
+# Logs
+*.log
+npm-debug.log*

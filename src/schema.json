@@ -1,0 +1,283 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "app_name": "RPG Life OS",
+    "created_at": "",
+    "last_saved": ""
+  },
+
+  "player": {
+    "id": "player_001",
+    "name": "Herói",
+    "avatar": "warrior",
+    "level": 1,
+    "xp": 0,
+    "xp_next": 100,
+    "hp": 100,
+    "hp_max": 100,
+    "attributes": {
+      "INT": { "value": 1, "xp_pool": 0, "xp_per_level": 50 },
+      "ART": { "value": 1, "xp_pool": 0, "xp_per_level": 50 },
+      "AVE": { "value": 1, "xp_pool": 0, "xp_per_level": 50 }
+    },
+    "badges": [],
+    "item_drops": [],
+    "stats": {
+      "quests_completed": 0,
+      "bosses_defeated": 0,
+      "workouts_completed": 0,
+      "total_xp_earned": 0,
+      "streak_days": 0,
+      "last_active_date": ""
+    }
+  },
+
+  "quests": {
+    "current_week_start": "",
+    "current_week_id": "",
+    "weeks": {
+      "2026-W10": {
+        "id": "2026-W10",
+        "start_date": "2026-03-09",
+        "end_date": "2026-03-15",
+        "tasks": [
+          {
+            "id": "task_001",
+            "title": "Otimizar modelagem de dados",
+            "description": "",
+            "day": "segunda",
+            "attribute": "INT",
+            "xp_reward": 30,
+            "hp_reward": 5,
+            "status": "pending",
+            "boss_id": null,
+            "completed_at": null,
+            "tags": ["trabalho", "dados"]
+          }
+        ],
+        "reset_done": false
+      }
+    }
+  },
+
+  "battle_ground": {
+    "templates": [
+      {
+        "id": "tmpl_001",
+        "name": "Treino A - Peito e Tríceps",
+        "attribute": "AVE",
+        "xp_reward_per_set": 5,
+        "hp_impact": 10,
+        "exercises": [
+          {
+            "id": "ex_001",
+            "name": "Supino Reto",
+            "sets": 4,
+            "reps": "8-12",
+            "weight_kg": 0,
+            "rest_seconds": 90,
+            "notes": ""
+          },
+          {
+            "id": "ex_002",
+            "name": "Tríceps Corda",
+            "sets": 3,
+            "reps": "12-15",
+            "weight_kg": 0,
+            "rest_seconds": 60,
+            "notes": ""
+          }
+        ]
+      },
+      {
+        "id": "tmpl_002",
+        "name": "Treino B - Costas e Bíceps",
+        "attribute": "AVE",
+        "xp_reward_per_set": 5,
+        "hp_impact": 10,
+        "exercises": []
+      }
+    ],
+    "sessions": [
+      {
+        "id": "session_001",
+        "template_id": "tmpl_001",
+        "template_name": "Treino A - Peito e Tríceps",
+        "date": "2026-03-10",
+        "duration_minutes": 60,
+        "completed": true,
+        "sets_done": 7,
+        "xp_earned": 35,
+        "hp_gained": 10,
+        "notes": ""
+      }
+    ]
+  },
+
+  "taverna": {
+    "months": {
+      "2026-03": {
+        "id": "2026-03",
+        "label": "Março 2026",
+        "receipts": [
+          {
+            "id": "rec_001",
+            "description": "Salário",
+            "amount": 5000.00,
+            "date": "2026-03-05",
+            "category": "trabalho",
+            "recurring": true
+          }
+        ],
+        "expenses": [
+          {
+            "id": "exp_001",
+            "description": "Aluguel",
+            "amount": 1200.00,
+            "date": "2026-03-10",
+            "category": "moradia",
+            "status": "paid",
+            "recurring": true
+          },
+          {
+            "id": "exp_002",
+            "description": "Academia",
+            "amount": 89.90,
+            "date": "2026-03-15",
+            "category": "saúde",
+            "status": "pending",
+            "recurring": true
+          }
+        ],
+        "summary_cache": {
+          "total_receipts": 5000.00,
+          "total_paid": 1200.00,
+          "total_pending": 89.90,
+          "free_balance": 2710.10,
+          "last_calculated": ""
+        }
+      }
+    }
+  },
+
+  "bosses": [
+    {
+      "id": "boss_001",
+      "name": "Lançar Canal no YouTube",
+      "description": "Criar e publicar os primeiros 10 vídeos no canal de anime.",
+      "sprite": "dragon",
+      "hp_max": 1000,
+      "hp_current": 850,
+      "attribute_bonus": "ART",
+      "xp_reward_on_defeat": 500,
+      "status": "active",
+      "created_at": "2026-03-01",
+      "defeated_at": null,
+      "subtasks": [
+        {
+          "id": "sub_001",
+          "title": "Escrever roteiro sobre aberturas de anime",
+          "damage": 50,
+          "xp_reward": 40,
+          "attribute": "ART",
+          "status": "completed",
+          "completed_at": "2026-03-08"
+        },
+        {
+          "id": "sub_002",
+          "title": "Gravar voz off do episódio 1",
+          "damage": 50,
+          "xp_reward": 40,
+          "attribute": "ART",
+          "status": "pending",
+          "completed_at": null
+        },
+        {
+          "id": "sub_003",
+          "title": "Editar vídeo do episódio 1",
+          "damage": 100,
+          "xp_reward": 60,
+          "attribute": "ART",
+          "status": "pending",
+          "completed_at": null
+        }
+      ]
+    },
+    {
+      "id": "boss_002",
+      "name": "Gravar Álbum de 12 Faixas",
+      "description": "Compor, gravar e mixar um álbum completo.",
+      "sprite": "golem",
+      "hp_max": 1200,
+      "hp_current": 1200,
+      "attribute_bonus": "ART",
+      "xp_reward_on_defeat": 600,
+      "status": "active",
+      "created_at": "2026-03-10",
+      "defeated_at": null,
+      "subtasks": [
+        {
+          "id": "sub_010",
+          "title": "Gravar guitarra da faixa 1",
+          "damage": 100,
+          "xp_reward": 50,
+          "attribute": "ART",
+          "status": "pending",
+          "completed_at": null
+        }
+      ]
+    }
+  ],
+
+  "achievements": [
+    {
+      "id": "ach_001",
+      "key": "FIRST_QUEST",
+      "name": "Primeira Missão",
+      "description": "Complete sua primeira tarefa semanal.",
+      "icon": "⚔️",
+      "rarity": "common",
+      "unlocked": false,
+      "unlocked_at": null
+    },
+    {
+      "id": "ach_002",
+      "key": "LEVEL_5",
+      "name": "Aventureiro",
+      "description": "Alcance o nível 5.",
+      "icon": "🌟",
+      "rarity": "uncommon",
+      "unlocked": false,
+      "unlocked_at": null
+    },
+    {
+      "id": "ach_003",
+      "key": "BOSS_SLAYER",
+      "name": "Caçador de Chefes",
+      "description": "Derrote seu primeiro Boss.",
+      "icon": "🏆",
+      "rarity": "rare",
+      "unlocked": false,
+      "unlocked_at": null
+    },
+    {
+      "id": "ach_004",
+      "key": "WORKOUT_STREAK_7",
+      "name": "Guerreiro da Semana",
+      "description": "Complete treinos por 7 dias seguidos.",
+      "icon": "💪",
+      "rarity": "uncommon",
+      "unlocked": false,
+      "unlocked_at": null
+    }
+  ],
+
+  "settings": {
+    "theme": "dark",
+    "sound_enabled": true,
+    "notifications_enabled": false,
+    "base_xp": 100,
+    "hp_decay_per_missed_day": 5,
+    "language": "pt-BR"
+  }
+}

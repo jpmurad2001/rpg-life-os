@@ -1,0 +1,582 @@
+/**
+ * RPG Life OS — Audio Player CSS (v1.4: Ecos do Vazio)
+ * ======================================================
+ * Bottom bar retrátil com duas abas: BGM Local + Spotify.
+ * Usa as variáveis do design system existente.
+ */
+
+/* ============================================================
+   VARIÁVEIS LOCAIS DO PLAYER
+   ============================================================ */
+:root {
+  --player-strip-h:   52px;   /* altura da tira colapsada    */
+  --player-panel-h:   240px;  /* altura do painel expandido  */
+  --player-z:         250;    /* z-index — acima de tudo exceto modais (400+) */
+}
+
+/* ============================================================
+   BOTTOM BAR — Container Principal
+   ============================================================ */
+.audio-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--player-z);
+  background: rgba(6, 6, 18, 0.97);
+  border-top: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 -6px 32px rgba(0, 0, 0, 0.6), 0 -1px 0 rgba(79, 195, 247, 0.08);
+  will-change: transform;
+  transition: box-shadow 200ms;
+}
+
+.audio-bar--expanded {
+  box-shadow: 0 -6px 48px rgba(0, 0, 0, 0.8), 0 -1px 0 rgba(79, 195, 247, 0.15);
+}
+
+/* Ocultar barra — desliza para baixo */
+.audio-bar--hidden {
+  transform: translateY(100%);
+  pointer-events: none;
+}
+
+/* Animação de entrada/saída */
+.audio-bar {
+  transition: transform 220ms cubic-bezier(.4,0,.2,1), box-shadow 200ms;
+}
+
+/* Mobile: barra fica ACIMA da bottom nav (64px) */
+@media (max-width: 767px) {
+  .audio-bar { bottom: 64px; }
+}
+
+/* Desktop: barra cobre toda a largura */
+@media (min-width: 768px) {
+  .audio-bar { bottom: 0; }
+}
+
+/* ============================================================
+   STRIP — Tira sempre visível
+   ============================================================ */
+.audio-bar__strip {
+  display: flex;
+  align-items: center;
+  height: var(--player-strip-h);
+  padding: 0 var(--space-2) 0 var(--space-1);
+  gap: var(--space-2);
+  user-select: none;
+}
+
+/* Botão expandir */
+.audio-bar__expand-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 0;
+  transition: color 120ms;
+}
+.audio-bar__expand-btn:hover { color: var(--color-gold); }
+
+/* Botão ocultar barra (×) */
+.audio-bar__hide-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  flex-shrink: 0;
+  transition: color 120ms;
+}
+.audio-bar__hide-btn:hover { color: var(--color-hp); }
+
+.audio-expand-icon {
+  font-size: 0.45rem;
+  font-family: var(--font-pixel);
+  line-height: 1;
+  display: block;
+  transition: transform 150ms;
+}
+
+/* Controles play/prev/next */
+.audio-bar__controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.audio-ctrl {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  flex-shrink: 0;
+  transition: color 100ms steps(2), transform 80ms;
+  border-radius: 0;
+}
+.audio-ctrl:hover  { color: var(--color-gold); }
+.audio-ctrl:active { transform: scale(0.82); }
+
+.audio-ctrl--play {
+  font-size: 1rem;
+  color: var(--color-xp);
+  width: 30px;
+  height: 30px;
+  background: rgba(79, 195, 247, 0.08);
+  border: 1px solid rgba(79, 195, 247, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 120ms, color 120ms, transform 80ms;
+}
+.audio-ctrl--play:hover     { background: rgba(79, 195, 247, 0.2); border-color: var(--color-xp); }
+.audio-ctrl--play--playing,
+.audio-ctrl--playing        { color: var(--color-xp); }
+
+/* Track info */
+.audio-bar__track-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.audio-note-icon {
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  display: inline-block;
+  animation: audio-note-bounce 2.4s ease-in-out infinite;
+  animation-play-state: paused; /* only runs when playing */
+}
+@keyframes audio-note-bounce {
+  0%,100% { transform: translateY(0)   scale(1); }
+  30%     { transform: translateY(-3px) scale(1.05); }
+  60%     { transform: translateY(1px)  scale(0.97); }
+}
+
+.audio-track-name {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.5px;
+  transition: color 200ms;
+}
+
+/* Right area: time + volume */
+.audio-bar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.audio-time {
+  font-family: var(--font-pixel);
+  font-size: 0.3rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  min-width: 48px;
+  text-align: right;
+}
+
+.audio-volume-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.audio-vol-icon {
+  background: none;
+  border: none;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 2px;
+  color: var(--text-muted);
+  line-height: 1;
+  transition: color 120ms;
+}
+.audio-vol-icon:hover { color: var(--text-primary); }
+
+.audio-volume-slider {
+  width: 72px;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(
+    to right,
+    var(--color-xp) calc(var(--audio-vol-pct, 20%) * 1%),
+    var(--color-border) calc(var(--audio-vol-pct, 20%) * 1%)
+  );
+  border-radius: 2px;
+  cursor: pointer;
+  outline: none;
+}
+.audio-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  background: var(--color-xp);
+  border-radius: 0;         /* pixel square */
+  cursor: pointer;
+  box-shadow: 0 0 6px var(--color-xp);
+}
+.audio-volume-slider::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  background: var(--color-xp);
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+/* ============================================================
+   EXPANDED PANEL
+   ============================================================ */
+.audio-bar__panel {
+  display: flex;
+  flex-direction: column;
+  max-height: var(--player-panel-h);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  animation: player-panel-in 120ms ease-out;
+}
+@keyframes player-panel-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Progress bar */
+.audio-progress-wrap {
+  padding: var(--space-1) var(--space-4) 0;
+  flex-shrink: 0;
+}
+
+.audio-progress-slider {
+  width: 100%;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-border);
+  border-radius: 0;
+  cursor: pointer;
+  outline: none;
+}
+.audio-progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  background: var(--color-gold);
+  border-radius: 0;
+  cursor: pointer;
+}
+.audio-progress-slider::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  background: var(--color-gold);
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+.audio-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.audio-tab {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: color 120ms, background 120ms, border-color 120ms;
+  text-align: center;
+}
+.audio-tab:hover     { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+.audio-tab--active   {
+  color: var(--color-gold);
+  border-bottom-color: var(--color-gold);
+  background: rgba(184, 134, 11, 0.06);
+}
+
+/* ============================================================
+   TAB CONTENT
+   ============================================================ */
+.audio-tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.audio-tab-content--hidden { display: none; }
+
+/* ============================================================
+   TRACKLIST (aba BGM)
+   ============================================================ */
+.audio-tracklist {
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.audio-tracklist::-webkit-scrollbar       { width: 4px; }
+.audio-tracklist::-webkit-scrollbar-thumb { background: var(--color-border); }
+
+.tracklist-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 100ms, color 80ms;
+}
+.tracklist-item:hover { background: rgba(255, 255, 255, 0.04); color: var(--text-primary); }
+
+.tracklist-item--active {
+  background: rgba(79, 195, 247, 0.07);
+  color: var(--color-xp);
+  border-left: 2px solid var(--color-xp);
+}
+
+.tracklist-num {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-muted);
+  width: 22px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.tracklist-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.tracklist-play-icon {
+  font-size: 0.45rem;
+  opacity: 0;
+  transition: opacity 100ms;
+  flex-shrink: 0;
+}
+.tracklist-item:hover .tracklist-play-icon,
+.tracklist-item--active .tracklist-play-icon { opacity: 1; }
+
+/* Empty state */
+.audio-empty-state {
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  line-height: 2;
+}
+.audio-empty-state code {
+  color: var(--color-xp);
+  font-family: var(--font-pixel);
+}
+
+/* ============================================================
+   SPOTIFY EMBED (aba Spotify)
+   ============================================================ */
+.spotify-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  padding: var(--space-2);
+  gap: var(--space-2);
+}
+
+.spotify-iframe {
+  flex: 1;
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid var(--color-border);
+  background: #000;
+  display: block;
+  border-radius: 0;
+}
+
+.spotify-change-bar {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.spotify-input {
+  flex: 1;
+  height: 28px;
+  font-size: var(--fs-display) !important;
+  padding: var(--space-1) var(--space-2) !important;
+}
+
+.spotify-apply-btn {
+  font-size: var(--fs-xxs);
+  padding: var(--space-1) var(--space-3);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   PADDING DO APP-SHELL — garante que nada fique atrás do player
+   ============================================================ */
+
+/* Desktop: só a barra do player (52px) */
+#app-shell .content-area {
+  padding-bottom: calc(var(--player-strip-h) + 12px);
+}
+
+/* Mobile: player fica acima do bottom-nav (64px), então somamos os dois */
+@media (max-width: 767px) {
+  #app-shell .content-area {
+    padding-bottom: calc(var(--player-strip-h) + 12px);
+  }
+}
+
+/* Quando a barra está oculta, remove o padding extra */
+.audio-bar--hidden ~ * #app-shell .content-area,
+body.audio-hidden #app-shell .content-area {
+  padding-bottom: 0;
+}
+
+/* ============================================================
+   MINI RESTORE BUTTON — aparece quando a barra está oculta
+   ============================================================ */
+.audio-mini-restore {
+  position: fixed;
+  z-index: var(--player-z);
+  background: rgba(6, 6, 18, 0.95);
+  border: 1px solid var(--color-border);
+  color: var(--color-xp);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-3);
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.5);
+  transition: opacity 180ms, transform 180ms;
+  /* Posição: canto inferior direito, acima do bottom-nav no mobile */
+  bottom: calc(64px + 8px);
+  right: 12px;
+}
+@media (min-width: 768px) {
+  .audio-mini-restore {
+    bottom: 12px;
+  }
+}
+.audio-mini-restore:hover {
+  background: rgba(79, 195, 247, 0.12);
+  border-color: var(--color-xp);
+}
+/* Mostra apenas quando a barra está oculta */
+.audio-mini-restore {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+}
+.audio-mini-restore--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   RESPONSIVIDADE
+   ============================================================ */
+
+/* Esconde volume no mobile muito pequeno */
+@media (max-width: 420px) {
+  .audio-volume-wrap { display: none; }
+  .audio-time        { display: none; }
+  .audio-track-name  { font-size: 0.27rem; }
+}
+
+/* Esconde tempo no mobile médio */
+@media (max-width: 640px) {
+  .audio-time { display: none; }
+  .audio-volume-slider { width: 52px; }
+}
+
+/* ============================================================
+   TOPBAR BGM BUTTON — ao lado do sino, visível apenas no desktop
+   ============================================================ */
+.topbar-bgm-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  opacity: 0.55;
+  line-height: 1;
+  transition: opacity 120ms, transform 120ms;
+  color: var(--text-primary);
+  position: relative;
+}
+.topbar-bgm-btn:hover  { opacity: 1; transform: scale(1.15); }
+
+/* Ponto verde pulsante quando tocando */
+.topbar-bgm-btn.bgm-playing::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: var(--color-xp);
+  border-radius: 0;
+  animation: bgm-dot-pulse 1.5s steps(3) infinite;
+}
+@keyframes bgm-dot-pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.2; }
+}
+
+/* No mobile: botão da topbar oculto (barra já fica acima bottom-nav) */
+@media (max-width: 767px) {
+  .topbar-bgm-btn { display: none; }
+}
+
+/* No desktop: mini-restore flutuante oculto (substituído pelo botão da topbar) */
+@media (min-width: 768px) {
+  .audio-mini-restore { display: none !important; }
+}

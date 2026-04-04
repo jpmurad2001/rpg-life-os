@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark" data-time="day">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Shadow Slave Life OS — Forje seu destino nas sombras" />
+  <meta name="theme-color" content="#050308" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <title>Shadow Slave — Life OS</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet" />
+
+  <!-- Styles (cascade order) -->
+  <link rel="stylesheet" href="src/ui/style.css" />
+  <link rel="stylesheet" href="src/ui/style-phase2.css" />
+  <link rel="stylesheet" href="src/ui/style-phase3.css" />
+  <link rel="stylesheet" href="src/ui/style-night.css" />
+  <link rel="stylesheet" href="src/ui/style-campaign.css" />
+  <link rel="stylesheet" href="src/ui/style-player.css" />
+  <link rel="stylesheet" href="src/ui/auth-screen.css" />
+
+  <!-- Icons -->
+  <link rel="icon" type="image/png" href="assets/sprites/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/sprites/icon-192.png" />
+</head>
+
+<body>
+
+  <!-- ============================================================
+       AUTH SCREEN — Shown until user is authenticated
+       ============================================================ -->
+  <div id="auth-screen" role="dialog" aria-modal="true" aria-label="Login — Shadow Slave Life OS">
+    <!-- Scanlines overlay -->
+    <div class="auth-scanlines" aria-hidden="true"></div>
+
+    <div class="auth-card" role="main">
+      <!-- Logo -->
+      <div class="auth-logo">
+        <span class="auth-logo__glyph" aria-hidden="true">🌑</span>
+        <div class="auth-logo__title">Shadow Slave<br/>Life OS</div>
+        <div class="auth-logo__subtitle">Forje seu Destino</div>
+      </div>
+
+      <!-- Tabs: Login | Registro -->
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab auth-tab--active" id="tab-login"
+                role="tab" aria-selected="true" aria-controls="form-login">
+          Entrar
+        </button>
+        <button class="auth-tab" id="tab-register"
+                role="tab" aria-selected="false" aria-controls="form-register">
+          Criar Conta
+        </button>
+      </div>
+
+      <!-- Login Form -->
+      <form class="auth-form" id="form-login" aria-label="Formulário de login">
+        <div class="auth-input-group">
+          <label class="auth-label" for="login-email">Email</label>
+          <input class="auth-input" id="login-email" type="email"
+                 placeholder="seu@email.com" autocomplete="email" required />
+        </div>
+        <div class="auth-input-group">
+          <label class="auth-label" for="login-password">Senha</label>
+          <input class="auth-input" id="login-password" type="password"
+                 placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <button class="auth-btn" type="submit" id="btn-login">⚔️ Entrar no Vazio</button>
+        <button class="auth-btn auth-btn--ghost" type="button" id="btn-forgot-pwd">
+          Esqueci minha senha
+        </button>
+      </form>
+
+      <!-- Register Form (hidden by default) -->
+      <form class="auth-form hidden" id="form-register" aria-label="Formulário de registro">
+        <div class="auth-input-group">
+          <label class="auth-label" for="reg-name">Nome do Caçador</label>
+          <input class="auth-input" id="reg-name" type="text"
+                 placeholder="Cazador do Vazio" maxlength="24" required />
+        </div>
+        <div class="auth-input-group">
+          <label class="auth-label" for="reg-email">Email</label>
+          <input class="auth-input" id="reg-email" type="email"
+                 placeholder="seu@email.com" autocomplete="email" required />
+        </div>
+        <div class="auth-input-group">
+          <label class="auth-label" for="reg-password">Senha (mín. 6 caracteres)</label>
+          <input class="auth-input" id="reg-password" type="password"
+                 placeholder="••••••••" autocomplete="new-password" minlength="6" required />
+        </div>
+        <button class="auth-btn" type="submit" id="btn-register">🌑 Despertar</button>
+      </form>
+
+      <!-- Loading dots -->
+      <div class="auth-loading" id="auth-loading" aria-live="polite">
+        <div class="auth-dot"></div>
+        <div class="auth-dot"></div>
+        <div class="auth-dot"></div>
+      </div>
+
+      <!-- Status Message -->
+      <div class="auth-message" id="auth-message" role="alert" aria-live="polite"></div>
+
+      <!-- Lore Quote -->
+      <div class="auth-lore" aria-hidden="true">
+        "O Vazio não mata. Ele apenas lembra o que você sempre foi."
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       APP SHELL — Hidden until auth is complete
+       ============================================================ -->
+  <div id="app-shell" class="hidden">
+
+    <!-- ========================================================
+         DESKTOP SIDEBAR NAV
+         ======================================================== -->
+    <aside id="sidebar" class="sidebar" role="navigation" aria-label="Menu Principal">
+
+      <!-- Player Card (click = profile modal) -->
+      <div class="sidebar__player-card" id="player-card" role="button" tabindex="0"
+           aria-label="Abrir perfil do personagem">
+        <div class="sidebar__profile">
+        <div class="avatar" aria-label="Avatar do jogador" role="img">
+          <img src="assets/sprites/icon-192.png" alt="Avatar Pixel Art" id="player-avatar-img">
+        </div>
+        <div class="profile-info">
+          <div class="player-name" id="sidebar-player-name">Herói</div>
+          <div class="player-title" id="sidebar-player-title" style="font-size:0.75rem; color:#a1a1aa; margin-top:2px;">Iniciado</div>
+          <div class="player-level rank-tag" id="sidebar-player-level">Nível 1</div>
+        </div>
+        </div>
+      </div>
+
+      <!-- Rank Badge + Progress Bar -->
+      <div class="rank-bar-wrap" id="rank-bar-wrap">
+        <div class="rank-bar-label">
+          <span id="rank-bar-label-text">Adormecido → Desperto</span>
+          <span id="rank-bar-pct">0%</span>
+        </div>
+        <div class="rank-bar">
+          <div class="rank-bar__fill" id="rank-bar-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- XP (Fragmentos de Sombra) -->
+      <div class="xp-bar-wrapper" aria-label="Fragmentos de Sombra">
+        <label class="label-xp">Fragmentos</label>
+        <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+          <div class="xp-bar__fill" id="sidebar-xp-fill" style="width:0%"></div>
+        </div>
+        <span class="xp-text" id="sidebar-xp-text">0 / 100</span>
+      </div>
+
+      <!-- HP -->
+      <div class="hp-bar-wrapper" aria-label="HP (Vitalidade)">
+        <label class="label-hp">HP</label>
+        <div class="hp-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+          <div class="hp-bar__fill" id="sidebar-hp-fill" style="width:100%"></div>
+        </div>
+        <span class="hp-text" id="sidebar-hp-text">100 / 100</span>
+      </div>
+
+      <!-- Attributes -->
+      <div class="attributes-panel">
+        <div class="attr-row-container">
+          <div class="attr-row" style="margin-bottom: 4px;">
+            <span class="attr-icon">🧠</span>
+            <span class="attr-name">INT</span>
+            <span class="attr-value" id="attr-int">1</span>
+          </div>
+        </div>
+        
+        <div class="attr-row-container">
+          <div class="attr-row" style="margin-bottom: 4px;">
+            <span class="attr-icon">🎨</span>
+            <span class="attr-name">ART</span>
+            <span class="attr-value" id="attr-art">1</span>
+          </div>
+        </div>
+
+        <div class="attr-row-container">
+          <div class="attr-row" style="margin-bottom: 4px;">
+            <span class="attr-icon">🗡️</span>
+            <span class="attr-name">AVE</span>
+            <span class="attr-value" id="attr-ave">1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attributes Radar Chart -->
+      <div class="radar-wrap">
+        <div class="radar-title">Atributos</div>
+        <canvas id="attr-radar" width="160" height="160" aria-label="Radar de atributos"></canvas>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="sidebar__nav" id="desktop-nav" aria-label="Navegação principal">
+        <button class="nav-btn nav-btn--active" id="nav-quests" data-view="quests" aria-current="page">
+          <span class="nav-icon">📜</span>
+          <span class="nav-label">Quests</span>
+        </button>
+        <button class="nav-btn" id="nav-battle" data-view="battle" aria-current="false">
+          <span class="nav-icon">⚔️</span>
+          <span class="nav-label">Treino</span>
+        </button>
+        <button class="nav-btn" id="nav-taverna" data-view="taverna" aria-current="false">
+          <span class="nav-icon">🏰</span>
+          <span class="nav-label">Taverna</span>
+        </button>
+        <button class="nav-btn" id="nav-bosses" data-view="bosses" aria-current="false">
+          <span class="nav-icon">🐉</span>
+          <span class="nav-label">Bosses</span>
+        </button>
+        <button class="nav-btn" id="nav-inventory" data-view="inventory" aria-current="false">
+          <span class="nav-icon">💎</span>
+          <span class="nav-label">Memórias</span>
+        </button>
+        <button class="nav-btn" id="nav-achievements" data-view="achievements" aria-current="false">
+          <span class="nav-icon">🏆</span>
+          <span class="nav-label">Conquistas</span>
+        </button>
+      </nav>
+
+      <div class="sidebar__footer">
+        <span class="version-badge">Gold v1.3</span>
+        <button class="theme-toggle-btn" id="btn-theme-toggle" aria-label="Trocar tema">☀️ Light Mode</button>
+      </div>
+    </aside>
+
+    <!-- ========================================================
+         MAIN CONTENT
+         ======================================================== -->
+    <main id="main-content" class="main-content" role="main">
+
+      <!-- Page Header -->
+      <header class="page-header" id="page-header">
+        <div class="page-header__left">
+          <button class="btn-icon mobile-only" id="btn-mobile-menu" aria-label="Menu">☰</button>
+          <h1 class="page-title" id="page-title">📜 Quests Semanais</h1>
+        </div>
+        <div class="page-header__right">
+          <!-- Mini BGM player — visível no desktop, oculto no mobile (a barra fica acima do bottom nav) -->
+          <button class="topbar-bgm-btn" id="topbar-bgm-btn"
+                  aria-label="Player de música" title="BGM — Abrir player">
+            🎵
+          </button>
+          <button class="bell-btn" id="btn-bell" aria-label="Notificações">🔔</button>
+          <button class="gear-btn" id="btn-settings" aria-label="Configurações">⚙️</button>
+        </div>
+      </header>
+
+      <!-- ---- VIEW: QUESTS ---- -->
+      <section id="view-quests" class="view view--active" data-view="quests"
+               aria-label="Missões Semanais">
+        <div class="view-inner">
+          <div class="week-header">
+            <button class="btn-rp btn-rp--ghost" id="btn-prev-week" aria-label="Semana anterior">◀</button>
+            <h2 class="week-label" id="week-label">Semana 11 · 2026</h2>
+            <button class="btn-rp btn-rp--ghost" id="btn-next-week" aria-label="Próxima semana">▶</button>
+            <button class="btn-rp btn-rp--danger" id="btn-weekly-reset">🔄 Reset</button>
+          </div>
+          <div class="week-progress" id="week-progress">
+            <span id="week-progress-text">0 / 0 quests</span>
+            <div class="week-progress__bar-wrapper">
+              <div class="week-progress__bar-fill" id="week-progress-fill" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="quest-filter-bar" id="quest-filter-bar">
+            <button class="filter-btn filter-btn--all filter-btn--active" data-filter="ALL" id="filter-all">Todos</button>
+            <button class="filter-btn filter-btn--INT" data-filter="INT" id="filter-int">🧠 INT</button>
+            <button class="filter-btn filter-btn--ART" data-filter="ART" id="filter-art">🎨 ART</button>
+            <button class="filter-btn filter-btn--AVE" data-filter="AVE" id="filter-ave">🗡️ AVE</button>
+          </div>
+          <div class="days-grid" id="days-grid"></div>
+          <button class="btn-rp btn-rp--primary btn-add-task" id="btn-add-task">+ Nova Quest</button>
+        </div>
+      </section>
+
+      <!-- ---- VIEW: BATTLE GROUND ---- -->
+      <section id="view-battle" class="view" data-view="battle"
+               aria-label="Battle Ground — Treino" hidden>
+        <div class="view-inner">
+          <div class="panel-row">
+            <div class="panel panel--dark" id="panel-templates">
+              <h2 class="panel-title">Templates de Treino</h2>
+              <div id="template-list"></div>
+              <button class="btn-rp btn-rp--primary" id="btn-new-template">+ Novo Template</button>
+            </div>
+            <div class="panel panel--dark" id="panel-active-session">
+              <h2 class="panel-title">⚔️ Sessão Ativa</h2>
+              <div id="active-session-content">
+                <p class="empty-state">Selecione um template para começar.</p>
+              </div>
+            </div>
+          </div>
+          <div class="panel panel--dark" id="panel-history">
+            <h2 class="panel-title">📋 Histórico</h2>
+            <div class="workout-chart-wrap">
+              <div class="workout-chart-title">⚔️ Frequência — Últimos 7 dias</div>
+              <canvas id="workout-chart" height="80"></canvas>
+            </div>
+            <div id="session-history"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- VIEW: TAVERNA ---- -->
+      <section id="view-taverna" class="view" data-view="taverna"
+               aria-label="Taverna — Finanças" hidden>
+        <div class="view-inner">
+          <div class="finance-summary" id="finance-summary">
+            <div class="finance-card finance-card--income">
+              <span class="finance-label">💰 Receitas</span>
+              <span class="finance-value" id="total-receipts">R$ 0,00</span>
+            </div>
+            <div class="finance-card finance-card--paid">
+              <span class="finance-label">✅ Pago</span>
+              <span class="finance-value" id="total-paid">R$ 0,00</span>
+            </div>
+            <div class="finance-card finance-card--pending">
+              <span class="finance-label">⏳ Previsto</span>
+              <span class="finance-value" id="total-pending">R$ 0,00</span>
+            </div>
+            <div class="finance-card finance-card--balance">
+              <span class="finance-label">⚖️ Saldo Livre</span>
+              <span class="finance-value" id="free-balance">R$ 0,00</span>
+            </div>
+          </div>
+          <div class="month-selector">
+            <button class="btn-rp btn-rp--ghost" id="btn-prev-month">◄</button>
+            <span class="month-label" id="month-label">Março 2026</span>
+            <button class="btn-rp btn-rp--ghost" id="btn-next-month">►</button>
+          </div>
+          <div class="budget-bar-wrap" id="budget-bar-wrap">
+            <div class="budget-bar-label">
+              <span>Orçamento comprometido</span>
+              <span id="budget-bar-pct">0%</span>
+            </div>
+            <div class="budget-bar">
+              <div class="budget-bar__fill budget-ok" id="budget-bar-fill" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="panel-row">
+            <div class="panel panel--dark">
+              <h2 class="panel-title">Receitas</h2>
+              <div id="receipts-list"></div>
+              <button class="btn-rp btn-rp--primary" id="btn-add-receipt">+ Receita</button>
+            </div>
+            <div class="panel panel--dark">
+              <h2 class="panel-title">Despesas</h2>
+              <div id="expenses-list"></div>
+              <button class="btn-rp btn-rp--danger" id="btn-add-expense">+ Despesa</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- VIEW: BOSSES / CAMPANHA v1.3 ---- -->
+      <section id="view-bosses" class="view" data-view="bosses"
+               aria-label="Campanhas — Modo Pesadelo" hidden>
+
+        <!-- Nível 1: Lista de Campanhas -->
+        <div id="campaign-list-view" class="view-inner">
+          <div class="campaign-list" id="campaign-list"></div>
+          <button class="btn-rp btn-rp--primary" id="btn-new-campaign">🐉 Nova Campanha</button>
+        </div>
+
+        <!-- Nível 2: Mapa Visual (substituí a lista ao entrar num mapa) -->
+        <div id="campaign-map-view" class="campaign-map-view hidden">
+
+          <!-- Topbar: Voltar + Boss HP + Botão Encontro -->
+          <div class="map-boss-topbar">
+            <button class="btn-rp btn-rp--ghost" id="btn-back-to-campaigns"
+                    style="font-size:var(--fs-xxs); flex-shrink:0;">◀ Campanhas</button>
+            <span class="map-boss-topbar__sprite" id="map-boss-sprite">👾</span>
+            <div class="map-boss-topbar__name" id="map-boss-name">...</div>
+            <div class="map-boss-topbar__hp">
+              <div class="map-boss-topbar__hp-text" id="map-boss-hp-text">— / —</div>
+              <div class="map-boss-topbar__hp-bar">
+                <div class="map-boss-topbar__hp-fill" id="map-boss-hp-fill" style="width:100%"></div>
+              </div>
+            </div>
+            <!-- Botão Encontro ao lado do HP -->
+            <button class="btn-rp btn-rp--ghost" id="btn-add-node"
+                    style="font-size:var(--fs-xxs);flex-shrink:0;white-space:nowrap;">⚔️ + Encontro</button>
+          </div>
+
+          <!-- Canvas do Mapa (imagem de fundo + nós + SVG) -->
+          <div class="campaign-map campaign-map--no-image" id="campaign-map-canvas">
+            <svg class="campaign-map__svg" id="campaign-map-svg"
+                 xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ---- VIEW: INVENTORY (Memórias) ---- -->
+      <section id="view-inventory" class="view" data-view="inventory"
+               aria-label="Inventário — Memórias" hidden>
+        <div class="view-inner">
+          <div class="inventory-grid" id="inventory-grid">
+            <div class="inventory-empty">🌑 Carregando...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- VIEW: ACHIEVEMENTS ---- -->
+      <section id="view-achievements" class="view" data-view="achievements"
+               aria-label="Conquistas" hidden>
+        <div class="view-inner">
+          <div class="achievements-grid" id="achievements-grid"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ========================================================
+         MOBILE BOTTOM NAV
+         ======================================================== -->
+    <nav class="bottom-nav mobile-only" id="bottom-nav" role="navigation" aria-label="Menu Mobile">
+      <button class="bottom-nav__btn bottom-nav__btn--active" data-view="quests" id="m-nav-quests">
+        <span class="bottom-nav__icon">📜</span>
+        <span class="bottom-nav__label">Quests</span>
+      </button>
+      <button class="bottom-nav__btn" data-view="battle" id="m-nav-battle">
+        <span class="bottom-nav__icon">⚔️</span>
+        <span class="bottom-nav__label">Treino</span>
+      </button>
+      <button class="bottom-nav__btn" data-view="bosses" id="m-nav-bosses">
+        <span class="bottom-nav__icon">🐉</span>
+        <span class="bottom-nav__label">Bosses</span>
+      </button>
+      <button class="bottom-nav__btn" data-view="inventory" id="m-nav-inventory">
+        <span class="bottom-nav__icon">💎</span>
+        <span class="bottom-nav__label">Memórias</span>
+      </button>
+      <button class="bottom-nav__btn" data-view="achievements" id="m-nav-achievements">
+        <span class="bottom-nav__icon">🏆</span>
+        <span class="bottom-nav__label">Conquistas</span>
+      </button>
+    </nav>
+
+  </div><!-- /#app-shell -->
+
+  <!-- ============================================================
+       GLOBAL OVERLAYS (outside app-shell, always in DOM)
+       ============================================================ -->
+
+  <!-- Modal Overlay -->
+  <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" hidden>
+    <div class="modal-window pixel-panel" id="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title">Modal</h3>
+        <button class="btn-icon modal-close" id="modal-close" aria-label="Fechar">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer">
+        <button class="btn-rp btn-rp--ghost" id="modal-cancel">Cancelar</button>
+        <button class="btn-rp btn-rp--primary" id="modal-confirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Memória Obtida Overlay -->
+  <div id="memoria-overlay" class="hidden" role="dialog" aria-modal="true" aria-label="Memória Obtida"></div>
+
+  <!-- Level Up / Rank Up Overlay -->
+  <div id="rankup-overlay" class="hidden" role="dialog" aria-modal="true">
+    <div class="rankup-content">
+      <div class="rankup-label">Ascensão</div>
+      <div class="rankup-glyph" id="rankup-glyph">🌑</div>
+      <div class="rankup-new-rank" id="rankup-new-rank">Desperto</div>
+      <div class="rankup-lore" id="rankup-lore">As sombras te reconhecem.</div>
+      <button class="btn-rp btn-rp--primary" id="btn-rankup-ok" style="margin-top:1.5rem">
+        ✦ Continuar
+      </button>
+    </div>
+  </div>
+
+  <!-- Level Up Overlay (legado — mantido para compatibilidade) -->
+  <div id="level-up-overlay" class="level-up-overlay" hidden>
+    <div class="level-up-box pixel-panel">
+      <p class="level-up-text">✨ LEVEL UP! ✨</p>
+      <p class="level-up-new" id="level-up-new">Nível 2</p>
+      <button class="btn-rp btn-rp--primary" id="btn-level-up-ok">OK</button>
+    </div>
+  </div>
+
+  <!-- Night Indicator -->
+  <div class="night-indicator" aria-hidden="true">
+    <span class="night-indicator__moon">🌙</span>
+    <span>Modo Noturno</span>
+  </div>
+
+  <!-- ============================================================
+       AUDIO PLAYER ROOT
+       Injetado por src/ui/audio_player_ui.js → initAudioPlayer()
+       Persiste entre navegações — não re-inicializa ao trocar de view.
+       ============================================================ -->
+  <div id="audio-bar-root"></div>
+
+  <!-- ============================================================
+       SCRIPTS
+       ============================================================ -->
+  <script type="module" src="src/ui/app.js"></script>
+
+</body>
+</html>

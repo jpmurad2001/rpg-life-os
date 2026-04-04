@@ -1,0 +1,464 @@
+/* ============================================================
+   SHADOW SLAVE LIFE OS — Night Mode & Dark Fantasy Theming
+   style-night.css — Phase 4
+
+   Aplicado automaticamente quando:
+     document.documentElement.setAttribute('data-time', 'night')
+   (Horas entre 20:00–06:00, detectado pelo app.js)
+   ============================================================ */
+
+/* ============================================================
+   NIGHT PALETTE — escurece todo o sistema 20%
+   ============================================================ */
+[data-time="night"] {
+  --color-bg-deepest:  #040209;
+  --color-bg-body:     #07040f;
+  --color-bg-panel:    #0c0818;
+  --color-bg-element:  #100c20;
+  --color-bg-hover:    #150f28;
+
+  --text-primary:   #d4c8e8;
+  --text-secondary: #9475cc;
+  --text-muted:     #5a4580;
+  --text-gold:      #c9a227;
+
+  --color-primary:       #5b21b6;
+  --color-primary-dark:  #3b0f8c;
+  --color-fragment:      #7c3aed;
+
+  --color-border:        #1e1038;
+  --color-border-bright: #3b1d6e;
+  --color-border-glow:   rgba(109, 40, 217, 0.6);
+}
+
+/* ---- Intensify CRT scanlines at night ---- */
+[data-time="night"] body::before {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.18) 2px,
+    rgba(0, 0, 0, 0.18) 4px
+  );
+}
+
+/* ---- Stronger vignette at night ---- */
+[data-time="night"] body::after {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+}
+
+/* ============================================================
+   STAR FIELD — CSS particle background (night only)
+   ============================================================ */
+[data-time="night"] #app-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 10%  15%, rgba(200,180,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25%  40%, rgba(180,160,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40%  8%,  rgba(220,200,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60%  30%, rgba(200,180,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 75%  55%, rgba(180,160,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 88%  12%, rgba(220,200,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5%   70%, rgba(200,180,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 52%  75%, rgba(180,160,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90%  80%, rgba(220,200,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 33%  90%, rgba(200,180,255,0.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 70% 20%, rgba(255,240,200,0.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 15% 50%, rgba(255,240,200,0.4) 0%, transparent 100%);
+  animation: starsTwinkle 6s ease-in-out infinite alternate;
+}
+
+@keyframes starsTwinkle {
+  0%   { opacity: 0.6; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+/* ---- Deepened sidebar at night ---- */
+[data-time="night"] .sidebar {
+  background: linear-gradient(180deg, #050210 0%, #080518 100%);
+  border-right-color: #1a0a30;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.8), inset -1px 0 0 #3b1d6e;
+}
+
+/* ---- Panels glow slightly violet at night ---- */
+[data-time="night"] .panel,
+[data-time="night"] .panel--dark {
+  box-shadow:
+    0 0 0 1px rgba(60, 20, 100, 0.4),
+    inset 0 0 20px rgba(30, 10, 50, 0.3);
+}
+
+/* ---- Night indicator badge ---- */
+.night-indicator {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  font-family: 'VT323', monospace;
+  font-size: 0.85rem;
+  color: #5a4580;
+  letter-spacing: 2px;
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+[data-time="night"] .night-indicator {
+  display: flex;
+}
+
+.night-indicator__moon {
+  font-size: 0.9rem;
+  animation: moonGlow 4s ease-in-out infinite;
+}
+
+@keyframes moonGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(200, 160, 255, 0.4)); }
+  50%       { filter: drop-shadow(0 0 10px rgba(200, 160, 255, 0.8)); }
+}
+
+/* ============================================================
+   RANK COLORS — universais (usados em night e day)
+   ============================================================ */
+:root {
+  --rank-adormecido: #6b7280;
+  --rank-desperto:   #3b82f6;
+  --rank-ascendido:  #8b5cf6;
+  --rank-mestre:     #f59e0b;
+  --rank-santo:      #ec4899;
+  --rank-soberano:   #ef4444;
+}
+
+/* ---- Rank badge component ---- */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  letter-spacing: 1px;
+  padding: 3px 6px;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+}
+
+.rank-badge--adormecido { color: var(--rank-adormecido); border-color: var(--rank-adormecido); }
+.rank-badge--desperto   { color: var(--rank-desperto);   border-color: var(--rank-desperto);   }
+.rank-badge--ascendido  { color: var(--rank-ascendido);  border-color: var(--rank-ascendido);  }
+.rank-badge--mestre     { color: var(--rank-mestre);     border-color: var(--rank-mestre);     box-shadow: 0 0 6px rgba(245,158,11,0.3); }
+.rank-badge--santo      { color: var(--rank-santo);      border-color: var(--rank-santo);      box-shadow: 0 0 6px rgba(236,72,153,0.3); }
+.rank-badge--soberano   { color: var(--rank-soberano);   border-color: var(--rank-soberano);   box-shadow: 0 0 10px rgba(239,68,68,0.4); animation: soberanoGlow 2s ease-in-out infinite; }
+
+@keyframes soberanoGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+  50%       { box-shadow: 0 0 18px rgba(239,68,68,0.8); }
+}
+
+/* ---- Rank progress bar (sidebar) ---- */
+.rank-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 var(--space-3);
+}
+
+.rank-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'VT323', monospace;
+  font-size: var(--fs-display);
+  color: var(--text-muted);
+}
+
+.rank-bar {
+  height: 4px;
+  background: var(--color-bg-deepest);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.rank-bar__fill {
+  height: 100%;
+  background: var(--color-fragment, #7c3aed);
+  transition: width 0.6s steps(20);
+}
+
+/* ============================================================
+   MEMÓRIA OBTIDA — Overlay de drop
+   ============================================================ */
+#memoria-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(4px);
+}
+
+#memoria-overlay.hidden { display: none; }
+
+.memoria-card {
+  background: rgba(8, 4, 18, 0.97);
+  border: 2px solid #3b1d6e;
+  box-shadow:
+    0 0 60px rgba(109, 40, 217, 0.4),
+    0 0 120px rgba(109, 40, 217, 0.15);
+  max-width: 360px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 1.5rem;
+  animation: memoriaReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes memoriaReveal {
+  from { opacity: 0; transform: scale(0.8) translateY(30px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.memoria-header {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: var(--text-gold, #d4af37);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.memoria-image {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 16px rgba(109, 40, 217, 0.6));
+  animation: memoriaPulse 3s ease-in-out infinite;
+}
+
+.memoria-image-fallback {
+  width: 120px;
+  height: 120px;
+  font-size: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 16px rgba(109, 40, 217, 0.6));
+}
+
+@keyframes memoriaPulse {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(109, 40, 217, 0.4)); }
+  50%       { filter: drop-shadow(0 0 28px rgba(109, 40, 217, 0.9)); }
+}
+
+.memoria-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  color: var(--text-primary, #e5d9f2);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.memoria-type {
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  color: var(--text-muted, #6b7280);
+  letter-spacing: 2px;
+}
+
+.memoria-desc {
+  font-family: 'VT323', monospace;
+  font-size: 0.95rem;
+  color: var(--text-secondary, #9b87b2);
+  text-align: center;
+  line-height: 1.5;
+  font-style: italic;
+  border-top: 1px solid #1e1035;
+  padding-top: 0.75rem;
+  width: 100%;
+}
+
+.memoria-enchantments {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.memoria-enchantments li {
+  font-family: 'VT323', monospace;
+  font-size: 0.95rem;
+  color: var(--rank-ascendido, #8b5cf6);
+  letter-spacing: 1px;
+}
+
+.memoria-enchantments li::before { content: '⟡ '; color: var(--text-gold, #d4af37); }
+
+.memoria-btn-collect {
+  width: 100%;
+  background: #4c1d95;
+  border: 2px solid #7c3aed;
+  color: #e9d5ff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.memoria-btn-collect:hover {
+  background: #5b21b6;
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+}
+
+/* ============================================================
+   RANK UP OVERLAY
+   ============================================================ */
+#rankup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8889;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.95);
+  animation: rankupFadeIn 0.4s ease both;
+}
+
+#rankup-overlay.hidden { display: none; }
+
+@keyframes rankupFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.rankup-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.rankup-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: #6b7280;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.rankup-glyph {
+  font-size: 4rem;
+  animation: rankupGlyph 1.5s ease-in-out infinite;
+}
+
+@keyframes rankupGlyph {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px #7c3aed); }
+  50%       { transform: scale(1.1); filter: drop-shadow(0 0 50px #a855f7); }
+}
+
+.rankup-new-rank {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  animation: rankupTextGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes rankupTextGlow {
+  0%, 100% { text-shadow: 0 0 10px currentColor; }
+  50%       { text-shadow: 0 0 30px currentColor, 0 0 60px currentColor; }
+}
+
+.rankup-lore {
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  color: #6b7280;
+  max-width: 300px;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ============================================================
+   INVENTORY VIEW — Grid de Memórias
+   ============================================================ */
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+}
+
+.memory-card {
+  background: var(--color-bg-panel);
+  border: var(--pixel-border-dark);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  text-align: center;
+}
+
+.memory-card:hover {
+  border-color: var(--color-border-bright);
+  box-shadow: 0 0 12px rgba(109, 40, 217, 0.3);
+  transform: translateY(-2px);
+}
+
+.memory-card__img {
+  width: 64px; height: 64px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.memory-card__emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.memory-card__name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.memory-card__type {
+  font-family: 'VT323', monospace;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.inventory-empty {
+  grid-column: 1/-1;
+  text-align: center;
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  padding: var(--space-8);
+  line-height: 1.8;
+}
