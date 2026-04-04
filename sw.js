@@ -3,7 +3,7 @@
  * Enables offline support and caching for PWA.
  */
 
-const CACHE_NAME = 'rpg-life-os-v27';
+const CACHE_NAME = 'rpg-life-os-v28';
 
 const ASSETS_TO_CACHE = [
     './',

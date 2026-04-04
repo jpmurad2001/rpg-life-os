@@ -507,12 +507,18 @@ function openSettingsModal() {
           if (!uid) return;
           closeModal();
           
+          // 1. Apaga todos os dados do Firestore (quests, inventário, treinos, boss maps…)
           await deletePlayer(uid);
-          await deleteAccount();
           
-          // Nuke localStorage so no offline data remains
-          import('../engine/core.js').then(module => module.resetState());
+          // 2. Apaga localStorage ANTES de deletar a conta Firebase Auth.
+          //    deleteAccount() dispara onAuthStateChanged imediatamente, que pode
+          //    relançar leituras do localStorage antes do clear (race condition).
+          //    Treinos e templates vivem APENAS no localStorage, então devem ser 
+          //    zerados aqui para garantir que não persistam.
           localStorage.clear();
+
+          // 3. Deleta a conta Firebase Auth (dispara auth observer → showAuthScreen)
+          await deleteAccount();
 
           showToast('Conta excluída definitivamente.', 'danger', 4000);
           setTimeout(() => window.location.reload(), 2000);
