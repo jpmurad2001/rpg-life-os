@@ -43,6 +43,8 @@ const ATTR_META = {
   INT: { icon: '🧠', label: 'INT' },
   ART: { icon: '🎨', label: 'ART' },
   AVE: { icon: '🗡️', label: 'AVE' },
+  FOR: { icon: '💪', label: 'FOR' },
+  CAR: { icon: '🎭', label: 'CAR' },
 };
 
 // ============================================================
@@ -1122,6 +1124,8 @@ function openAddNodeModal(mapData) {
           <option value="INT">🧠 INT — Inteligência</option>
           <option value="ART" selected>🎨 ART — Arte</option>
           <option value="AVE">🗡️ AVE — Aventura</option>
+          <option value="FOR">💪 FOR — Força</option>
+          <option value="CAR">🎭 CAR — Carisma</option>
         </select>
       </div>
       <div class="form-group">

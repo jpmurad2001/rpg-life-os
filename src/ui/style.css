@@ -39,6 +39,8 @@
   --color-int:           #7c4dff; /* Purple - Intelligence */
   --color-art:           #ff4081; /* Pink - Art */
   --color-ave:           #00e676; /* Green - Adventure */
+  --color-for:           #ff5252; /* Red - Strength */
+  --color-car:           #ffb74d; /* Orange/Gold - Charisma */
 
   /* --- UI SEMANTICS --- */
   --color-primary:       #5c6bc0;
@@ -829,6 +831,8 @@ body {
 .task-attr-badge.INT { color: var(--color-int); border-color: var(--color-int); }
 .task-attr-badge.ART { color: var(--color-art); border-color: var(--color-art); }
 .task-attr-badge.AVE { color: var(--color-ave); border-color: var(--color-ave); }
+.task-attr-badge.FOR { color: var(--color-for); border-color: var(--color-for); }
+.task-attr-badge.CAR { color: var(--color-car); border-color: var(--color-car); }
 
 .btn-add-task {
   align-self: flex-start;

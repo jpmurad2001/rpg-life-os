@@ -1,0 +1,396 @@
+/* ============================================================
+   RPG LIFE OS v2.2 — O Reino dos Sonhos (Pomodoro Hardcore)
+   style-pomodoro.css
+   ============================================================ */
+
+/* ============================================================
+   VIEW OVERRIDE — center everything in the available space
+   ============================================================ */
+#view-pomodoro {
+  position: relative; /* anchor for the failure overlay */
+}
+
+#view-pomodoro .view-inner {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  min-height: calc(100dvh - var(--header-height));
+}
+
+/* ============================================================
+   PHASE LABEL
+   ============================================================ */
+.pomo-phase-label {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-sm);
+  color: var(--text-gold);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+/* ============================================================
+   SVG RING — circular timer
+   ============================================================ */
+.pomo-ring-wrap {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: filter 400ms ease;
+}
+
+/* Glow states */
+.pomo-ring-wrap--focus {
+  animation: pomo-pulse-focus 2.5s ease-in-out infinite;
+}
+
+.pomo-ring-wrap--break {
+  animation: pomo-pulse-break 3s ease-in-out infinite;
+}
+
+.pomo-ring-wrap--paused {
+  animation: pomo-blink-paused 1s steps(1) infinite;
+}
+
+@keyframes pomo-pulse-focus {
+  0%, 100% { filter: drop-shadow(0 0 8px #ff6b35) drop-shadow(0 0 2px #ff6b35); }
+  50%       { filter: drop-shadow(0 0 24px #ff6b35) drop-shadow(0 0 48px rgba(255,107,53,0.35)); }
+}
+
+@keyframes pomo-pulse-break {
+  0%, 100% { filter: drop-shadow(0 0 8px #4fc3f7); }
+  50%       { filter: drop-shadow(0 0 20px #4fc3f7) drop-shadow(0 0 40px rgba(79,195,247,0.3)); }
+}
+
+@keyframes pomo-blink-paused {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+
+/* SVG element */
+.pomo-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg); /* start arc at 12 o'clock */
+}
+
+/* Track (background ring) */
+.pomo-track {
+  fill:              none;
+  stroke:            var(--color-bg-element);
+  stroke-width:      14;
+}
+
+/* Progress ring */
+.pomo-progress {
+  fill:              none;
+  stroke-width:      14;
+  stroke-linecap:    butt;
+  /* dasharray & dashoffset set by JS */
+  transition:        stroke-dashoffset 1s linear, stroke 400ms ease;
+}
+
+/* ── Time overlay ── */
+.pomo-time-overlay {
+  position:       absolute;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            var(--space-1);
+  z-index:        2;
+}
+
+.pomo-time-display {
+  font-family:   var(--font-pixel);
+  font-size:     1.8rem;
+  line-height:   1;
+  letter-spacing: 4px;
+  /* color set by JS */
+  transition:    color 400ms ease;
+  text-shadow:   0 0 20px currentColor;
+}
+
+.pomo-cycle-count {
+  font-family:  var(--font-display);
+  font-size:    var(--fs-display);
+  color:        var(--text-muted);
+  letter-spacing: 1px;
+}
+
+/* ============================================================
+   PAUSE COUNTDOWN BAR
+   ============================================================ */
+.pomo-pause-bar-wrap {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pomo-pause-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+.pomo-pause-bar {
+  height: 8px;
+  background: var(--color-bg-deepest);
+  border: 2px solid var(--color-border);
+  overflow: hidden;
+}
+
+.pomo-pause-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
+  transition: width 1s linear;
+}
+
+.pomo-pause-bar-fill--critical {
+  background: linear-gradient(90deg, #b71c1c, var(--color-danger));
+  animation: pomo-bar-critical-pulse 0.5s steps(2) infinite;
+}
+
+@keyframes pomo-bar-critical-pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* ============================================================
+   MISSION SELECTOR
+   ============================================================ */
+.pomo-mission-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 380px;
+}
+
+.pomo-mission-label {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-secondary);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.pomo-mission-select {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-element);
+  color: var(--text-primary);
+  border: 2px solid var(--color-border);
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  box-shadow: var(--pixel-shadow);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235555aa' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  transition: border-color var(--transition-fast);
+}
+
+.pomo-mission-select:focus {
+  outline: none;
+  border-color: var(--color-border-glow);
+}
+
+.pomo-mission-select option,
+.pomo-mission-select optgroup {
+  background: var(--color-bg-panel);
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   CONTROLS
+   ============================================================ */
+.pomo-controls {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ============================================================
+   LORE QUOTE
+   ============================================================ */
+.pomo-lore-quote {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-muted);
+  font-style: italic;
+  letter-spacing: 1px;
+  opacity: 0.7;
+  max-width: 360px;
+}
+
+/* ============================================================
+   SUCCESS FLASH
+   ============================================================ */
+.pomo-success-flash {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-md);
+  color: var(--color-gold);
+  text-shadow: 0 0 20px var(--color-gold), 0 0 40px rgba(255,215,0,0.4);
+  pointer-events: none;
+  z-index: 9000;
+  animation: pomo-flash-out 1.5s ease-out forwards;
+  white-space: nowrap;
+}
+
+@keyframes pomo-flash-out {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  60%  { opacity: 1; transform: translate(-50%, -60%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -80%) scale(0.9); }
+}
+
+/* ============================================================
+   FAILURE OVERLAY — dramatic full-view cover
+   ============================================================ */
+.pomo-failure-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 0, 0, 0.97);
+  display: none; /* toggled to flex by JS */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  z-index: 50;
+  animation: pomo-failure-in 0.35s ease;
+  backdrop-filter: blur(4px);
+}
+
+@keyframes pomo-failure-in {
+  0%   { opacity: 0; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.pomo-failure-glyph {
+  font-size: 4rem;
+  animation: pomo-failure-shake 0.5s ease 0.2s;
+}
+
+@keyframes pomo-failure-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px) rotate(-3deg); }
+  40%       { transform: translateX(8px) rotate(3deg); }
+  60%       { transform: translateX(-5px); }
+  80%       { transform: translateX(5px); }
+}
+
+.pomo-failure-title {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-md);
+  color: var(--color-danger);
+  letter-spacing: 4px;
+  text-shadow: 0 0 20px var(--color-danger);
+}
+
+.pomo-failure-subtitle {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--color-hp-danger);
+  font-weight: bold;
+}
+
+.pomo-failure-detail {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-secondary);
+}
+
+.pomo-failure-lore {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  font-style: italic;
+  max-width: 320px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* ============================================================
+   ABANDON CONFIRM MODAL BODY
+   ============================================================ */
+.pomo-abandon-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-3);
+  text-align: center;
+}
+
+.pomo-abandon-glyph {
+  font-size: 3rem;
+}
+
+.pomo-abandon-msg,
+.pomo-abandon-penalty {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.pomo-abandon-lore {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-muted);
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* ============================================================
+   SETTINGS MODAL GRID
+   ============================================================ */
+.pomo-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3) var(--space-4);
+}
+
+.pomo-settings-grid .form-group:last-child {
+  grid-column: 1 / -1; /* last item full width */
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+@media (max-width: 767px) {
+  #view-pomodoro .view-inner {
+    padding: var(--space-4) var(--space-3);
+    gap: var(--space-4);
+    min-height: calc(100dvh - var(--header-height) - var(--bottom-nav-height));
+  }
+
+  .pomo-time-display { font-size: 2rem; }
+  .pomo-ring-wrap    { width: 260px; height: 260px; }
+  .pomo-settings-grid { grid-template-columns: 1fr; }
+  .pomo-settings-grid .form-group:last-child { grid-column: 1; }
+
+  .pomo-failure-title { font-size: var(--fs-base); }
+}

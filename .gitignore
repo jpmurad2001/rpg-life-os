@@ -15,6 +15,7 @@ desktop.ini
 # Arquivos temporários do projeto
 tmp/
 *.tmp
+backups/
 
 # VS Code / Editor configs locais
 .vscode/settings.json

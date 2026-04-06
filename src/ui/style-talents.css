@@ -1,0 +1,318 @@
+/* ============================================================
+   RPG LIFE OS v2.3 Diamond — Habilidades de Aspecto (Talent Tree)
+   style-talents.css
+   ============================================================ */
+
+#view-talents .view-inner {
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  overflow-x: auto;
+}
+
+/* ── Header ── */
+.talent-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.talent-header__title {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-sm);
+  color: var(--text-gold);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.talent-header__sub {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-muted);
+  font-style: italic;
+  letter-spacing: 1px;
+}
+
+.talent-sk-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-bg-element);
+  border: var(--pixel-border-dark);
+  box-shadow: var(--pixel-shadow);
+  padding: var(--space-2) var(--space-5);
+}
+
+.talent-sk-icon { font-size: 1.3rem; }
+
+.talent-sk-value {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-md);
+  color: var(--color-gold);
+  min-width: 2ch;
+  text-align: right;
+  display: inline-block;
+}
+
+@keyframes sk-flash {
+  0%   { color: var(--color-gold); transform: scale(1); }
+  30%  { color: #fff;              transform: scale(1.2); }
+  100% { color: var(--color-gold); transform: scale(1); }
+}
+.talent-sk-value--flash { animation: sk-flash 400ms ease; }
+
+.talent-sk-label {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+/* ── Grid wrapper ── */
+.talent-grid-wrap {
+  position: relative;
+  width:  660px;
+  height: 420px;
+  flex-shrink: 0;
+}
+
+.talent-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+
+@keyframes line-flow {
+  to { stroke-dashoffset: -26; }
+}
+.talent-line--active {
+  animation: line-flow 1.8s linear infinite;
+}
+
+.talent-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 90px);
+  grid-template-rows:    repeat(3, 130px);
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Node base ── */
+.talent-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 74px;
+  height: 74px;
+  align-self: center;
+  justify-self: center;
+  border: 2px solid var(--color-border);
+  background: var(--color-bg-element);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition:
+    filter 300ms ease, border-color 300ms ease,
+    background 300ms ease, box-shadow 300ms ease,
+    transform 200ms ease;
+  z-index: 2;
+}
+
+.talent-node:focus-visible {
+  outline: 2px solid var(--branch-color, #ffd700);
+  outline-offset: 3px;
+}
+
+.talent-node__icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  transition: filter 300ms ease;
+}
+
+.talent-node__name {
+  font-family: var(--font-pixel);
+  font-size: 6.5px;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+  max-width: 68px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.talent-lock-icon {
+  position: absolute;
+  bottom: 3px; right: 4px;
+  font-size: 0.65rem;
+  opacity: 0.85;
+  line-height: 1;
+}
+
+.talent-purchased-check {
+  position: absolute;
+  bottom: 3px; right: 4px;
+  font-size: 0.6rem;
+  font-family: var(--font-pixel);
+  color: var(--branch-color, #ffd700);
+  line-height: 1;
+}
+
+/* ── LOCKED ── */
+.talent-node--locked {
+  filter: grayscale(100%) opacity(0.32);
+  cursor: not-allowed;
+  border-color: var(--color-border);
+}
+.talent-node--locked:hover {
+  transform: none;
+  filter: grayscale(100%) opacity(0.42);
+}
+
+/* ── AVAILABLE ── */
+.talent-node--available {
+  border-color: var(--branch-color, #ffd700);
+  background: var(--color-bg-surface);
+  animation: talent-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes talent-pulse {
+  0%, 100% { box-shadow: 0 0 4px var(--branch-color, #ffd700); }
+  50%       { box-shadow: 0 0 14px var(--branch-color, #ffd700),
+                           0 0 28px var(--branch-color, #ffd70044); }
+}
+
+.talent-node--available:hover {
+  transform: translateY(-3px) scale(1.06);
+  animation: none;
+  box-shadow: 0 0 18px var(--branch-color, #ffd700),
+              0 0 36px var(--branch-color, #ffd70033);
+}
+
+/* ── PURCHASED ── */
+.talent-node--purchased {
+  border-color: var(--branch-color, #ffd700);
+  background: var(--color-bg-surface);
+  box-shadow: 0 0 8px  var(--branch-color, #ffd700),
+              0 0 20px var(--branch-color, #ffd70044);
+  cursor: default;
+  animation: talent-glow 3.5s ease-in-out infinite;
+}
+
+@keyframes talent-glow {
+  0%, 100% { box-shadow: 0 0 6px  var(--branch-color, #ffd700),
+                          0 0 18px var(--branch-color, #ffd70033); }
+  50%       { box-shadow: 0 0 12px var(--branch-color, #ffd700),
+                          0 0 32px var(--branch-color, #ffd70055); }
+}
+
+.talent-node--purchased .talent-node__icon {
+  filter: drop-shadow(0 0 6px var(--branch-color, #ffd700));
+}
+
+.talent-node--purchased .talent-node__name {
+  color: var(--branch-color, #ffd700);
+  opacity: 0.9;
+}
+
+.talent-node--purchased:hover { transform: none; }
+
+/* ── Tooltip ── */
+.talent-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  width: 248px;
+  background: var(--color-bg-panel);
+  border: var(--pixel-border-dark);
+  box-shadow: 4px 4px 0 #000000cc, var(--pixel-shadow);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.talent-tooltip--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.talent-tooltip__title {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  letter-spacing: 0.5px;
+}
+
+.talent-tooltip__branch {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 3px;
+}
+
+.talent-tooltip__desc {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.talent-tooltip__effect {
+  font-family: var(--font-pixel);
+  font-size: 7.5px;
+  color: var(--color-success);
+  letter-spacing: 0.3px;
+  padding-top: var(--space-1);
+}
+
+.talent-tooltip__status {
+  font-family: var(--font-pixel);
+  font-size: 7.5px;
+  letter-spacing: 1px;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-2);
+}
+
+.talent-tt-purchased { color: var(--text-gold); }
+.talent-tt-available  { color: var(--color-primary-hover); }
+.talent-tt-locked     { color: var(--text-muted); }
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+  #view-talents .view-inner {
+    padding: var(--space-3);
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+  .talent-grid-wrap {
+    width: 510px;
+    height: 360px;
+  }
+  .talent-grid {
+    grid-template-columns: repeat(7, 68px);
+    grid-template-rows:    repeat(3, 110px);
+  }
+  .talent-node { width: 56px; height: 56px; }
+  .talent-node__icon { font-size: 1.4rem; }
+  .talent-node__name { font-size: 5.5px; }
+}

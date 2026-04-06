@@ -62,6 +62,22 @@ export async function savePlayer(uid, data) {
 }
 
 /**
+ * Salva o estado de badges do jogador (achievements + activeBadgeId).
+ * Operação de merge parcial — não sobrescreve outros campos.
+ * @param {string} uid
+ * @param {string[]} achievements  - Array de badge IDs desbloqueados
+ * @param {string|null} activeBadgeId - Badge equipada (ou null)
+ */
+export async function saveBadgeState(uid, { achievements, activeBadgeId }) {
+  await setDoc(_userRef(uid), {
+    achievements,
+    activeBadgeId,
+    last_active: serverTimestamp(),
+  }, { merge: true });
+  console.log('🏅 [DB] Badge state salvo:', { achievements, activeBadgeId });
+}
+
+/**
  * Deletes the player root doc AND all known subcollections from Firestore.
  * Firestore doesn't cascade-delete subcollections automatically.
  */
@@ -123,6 +139,9 @@ export async function initNewPlayer(uid, displayName) {
       notifications_enabled:    false,
       hp_decay_per_missed_day:  5,
     },
+    // v2.5 — Marcos do Despertar
+    achievements:  [],
+    activeBadgeId: null,
   };
 
   await setDoc(_userRef(uid), defaultPlayer, { merge: false });

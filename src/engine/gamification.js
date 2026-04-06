@@ -43,7 +43,7 @@ export function renderHUD(state) {
     _setText('sidebar-hp-text', `${p.hp} / ${p.hp_max}`);
 
     for (const key of ATTR_KEYS) {
-        const a = p.attributes[key];
+        const a = p.attributes[key] || { value: 1 };
         _setText(`attr-${key.toLowerCase()}`, a.value);
     }
 
@@ -63,7 +63,7 @@ function _setText(id, text) {
 }
 
 // ============================================================
-//   RADAR CHART (Canvas 2D, Triangular)
+//   RADAR CHART (Canvas 2D, Pentagonal v2.6)
 // ============================================================
 export function renderAttributeRadar(state) {
     const canvas = document.getElementById('attr-radar');
@@ -76,47 +76,48 @@ export function renderAttributeRadar(state) {
 
     const ctx = canvas.getContext('2d');
     const cx = W / 2;
-    const cy = H / 2 + 8;
-    const radius = 58;
+    const cy = H / 2 + 5;
+    const radius = 55;
 
-    // The 3 axes at 120° apart: INT=top (270°), ART=right (30°), AVE=left (150°)
-    const angles = {
-        INT: -Math.PI / 2,              // top
-        ART: -Math.PI / 2 + (2 * Math.PI / 3),   // bottom-right
-        AVE: -Math.PI / 2 + (4 * Math.PI / 3),   // bottom-left
-    };
+    // 5 axes for INT, FOR, AVE, ART, CAR (72° apart)
+    const AXES = ['INT', 'FOR', 'AVE', 'ART', 'CAR'];
+    const angles = {};
+    AXES.forEach((key, i) => {
+        angles[key] = -Math.PI / 2 + (i * (2 * Math.PI / 5));
+    });
 
     const attrs = state.player.attributes;
 
-    // Values normalised: attr.value / (attr.value + 10) gives nice scaling
+    // Values normalised: attr.value / (attr.value + 5), max 0.95
     const vals = {};
-    for (const key of ['INT', 'ART', 'AVE']) {
-        const v = attrs[key].value;
-        vals[key] = Math.min((v / Math.max(v + 5, 10)), 0.95);
+    for (const key of AXES) {
+        const attr = attrs[key] || { value: 1 };
+        const v = attr.value;
+        vals[key] = Math.min((v / Math.max(v + 5, 8)), 0.95);
     }
 
     ctx.clearRect(0, 0, W, H);
 
-    // ---- Background triangle grid ----
+    // ---- Background pentagon grid ----
     for (let tier = 1; tier <= 4; tier++) {
         const r = (tier / 4) * radius;
         ctx.beginPath();
-        for (const key of ['INT', 'ART', 'AVE']) {
+        AXES.forEach((key, i) => {
             const a = angles[key];
             const x = cx + Math.cos(a) * r;
             const y = cy + Math.sin(a) * r;
-            key === 'INT' ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
         ctx.closePath();
         ctx.strokeStyle = tier === 4 ? '#3a3560' : '#2a2550';
         ctx.lineWidth = tier === 4 ? 1.5 : 1;
-        ctx.setLineDash([3, 3]);
+        ctx.setLineDash([3, 2]);
         ctx.stroke();
         ctx.setLineDash([]);
     }
 
     // ---- Axis lines ----
-    for (const key of ['INT', 'ART', 'AVE']) {
+    for (const key of AXES) {
         const a = angles[key];
         ctx.beginPath();
         ctx.moveTo(cx, cy);
@@ -128,13 +129,13 @@ export function renderAttributeRadar(state) {
 
     // ---- Filled polygon ----
     ctx.beginPath();
-    for (const key of ['INT', 'ART', 'AVE']) {
+    AXES.forEach((key, i) => {
         const r = vals[key] * radius;
         const a = angles[key];
         const x = cx + Math.cos(a) * r;
         const y = cy + Math.sin(a) * r;
-        key === 'INT' ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    }
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
     ctx.closePath();
 
     const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
@@ -149,34 +150,34 @@ export function renderAttributeRadar(state) {
     ctx.stroke();
 
     // ---- Vertex dots ----
-    for (const key of ['INT', 'ART', 'AVE']) {
+    for (const key of AXES) {
         const r = vals[key] * radius;
         const a = angles[key];
         const x = cx + Math.cos(a) * r;
         const y = cy + Math.sin(a) * r;
 
         ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.fillStyle = '#f1c40f';
         ctx.fill();
     }
 
     // ---- Labels (emoji + value) ----
-    ctx.font = '9px "Press Start 2P", monospace';
+    ctx.font = '8px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const LABEL_PAD = 18;
-    const labelPos = {
-        INT: { x: cx, y: cy - radius - LABEL_PAD, emoji: '🧠' },
-        ART: { x: cx + Math.cos(angles.ART) * (radius + LABEL_PAD), y: cy + Math.sin(angles.ART) * (radius + LABEL_PAD), emoji: '🎨' },
-        AVE: { x: cx + Math.cos(angles.AVE) * (radius + LABEL_PAD), y: cy + Math.sin(angles.AVE) * (radius + LABEL_PAD), emoji: '🗡️' },
-    };
-
-    for (const [key, pos] of Object.entries(labelPos)) {
-        const val = attrs[key].value;
-        ctx.fillStyle = ATTR_META[key].color;
-        ctx.fillText(`${pos.emoji}${val}`, pos.x, pos.y);
+    const LABEL_PAD = 16;
+    for (const key of AXES) {
+        const a = angles[key];
+        const attr = attrs[key] || { value: 1 };
+        const meta = ATTR_META[key] || { icon: '?', color: '#fff' };
+        
+        const lx = cx + Math.cos(a) * (radius + LABEL_PAD);
+        const ly = cy + Math.sin(a) * (radius + LABEL_PAD);
+        
+        ctx.fillStyle = meta.color;
+        ctx.fillText(`${meta.icon}${attr.value}`, lx, ly);
     }
 }
 

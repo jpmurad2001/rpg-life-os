@@ -1,0 +1,588 @@
+/* ============================================================
+   RPG LIFE OS v2.1 Diamond — Quadro de Missões (Kanban)
+   style-board.css
+   Uses existing CSS custom property tokens from style.css
+   ============================================================ */
+
+/* ============================================================
+   VIEW WRAPPER — overrides .view-inner padding/flex for kanban
+   ============================================================ */
+#view-board .view-inner {
+  padding: var(--space-4) var(--space-5);
+  max-width: none;
+  gap: var(--space-3);
+  height: calc(100dvh - var(--header-height));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   BOARD TOPBAR
+   ============================================================ */
+.board-topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.board-active-title {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-sm);
+  color: var(--text-gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================
+   BOARD EMPTY STATE
+   ============================================================ */
+.board-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  flex: 1;
+  color: var(--text-muted);
+}
+
+.board-empty-state__glyph {
+  font-size: 3rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+.board-empty-state__text {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+/* ============================================================
+   BOARD SELECTOR (Tabs)
+   ============================================================ */
+.board-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+}
+
+.board-selector-wrap::-webkit-scrollbar { height: 4px; }
+
+#board-selector {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.board-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-element);
+  color: var(--text-secondary);
+  border: 2px solid var(--color-border);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.board-tab:hover {
+  background: var(--color-bg-hover);
+  color: var(--text-primary);
+  border-color: var(--color-border-bright);
+}
+
+.board-tab--active {
+  background: var(--color-bg-hover);
+  color: var(--text-gold);
+  border-color: var(--color-gold-dark);
+  box-shadow: inset 0 -2px 0 var(--color-gold);
+}
+
+/* ============================================================
+   BOARD AREA — horizontal scroll container
+   ============================================================ */
+#board-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  gap: var(--space-3);
+}
+
+#board-columns-container {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  padding-bottom: var(--space-4);
+  scroll-snap-type: x mandatory;
+}
+
+#board-columns-container::-webkit-scrollbar { height: 8px; }
+#board-columns-container::-webkit-scrollbar-track { background: var(--color-bg-deepest); }
+#board-columns-container::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border: 2px solid var(--color-bg-deepest);
+}
+
+/* ============================================================
+   COLUMN
+   ============================================================ */
+.board-column {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  min-width: 300px;
+  max-height: 100%;
+  background: var(--color-bg-panel);
+  border: var(--pixel-border-dark);
+  box-shadow: var(--pixel-shadow);
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  transition: border-color var(--transition-fast);
+}
+
+.board-column--drop-target {
+  border-color: var(--color-border-glow);
+  box-shadow: 0 0 0 2px var(--color-border-glow), var(--pixel-shadow);
+}
+
+.board-column__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-element);
+  border-bottom: var(--pixel-border-dark);
+  flex-shrink: 0;
+}
+
+.board-column__title {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--text-gold);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-column__count {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-secondary);
+  background: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-1);
+  flex-shrink: 0;
+}
+
+.board-column__cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 80px;
+}
+
+.board-column__cards::-webkit-scrollbar { width: 4px; }
+.board-column__cards::-webkit-scrollbar-track { background: transparent; }
+.board-column__cards::-webkit-scrollbar-thumb { background: var(--color-border); }
+
+/* ============================================================
+   ADD CARD BUTTON
+   ============================================================ */
+.board-add-card-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3);
+  background: transparent;
+  border: none;
+  border-top: 2px dashed var(--color-border);
+  color: var(--text-muted);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  letter-spacing: 1px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.board-add-card-btn:hover {
+  background: var(--color-bg-element);
+  color: var(--color-gold);
+  border-color: var(--color-gold-dark);
+}
+
+/* ============================================================
+   ADD COLUMN BUTTON
+   ============================================================ */
+.board-add-column-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 220px;
+  min-width: 220px;
+  height: 64px;
+  background: transparent;
+  border: 2px dashed var(--color-border);
+  color: var(--text-muted);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  letter-spacing: 1px;
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: flex-start;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.board-add-column-btn:hover {
+  background: var(--color-bg-element);
+  color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.board-card {
+  background: var(--color-bg-surface);
+  border: var(--pixel-border-dark);
+  box-shadow: var(--pixel-shadow);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  cursor: grab;
+  transition:
+    border-color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+  position: relative;
+  outline: none;
+}
+
+.board-card:hover {
+  border-color: var(--color-border-bright);
+  box-shadow: 0 0 0 1px var(--color-border-bright), var(--pixel-shadow);
+  transform: translateY(-2px);
+}
+
+.board-card:focus-visible {
+  outline: 2px solid var(--color-border-glow);
+  outline-offset: 2px;
+}
+
+.board-card--dragging {
+  opacity: 0.35;
+  cursor: grabbing;
+  transform: rotate(1deg) scale(1.02);
+}
+
+.board-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.board-card__title {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-primary);
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+  word-break: break-word;
+}
+
+.board-card__desc {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============================================================
+   PRIORITY BADGES (RPG Rarity)
+   ============================================================ */
+.board-priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--space-2);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  border: 1px solid;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* 🟢 Normal — Uncommon Green */
+.priority--normal {
+  color: #78c97e;
+  border-color: #78c97e;
+  background: rgba(120, 201, 126, 0.08);
+}
+
+/* 🟣 Epic — Purple */
+.priority--epic {
+  color: #c084fc;
+  border-color: #9c4dfa;
+  background: rgba(156, 77, 250, 0.12);
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.5);
+}
+
+/* 🟡 Legendary — Gold */
+.priority--legendary {
+  color: #ffd700;
+  border-color: #b8860b;
+  background: rgba(255, 215, 0, 0.10);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+  animation: legendary-shimmer 2.5s ease-in-out infinite;
+}
+
+@keyframes legendary-shimmer {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 6px rgba(255, 215, 0, 0.4); }
+}
+
+/* ============================================================
+   CARD  PROGRESS BAR (Checklist)
+   ============================================================ */
+.board-card__progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.board-card__progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--color-bg-deepest);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.board-card__progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
+  transition: width 200ms ease;
+}
+
+.board-card__progress-fill--done {
+  background: linear-gradient(90deg, #2e7d32, var(--color-success));
+}
+
+.board-card__progress-label {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* ============================================================
+   CARD DETAIL MODAL BODY
+   ============================================================ */
+.board-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* --- Modal progress bar --- */
+.bm-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.bm-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-secondary);
+}
+
+.bm-progress-bar {
+  height: 10px;
+  background: var(--color-bg-deepest);
+  border: 2px solid var(--color-border);
+  overflow: hidden;
+}
+
+.bm-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-success));
+  transition: width 200ms ease;
+}
+
+/* --- Subtask rows --- */
+.board-subtasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.board-subtask-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-bg-element);
+  border: 1px solid var(--color-border);
+  transition: border-color var(--transition-fast);
+}
+
+.board-subtask-row:hover { border-color: var(--color-border-bright); }
+
+.board-subtask-check {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  background: var(--color-bg-deepest);
+  border: 2px solid var(--color-border-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--color-success);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.board-subtask-check--done {
+  background: var(--color-success);
+  border-color: #43a047;
+  color: #000;
+}
+
+.board-subtask-text {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.board-subtask-text--done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.board-subtask-del {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+.board-subtask-del:hover { color: var(--color-danger); }
+
+/* Add subtask row */
+.board-add-subtask-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: var(--space-2);
+}
+
+.board-add-subtask-row .form-input {
+  flex: 1;
+}
+
+/* ============================================================
+   FORM TEXTAREA (shared with other modals, safe to add here)
+   ============================================================ */
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   MOBILE ADJUSTMENTS
+   ============================================================ */
+@media (max-width: 767px) {
+  #view-board .view-inner {
+    padding: var(--space-3);
+    height: calc(100dvh - var(--header-height) - var(--bottom-nav-height));
+  }
+
+  .board-column {
+    width: 260px;
+    min-width: 260px;
+  }
+
+  .board-active-title {
+    font-size: var(--fs-xxs);
+  }
+
+  .board-topbar {
+    gap: var(--space-2);
+  }
+}

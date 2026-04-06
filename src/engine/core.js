@@ -4,6 +4,8 @@
  * Pure ES Module — no framework dependencies.
  */
 
+import { BADGE_CATALOG } from '../config/badges.js';
+
 // ============================================================
 //   CONSTANTS
 // ============================================================
@@ -20,12 +22,14 @@ export const DAYS_LABEL = {
   quinta: 'Qui', sexta: 'Sex', sábado: 'Sáb', domingo: 'Dom'
 };
 
-export const ATTR_KEYS = ['INT', 'ART', 'AVE'];
+export const ATTR_KEYS = ['INT', 'ART', 'AVE', 'FOR', 'CAR'];
 
 export const ATTR_META = {
-  INT: { icon: '🧠', color: 'var(--color-int)', label: 'Inteligência' },
-  ART: { icon: '🎨', color: 'var(--color-art)', label: 'Arte'         },
-  AVE: { icon: '🗡️', color: 'var(--color-ave)', label: 'Aventura'    },
+  INT: { icon: '🧠', color: 'var(--color-int, #9c7cf4)', label: 'Inteligência' },
+  ART: { icon: '🎨', color: 'var(--color-art, #ff6b9d)', label: 'Arte'         },
+  AVE: { icon: '🗡️', color: 'var(--color-ave, #4fc3f7)', label: 'Aventura'    },
+  FOR: { icon: '💪', color: 'var(--color-for, #ff5252)', label: 'Força'       },
+  CAR: { icon: '🎭', color: 'var(--color-car, #ffb74d)', label: 'Carisma'     },
 };
 
 // ============================================================
@@ -53,6 +57,8 @@ function buildDefaultState() {
         INT: { value: 1, xp_pool: 0, xp_per_level: ATTR_XP_PER_LEVEL },
         ART: { value: 1, xp_pool: 0, xp_per_level: ATTR_XP_PER_LEVEL },
         AVE: { value: 1, xp_pool: 0, xp_per_level: ATTR_XP_PER_LEVEL },
+        FOR: { value: 1, xp_pool: 0, xp_per_level: ATTR_XP_PER_LEVEL },
+        CAR: { value: 1, xp_pool: 0, xp_per_level: ATTR_XP_PER_LEVEL },
       },
       badges: [],
       item_drops: [],
@@ -63,7 +69,18 @@ function buildDefaultState() {
         total_xp_earned: 0,
         streak_days: 0,
         last_active_date: '',
+        pomodoro_sessions_completed: 0,
+        gold: 0,
+        dawn_quests: 0,
+        night_quests: 0,
+        streak_broken_date: null,
+        tasks_today_after_break: 0,
       },
+      skill_points:  10,    // v2.3 Habilidades de Aspecto
+      xpMultiplier:  1.0,   // v2.3 — multiplicado pelos talentos comprados
+      talents:       {},    // v2.3 — { [nodeId]: 'purchased' | 'available' | 'locked' }
+      achievements:  [],    // v2.5 — badge IDs desbloqueados
+      activeBadgeId: null,  // v2.5 — badge ID equipado para o medalhão
     },
     quests: {
       current_week_start: '',
@@ -78,6 +95,7 @@ function buildDefaultState() {
       months: {},
     },
     bosses: [],
+    boards: [],   // v2.1 Diamond — Quadro de Missões (Kanban)
     achievements: [
       { id: 'ach_001', key: 'FIRST_QUEST',       name: 'Primeira Missão',      description: 'Complete sua primeira tarefa semanal.', icon: '⚔️', rarity: 'common',   unlocked: false, unlocked_at: null },
       { id: 'ach_002', key: 'LEVEL_5',            name: 'Aventureiro',          description: 'Alcance o nível 5.',                    icon: '🌟', rarity: 'uncommon', unlocked: false, unlocked_at: null },
@@ -110,12 +128,47 @@ export function loadState() {
     
     // Future/Legacy: migration logic here (schema_version checks)
     if (parsed.player && parsed.player.attributes) {
-      ['INT', 'ART', 'AVE'].forEach(k => {
-        if (parsed.player.attributes[k] && parsed.player.attributes[k].xp_pool === undefined) {
+      ATTR_KEYS.forEach(k => {
+        if (!parsed.player.attributes[k]) {
+          parsed.player.attributes[k] = { value: 1, xp_pool: 0, xp_per_level: ATTR_XP_PER_LEVEL };
+        }
+        if (parsed.player.attributes[k].xp_pool === undefined) {
           parsed.player.attributes[k].xp_pool = 0;
           parsed.player.attributes[k].xp_per_level = 50;
         }
       });
+    }
+
+    // v2.1 migration: ensure boards array exists
+    if (!Array.isArray(parsed.boards)) {
+      parsed.boards = [];
+    }
+
+    // v2.2 migration: ensure pomodoro stat exists
+    if (parsed.player?.stats && parsed.player.stats.pomodoro_sessions_completed === undefined) {
+      parsed.player.stats.pomodoro_sessions_completed = 0;
+    }
+
+    // v2.6 migration: new stats
+    if (parsed.player?.stats) {
+      if (parsed.player.stats.gold === undefined) parsed.player.stats.gold = 0;
+      if (parsed.player.stats.dawn_quests === undefined) parsed.player.stats.dawn_quests = 0;
+      if (parsed.player.stats.night_quests === undefined) parsed.player.stats.night_quests = 0;
+      if (parsed.player.stats.streak_broken_date === undefined) parsed.player.stats.streak_broken_date = null;
+      if (parsed.player.stats.tasks_today_after_break === undefined) parsed.player.stats.tasks_today_after_break = 0;
+    }
+
+    // v2.3 migration: ensure talent tree fields exist
+    if (parsed.player) {
+      if (parsed.player.skill_points === undefined) parsed.player.skill_points = 10;
+      if (parsed.player.xpMultiplier === undefined) parsed.player.xpMultiplier = 1.0;
+      if (!parsed.player.talents || typeof parsed.player.talents !== 'object') parsed.player.talents = {};
+    }
+
+    // v2.5 migration: ensure badge fields exist
+    if (parsed.player) {
+      if (!Array.isArray(parsed.player.achievements)) parsed.player.achievements = [];
+      if (parsed.player.activeBadgeId === undefined) parsed.player.activeBadgeId = null;
     }
 
     return parsed;
@@ -198,6 +251,7 @@ export function awardXP(state, amount) {
     p.level    += 1;
     p.xp_next   = calcXpNext(p.level);
     p.hp_max   += 10; // HP pool increases on level up
+    p.skill_points += 1; // +1 SK per level up
     p.hp        = p.hp_max; // Full heal on level up
     leveledUp   = true;
     newLevel     = p.level;
@@ -349,6 +403,21 @@ export function completeTask(state, weekId, taskId) {
   task.status        = 'completed';
   task.completed_at  = new Date().toISOString();
   state.player.stats.quests_completed += 1;
+  state.player.stats.gold += 15; // Ganho base de ouro por quest
+
+  // Lógica de horários para Badges
+  const hour = new Date().getHours();
+  if (hour >= 0 && hour < 8) state.player.stats.dawn_quests += 1;
+  if (hour >= 0 && hour < 4) state.player.stats.night_quests += 1;
+
+  // Lógica de Recuperação de Streak (Fênix Negra)
+  if (state.player.stats.streak_broken_date) {
+    const brokenDate = new Date(state.player.stats.streak_broken_date).toDateString();
+    const today = new Date().toDateString();
+    if (brokenDate === today) {
+      state.player.stats.tasks_today_after_break += 1;
+    }
+  }
 
   const xpGained   = task.xp_reward ?? 20;
   const attrAmount = 1; // 1 flat point per task
@@ -439,6 +508,99 @@ export function checkAchievements(state) {
     }
   }
   return newlyUnlocked;
+}
+
+// ============================================================
+//   BADGE SYSTEM (v2.5 — Marcos do Despertar)
+// ============================================================
+
+/**
+ * Conditions map: unlockKey → function(state) → boolean
+ * Mirrors ACHIEVEMENT_CONDITIONS but for the badge system.
+ * Each key corresponds to the `unlockKey` field in BADGE_CATALOG.
+ */
+export const BADGE_UNLOCK_CONDITIONS = {
+  FIRST_QUEST:       s => s.player.stats.quests_completed >= 1,
+  BOSS_SLAYER:       s => s.player.stats.bosses_defeated >= 1,
+  BOSS_SLAYER_10:    s => s.player.stats.bosses_defeated >= 10,
+  POMODORO_STREAK_7: s => s.player.stats.pomodoro_sessions_completed >= 7,
+  POMODORO_50:       s => s.player.stats.pomodoro_sessions_completed >= 50,
+  WORKOUT_STREAK_7:  s => s.player.stats.workouts_completed >= 7,
+  INT_10:            s => s.player.attributes.INT.value >= 10,
+  ART_10:            s => s.player.attributes.ART.value >= 10,
+  LEVEL_10:          s => s.player.level >= 10,
+  QUESTS_100:        s => s.player.stats.quests_completed >= 100,
+
+  // v2.6 — Novas Conquistas
+  BOARD_CARDS_10:    s => (s.boards || []).reduce((acc, b) => acc + (b.lists || []).reduce((acc2, l) => acc2 + (l.cards || []).length, 0), 0) >= 10,
+  FOR_10:            s => s.player.attributes.FOR?.value >= 10,
+  CAR_10:            s => s.player.attributes.CAR?.value >= 10,
+  STREAK_RECOVERY:   s => s.player.stats.tasks_today_after_break >= 3,
+  DAWN_QUESTS_5:     s => s.player.stats.dawn_quests >= 5,
+  NIGHT_QUESTS_5:    s => s.player.stats.night_quests >= 5,
+  POMODORO_100:      s => s.player.stats.pomodoro_sessions_completed >= 100,
+  GOLD_1000:         s => s.player.stats.gold >= 1000,
+  STREAK_30:         s => s.player.stats.streak_days >= 30,
+  BOSS_SLAYER_50:    s => s.player.stats.bosses_defeated >= 50,
+};
+
+/**
+ * Checks all badges and unlocks any whose conditions are now met.
+ * Returns an array of newly unlocked badge IDs.
+ * @param {Object} state - Current app state
+ * @returns {string[]} - Array of newly unlocked badge IDs
+ */
+export function checkBadgeUnlocks(state) {
+  if (!state.player.achievements) state.player.achievements = [];
+  const unlocked = new Set(state.player.achievements);
+  const newlyUnlocked = [];
+
+  for (const badge of BADGE_CATALOG) {
+    if (unlocked.has(badge.id)) continue;
+    const condition = BADGE_UNLOCK_CONDITIONS[badge.unlockKey];
+    if (condition && condition(state)) {
+      state.player.achievements.push(badge.id);
+      newlyUnlocked.push(badge.id);
+    }
+  }
+
+  return newlyUnlocked;
+}
+
+/**
+ * Manually unlocks a badge by ID (for admin / special events).
+ * Idempotent — won't add duplicates.
+ * @param {Object} state
+ * @param {string} badgeId
+ * @returns {{ state, wasNew: boolean }}
+ */
+export function unlockBadge(state, badgeId) {
+  if (!state.player.achievements) state.player.achievements = [];
+  if (state.player.achievements.includes(badgeId)) {
+    return { state, wasNew: false };
+  }
+  state.player.achievements.push(badgeId);
+  return { state, wasNew: true };
+}
+
+/**
+ * Sets the active (equipped) badge ID.
+ * Pass null to unequip and restore the default medallion.
+ * @param {Object} state
+ * @param {string|null} badgeId
+ * @returns {Object} state
+ */
+export function equipBadge(state, badgeId) {
+  // Only allow equipping if the badge is actually unlocked (or null to unequip)
+  if (badgeId !== null) {
+    const unlocked = state.player.achievements ?? [];
+    if (!unlocked.includes(badgeId)) {
+      console.warn('[Core] equipBadge: badge not unlocked:', badgeId);
+      return state;
+    }
+  }
+  state.player.activeBadgeId = badgeId;
+  return state;
 }
 
 // ============================================================

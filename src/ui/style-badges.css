@@ -1,0 +1,665 @@
+/* ============================================================
+   RPG LIFE OS — Badge System Styles (v2.5 Diamond)
+   Marcos do Despertar — Arsenal de Conquistas
+   ============================================================ */
+
+/* ── NEON COLOR TOKENS ──────────────────────────────────────── */
+:root {
+  --neon-common:    rgba(144,164,174,0.5);
+  --neon-uncommon:  rgba(102,187,106,0.6);
+  --neon-rare:      rgba(92,107,192,0.7);
+  --neon-legendary: rgba(255,215,0,0.85);
+
+  --badge-frame-gold:   #ffd700;
+  --badge-frame-silver: #c0c0c0;
+  --badge-frame-bronze: #cd7f32;
+  --badge-frame-void:   #7c4dff;
+  --badge-locked-bg:    var(--color-bg-element, rgba(10,10,20,0.8));
+  --badge-tooltip-bg:   var(--color-bg-panel, #0a0a14);
+
+  --badge-equipped-pulse: #ffd700;
+}
+
+/* ============================================================
+   ARSENAL DE CONQUISTAS — LAYOUT DO VIEW
+   ============================================================ */
+.achievements-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.arsenal-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: 100%;
+  max-width: 1200px;
+  align-items: center;
+  text-align: center;
+}
+
+.arsenal-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: var(--space-4);
+  align-items: center;
+  width: 100%;
+}
+
+.arsenal-header__title {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-base);
+  color: var(--text-gold);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.arsenal-header__sub {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+.arsenal-stats-bar {
+  display: flex;
+  gap: var(--space-5);
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.arsenal-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.arsenal-stat__value {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--text-gold);
+  line-height: 1;
+}
+
+.arsenal-stat__label {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ── CATEGORY FILTERS ── */
+.arsenal-filters {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.arsenal-filter-btn {
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-secondary);
+  background: var(--color-bg-element);
+  border: 2px solid var(--color-border);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 80ms steps(2);
+}
+
+.arsenal-filter-btn:hover,
+.arsenal-filter-btn--active {
+  background: var(--color-bg-hover);
+  color: var(--text-gold);
+  border-color: var(--color-gold-dark);
+  box-shadow: 0 0 8px var(--neon-legendary);
+}
+
+/* ── BADGE GRID ── */
+.arsenal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+@media (max-width: 960px) {
+  .arsenal-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+}
+
+@media (max-width: 640px) {
+  .arsenal-grid { grid-template-columns: repeat(1, 1fr); }
+}
+
+
+/* ============================================================
+   BADGE CARD — BASE
+   ============================================================ */
+.badge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-bg-panel);
+  border: 2px solid var(--color-border);
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform 80ms steps(2),
+    border-color 80ms steps(2),
+    box-shadow 120ms ease;
+  user-select: none;
+  min-height: 260px;
+  justify-content: center;
+}
+
+.badge-card:hover {
+  transform: translate(-2px, -2px);
+  z-index: 10;
+}
+
+.badge-card__svg-wrap {
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.badge-card__name {
+  font-family: var(--font-pixel);
+  font-size: 0.4rem;
+  color: var(--text-secondary);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1.4;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.badge-card__rarity {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  text-align: center;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   BADGE CARD — UNLOCKED STATES
+   ============================================================ */
+.badge-card--unlocked       { cursor: pointer; }
+.badge-card--unlocked:active { transform: translate(2px, 2px); }
+
+/* Rarity: Common */
+.badge-card--common.badge-card--unlocked {
+  border-color: #546e7a;
+  box-shadow:
+    0 0 8px var(--neon-common),
+    inset 0 0 4px rgba(144,164,174,0.1);
+}
+.badge-card--common .badge-card__rarity { color: #90a4ae; }
+
+/* Rarity: Uncommon */
+.badge-card--uncommon.badge-card--unlocked {
+  border-color: #388e3c;
+  box-shadow:
+    0 0 12px var(--neon-uncommon),
+    inset 0 0 6px rgba(102,187,106,0.1);
+}
+.badge-card--uncommon .badge-card__rarity { color: #66bb6a; }
+
+/* Rarity: Rare */
+.badge-card--rare.badge-card--unlocked {
+  border-color: #3949ab;
+  box-shadow:
+    0 0 16px var(--neon-rare),
+    inset 0 0 8px rgba(92,107,192,0.15);
+}
+.badge-card--rare .badge-card__rarity { color: #7986cb; }
+
+/* Rarity: Legendary */
+.badge-card--legendary.badge-card--unlocked {
+  border-color: var(--color-gold-dark);
+  box-shadow:
+    0 0 20px var(--neon-legendary),
+    0 0 40px rgba(255,215,0,0.3),
+    inset 0 0 12px rgba(255,215,0,0.1);
+}
+.badge-card--legendary .badge-card__rarity { color: var(--color-gold); }
+
+/* ── EQUIPPED STATE ── */
+.badge-card--equipped {
+  animation: badge-equipped-pulse 2s steps(4) infinite;
+  border-color: var(--badge-equipped-pulse) !important;
+}
+
+.badge-card--equipped::before {
+  content: '⚔️ EQUIPADO';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-pixel);
+  font-size: 0.3rem;
+  color: #000;
+  background: var(--color-gold);
+  padding: 1px 4px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+@keyframes badge-equipped-pulse {
+  0%, 100% { box-shadow: 0 0 16px var(--neon-legendary), 0 0 32px rgba(255,215,0,0.4); }
+  50%       { box-shadow: 0 0 28px var(--neon-legendary), 0 0 56px rgba(255,215,0,0.7); }
+}
+
+/* ============================================================
+   BADGE CARD — LOCKED STATE
+   ============================================================ */
+.badge-card--locked {
+  cursor: default;
+  opacity: 0.55;
+  border-color: var(--color-border);
+}
+
+.badge-card--locked .badge-card__svg-wrap {
+  filter: saturate(0) brightness(0.5);
+}
+
+.badge-card--locked .badge-card__name {
+  color: var(--text-muted);
+}
+
+.badge-card--locked .badge-card__rarity {
+  color: var(--text-muted);
+}
+
+.badge-card--locked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    rgba(0,0,0,0.12) 4px,
+    rgba(0,0,0,0.12) 6px
+  );
+  pointer-events: none;
+}
+
+.badge-lock-icon {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 1rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.9));
+}
+
+/* ============================================================
+   BADGE TOOLTIP (estilo pergaminho RPG)
+   ============================================================ */
+.badge-tooltip-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(2px);
+  animation: tooltip-fade-in 100ms steps(2) forwards;
+}
+
+@keyframes tooltip-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.badge-tooltip {
+  background: var(--badge-tooltip-bg);
+  border: 3px solid var(--color-border-bright);
+  box-shadow:
+    0 0 0 1px #000,
+    6px 6px 0 #000,
+    0 0 32px rgba(0,0,0,0.9);
+  padding: var(--space-5);
+  max-width: 320px;
+  width: calc(100% - 32px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  animation: tooltip-slide-in 120ms steps(3) forwards;
+}
+
+@keyframes tooltip-slide-in {
+  from { transform: translateY(8px); opacity: 0.5; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+.badge-tooltip__close {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  font-size: 0.7rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-pixel);
+  padding: var(--space-1);
+}
+
+.badge-tooltip__close:hover { color: var(--text-primary); }
+
+.badge-tooltip__badge-display {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-tooltip__name {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-sm);
+  color: var(--text-gold);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  line-height: 1.5;
+}
+
+.badge-tooltip__rarity-tag {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  padding: 2px var(--space-3);
+  border: 2px solid currentColor;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.badge-tooltip__divider {
+  width: 100%;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.badge-tooltip__category {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.badge-tooltip__lore {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.5;
+  font-style: italic;
+  letter-spacing: 0.5px;
+}
+
+.badge-tooltip__unlocked-at {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.badge-tooltip__actions {
+  display: flex;
+  gap: var(--space-3);
+  width: 100%;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+/* ============================================================
+   SIDEBAR — MEDALHÃO DINÂMICO
+   ============================================================ */
+.badge-medallion-wrap {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 80ms steps(2);
+}
+
+.badge-medallion-wrap:hover {
+  transform: scale(1.05);
+}
+
+.badge-medallion-wrap svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Active badge glow ring on sidebar medallion */
+.badge-medallion-wrap--active::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--color-gold);
+  animation: medallion-ring-pulse 2s ease-in-out infinite;
+}
+
+@keyframes medallion-ring-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,215,0,0.4); opacity: 0.8; }
+  50%       { box-shadow: 0 0 16px rgba(255,215,0,0.8); opacity: 1; }
+}
+
+/* ============================================================
+   BADGE UNLOCK TOAST / CELEBRATION
+   ============================================================ */
+.badge-unlock-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 260px;
+}
+
+.badge-unlock-toast__icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  animation: badge-pop 300ms steps(5) forwards;
+}
+
+@keyframes badge-pop {
+  0%   { transform: scale(0.5); }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.badge-unlock-toast__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.badge-unlock-toast__headline {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-gold);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.badge-unlock-toast__name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+}
+
+.badge-unlock-toast__lore {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ============================================================
+   UNEQUIP BUTTON (no tooltip)
+   ============================================================ */
+.badge-unequip-btn {
+  font-size: var(--fs-xxs);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  padding: 2px var(--space-2);
+  cursor: pointer;
+  font-family: var(--font-pixel);
+  transition: color 80ms steps(2), border-color 80ms steps(2);
+}
+
+.badge-unequip-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--color-border-bright);
+}
+
+/* ============================================================
+   HOVER TOOLTIP (Critérios de Desbloqueio)
+   ============================================================ */
+.badge-card__hover-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  width: max-content;
+  max-width: 220px;
+  background: var(--badge-tooltip-bg);
+  border: 1px solid var(--color-border-bright);
+  padding: var(--space-2) var(--space-3);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.9);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease-in-out;
+  z-index: 1000;
+  pointer-events: none;
+  font-family: var(--font-display);
+  text-align: center;
+}
+
+.badge-card:hover .badge-card__hover-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(4px);
+}
+
+.badge-hover-req {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-gold);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.badge-hover-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.badge-hover-status {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.badge-hover-status.unlocked {
+  color: #66bb6a;
+}
+
+/* ============================================================
+   PROFILE MODAL — BADGE DISPLAY
+   ============================================================ */
+.profile-badge-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4) 0;
+  background: radial-gradient(circle at center, rgba(124,77,255,0.1), transparent);
+}
+
+.profile-badge-display {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 15px rgba(255,215,0,0.3));
+  transition: transform 0.3s ease;
+}
+
+.profile-badge-display:hover {
+  transform: scale(1.1);
+}
+
+.profile-badge-name {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--text-gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(255,215,0,0.5);
+}
+
+/* ── ARSENAL HEADER REFINEMENT ── */
+.arsenal-stat--equipped {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 0 var(--space-4);
+  border-left: 1px solid rgba(255,255,255,0.1);
+}
+
+.arsenal-equipped-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.arsenal-equipped-name {
+  font-family: var(--font-pixel);
+  font-size: 0.85rem;
+  color: var(--text-gold);
+  text-shadow: 0 0 5px rgba(255,215,0,0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}

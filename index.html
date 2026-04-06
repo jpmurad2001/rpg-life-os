@@ -28,6 +28,11 @@
   <link rel="stylesheet" href="src/ui/style-campaign.css" />
   <link rel="stylesheet" href="src/ui/style-player.css" />
   <link rel="stylesheet" href="src/ui/auth-screen.css" />
+  <link rel="stylesheet" href="src/ui/style-board.css" />     <!-- v2.1 Diamond -->
+  <link rel="stylesheet" href="src/ui/style-pomodoro.css" /> <!-- v2.2 Reino dos Sonhos -->
+  <link rel="stylesheet" href="src/ui/style-talents.css" />  <!-- v2.3 Habilidades de Aspecto -->
+  <link rel="stylesheet" href="src/ui/style-analytics.css" /> <!-- v2.4 Tear do Destino -->
+  <link rel="stylesheet" href="src/ui/style-badges.css?v=2.5.1" />   <!-- v2.5 Marcos do Despertar -->
 
   <!-- Icons -->
   <link rel="icon" type="image/png" href="assets/sprites/icon-192.png" />
@@ -132,8 +137,11 @@
       <div class="sidebar__player-card" id="player-card" role="button" tabindex="0"
            aria-label="Abrir perfil do personagem">
         <div class="sidebar__profile">
-        <div class="avatar" aria-label="Avatar do jogador" role="img">
-          <img src="assets/sprites/icon-192.png" alt="Avatar Pixel Art" id="player-avatar-img">
+        <!-- Badge Medallion: substituído dinamicamente pelo JS -->
+        <div class="badge-medallion-wrap" id="sidebar-medallion"
+             role="img" aria-label="Medalhão do jogador — clique para ver conquistas"
+             title="Clique para ver conquistas">
+          <!-- SVG injetado por renderSidebarMedallion() -->
         </div>
         <div class="profile-info">
           <div class="player-name" id="sidebar-player-name">Herói</div>
@@ -197,6 +205,22 @@
             <span class="attr-value" id="attr-ave">1</span>
           </div>
         </div>
+
+        <div class="attr-row-container">
+          <div class="attr-row" style="margin-bottom: 4px;">
+            <span class="attr-icon">💪</span>
+            <span class="attr-name">FOR</span>
+            <span class="attr-value" id="attr-for">1</span>
+          </div>
+        </div>
+
+        <div class="attr-row-container">
+          <div class="attr-row" style="margin-bottom: 4px;">
+            <span class="attr-icon">🎭</span>
+            <span class="attr-name">CAR</span>
+            <span class="attr-value" id="attr-car">1</span>
+          </div>
+        </div>
       </div>
 
       <!-- Attributes Radar Chart -->
@@ -231,10 +255,26 @@
           <span class="nav-icon">🏆</span>
           <span class="nav-label">Conquistas</span>
         </button>
+        <button class="nav-btn" id="nav-board" data-view="board" aria-current="false">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Projetos</span>
+        </button>
+        <button class="nav-btn" id="nav-pomodoro" data-view="pomodoro" aria-current="false">
+          <span class="nav-icon">⏳</span>
+          <span class="nav-label">Sonhos</span>
+        </button>
+        <button class="nav-btn" id="nav-talents" data-view="talents" aria-current="false">
+          <span class="nav-icon">✨</span>
+          <span class="nav-label">Talentos</span>
+        </button>
+        <button class="nav-btn" id="nav-analytics" data-view="analytics" aria-current="false">
+          <span class="nav-icon">🔭</span>
+          <span class="nav-label">Destino</span>
+        </button>
       </nav>
 
       <div class="sidebar__footer">
-        <span class="version-badge">Gold v1.3</span>
+        <span class="version-badge">Diamond v2.5</span>
         <button class="theme-toggle-btn" id="btn-theme-toggle" aria-label="Trocar tema">☀️ Light Mode</button>
       </div>
     </aside>
@@ -282,6 +322,8 @@
             <button class="filter-btn filter-btn--INT" data-filter="INT" id="filter-int">🧠 INT</button>
             <button class="filter-btn filter-btn--ART" data-filter="ART" id="filter-art">🎨 ART</button>
             <button class="filter-btn filter-btn--AVE" data-filter="AVE" id="filter-ave">🗡️ AVE</button>
+            <button class="filter-btn filter-btn--FOR" data-filter="FOR" id="filter-for">💪 FOR</button>
+            <button class="filter-btn filter-btn--CAR" data-filter="CAR" id="filter-car">🎭 CAR</button>
           </div>
           <div class="days-grid" id="days-grid"></div>
           <button class="btn-rp btn-rp--primary btn-add-task" id="btn-add-task">+ Nova Quest</button>
@@ -425,7 +467,209 @@
         </div>
       </section>
 
-    </main>
+      <!-- ---- VIEW: BOARD (v2.1 Diamond — Quadro de Missões) ---- -->
+      <section id="view-board" class="view" data-view="board"
+               aria-label="Quadro de Missões — Kanban" hidden>
+        <div class="view-inner">
+
+          <!-- Topbar: título ativo + botões de ação -->
+          <div class="board-topbar">
+            <span class="board-active-title" id="board-active-title">🗡️ Quadro de Missões</span>
+            <button class="btn-rp btn-rp--primary" id="btn-new-board"
+                    aria-label="Criar novo projeto">
+              ＋ Novo Projeto
+            </button>
+            <button class="btn-rp btn-rp--danger" id="btn-delete-board"
+                    aria-label="Deletar projeto ativo" title="Deletar projeto ativo">
+              🗑️
+            </button>
+          </div>
+
+          <!-- Seletor de Boards (tabs) -->
+          <div class="board-selector-wrap" role="tablist" aria-label="Projetos">
+            <div id="board-selector"></div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="board-empty-state" id="board-empty-state" style="display:none;">
+            <span class="board-empty-state__glyph">📋</span>
+            <span class="board-empty-state__text">Nenhum projeto criado.</span>
+            <button class="btn-rp btn-rp--primary" id="btn-new-board-empty"
+                    aria-label="Criar primeiro projeto">
+              ⚔️ Criar Primeiro Projeto
+            </button>
+          </div>
+
+          <!-- Board Area: colunas com scroll horizontal -->
+          <div id="board-area" style="display:none;">
+            <div id="board-columns-container"
+                 role="list"
+                 aria-label="Colunas do quadro de missões">
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ---- VIEW: POMODORO (v2.2 — O Reino dos Sonhos) ---- -->
+      <section id="view-pomodoro" class="view" data-view="pomodoro"
+               aria-label="O Reino dos Sonhos — Pomodoro Hardcore" hidden>
+        <div class="view-inner">
+
+          <!-- Phase label -->
+          <div class="pomo-phase-label" id="pomo-phase-label" aria-live="polite">⏳ REINO DOS SONHOS</div>
+
+          <!-- SVG Ring Timer -->
+          <div class="pomo-ring-wrap" id="pomo-ring-wrap">
+            <svg class="pomo-svg" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg"
+                 role="img" aria-label="Temporizador circular">
+              <!-- Track (background) -->
+              <circle class="pomo-track" cx="120" cy="120" r="100" />
+              <!-- Progress ring (stroke-dasharray/dashoffset set by JS) -->
+              <circle class="pomo-progress" id="pomo-progress-ring"
+                      cx="120" cy="120" r="100"
+                      transform="rotate(-90 120 120)" />
+            </svg>
+
+            <!-- Time overlay (centered over SVG) -->
+            <div class="pomo-time-overlay">
+              <div class="pomo-time-display" id="pomo-time-display"
+                   aria-live="polite" aria-label="Tempo restante">25:00</div>
+              <div class="pomo-cycle-count" id="pomo-cycle-count">— Iniciar para começar —</div>
+            </div>
+          </div>
+
+          <!-- Pause countdown bar (hidden when not paused) -->
+          <div class="pomo-pause-bar-wrap" id="pomo-pause-bar-wrap" style="display:none">
+            <div class="pomo-pause-bar-label">
+              <span>⏸ Pausa restante</span>
+              <span id="pomo-pause-seconds">90s</span>
+            </div>
+            <div class="pomo-pause-bar">
+              <div class="pomo-pause-bar-fill" id="pomo-pause-bar-fill" style="width:100%"></div>
+            </div>
+          </div>
+
+          <!-- Mission selector -->
+          <div class="pomo-mission-wrap">
+            <label class="pomo-mission-label" for="pomo-mission-select">🎯 Missão Vinculada</label>
+            <select class="pomo-mission-select" id="pomo-mission-select"
+                    aria-label="Selecionar missão para focar">
+              <option value="">— Nenhuma (foco livre) —</option>
+            </select>
+          </div>
+
+          <!-- Controls -->
+          <div class="pomo-controls" id="pomo-controls">
+            <button class="btn-rp btn-rp--primary" id="pomo-btn-start"
+                    aria-label="Iniciar ciclo de foco">▶ Iniciar Foco</button>
+            <button class="btn-rp btn-rp--ghost" id="pomo-btn-pause"
+                    style="display:none" aria-label="Pausar timer">⏸ Pausar</button>
+            <button class="btn-rp btn-rp--danger" id="pomo-btn-abandon"
+                    style="display:none" aria-label="Desistir do ciclo">✕ Desistir</button>
+            <button class="btn-rp btn-rp--ghost" id="pomo-btn-settings"
+                    aria-label="Configurações do timer">⚙️</button>
+          </div>
+
+          <!-- Lore -->
+          <div class="pomo-lore-quote" aria-hidden="true">
+            "O medo não é o inimigo. A distração é."
+          </div>
+
+        </div>
+
+        <!-- Failure overlay (absolute over this section) -->
+        <div class="pomo-failure-overlay" id="pomo-failure-overlay" role="alertdialog"
+             aria-modal="true" aria-label="Foco quebrado">
+          <div class="pomo-failure-glyph" aria-hidden="true">💀</div>
+          <div class="pomo-failure-title">FOCO QUEBRADO</div>
+          <div class="pomo-failure-subtitle" id="pomo-failure-subtitle">−10 HP perdido</div>
+          <div class="pomo-failure-detail" id="pomo-failure-detail">Progresso: 0% concluído.</div>
+          <div class="pomo-failure-lore" aria-hidden="true">
+            "A fraqueza da mente é o maior dos venenos."
+          </div>
+          <button class="btn-rp btn-rp--ghost" id="pomo-failure-ok"
+                  aria-label="Fechar alerta de falha">⚔️ Continuar</button>
+        </div>
+
+      </section>
+
+      <!-- ---- VIEW: TALENTS (v2.3 Diamond — Habilidades de Aspecto) ---- -->
+      <section id="view-talents" class="view" data-view="talents"
+               aria-label="Habilidades de Aspecto — Árvore de Talentos" hidden>
+        <div class="view-inner">
+
+          <!-- Header -->
+          <div class="talent-header">
+            <div class="talent-header__title">✨ Habilidades de Aspecto</div>
+            <div class="talent-sk-counter" title="Pontos de Habilidade disponíveis">
+              <span class="talent-sk-icon">💠</span>
+              <span class="talent-sk-value" id="talent-sk-value">10</span>
+              <span class="talent-sk-label">Pontos de Habilidade</span>
+            </div>
+            <p class="talent-header__sub">Clique em um nó disponível para desbloquear a habilidade.</p>
+          </div>
+
+          <!-- Grid wrapper: SVG overlay + CSS Grid de nós -->
+          <div class="talent-grid-wrap" id="talent-grid-wrap">
+            <svg class="talent-svg" id="talent-svg"
+                 xmlns="http://www.w3.org/2000/svg"
+                 aria-hidden="true"></svg>
+            <div class="talent-grid" id="talent-grid"
+                 role="list" aria-label="Árvore de talentos"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ---- VIEW: ANALYTICS (v2.4 Diamond — Tear do Destino) ---- -->
+      <section id="view-analytics" class="view" data-view="analytics"
+               aria-label="Tear do Destino — Analytics Gamificado" hidden>
+        <div class="view-inner">
+
+          <!-- Observatory Header -->
+          <div class="analytics-header">
+            <div class="analytics-header__title">🔮 Tear do Destino</div>
+            <div class="analytics-header__sub">Observe sua essência... os dados não mentem.</div>
+          </div>
+
+          <!-- Main content: Radar + KPI cards -->
+          <div class="analytics-main-grid">
+
+            <!-- Teia dos Atributos (Radar) -->
+            <div class="analytics-card analytics-card--radar">
+              <div class="analytics-card__label">🕸️ Teia dos Atributos</div>
+              <div class="radar-container" id="analytics-radar" aria-live="polite"></div>
+            </div>
+
+            <!-- KPI Stat Cards (2×2 grid) -->
+            <div class="analytics-kpis">
+              <div class="analytics-card analytics-card--stat" id="analytics-level-card">
+                <!-- Rendered by initAnalytics() -->
+              </div>
+              <div class="analytics-card analytics-card--stat" id="analytics-hp-card">
+                <!-- Rendered by initAnalytics() -->
+              </div>
+              <div class="analytics-card analytics-card--stat" id="analytics-missions-card">
+                <!-- Rendered by initAnalytics() -->
+              </div>
+              <div class="analytics-card analytics-card--stat" id="analytics-pomodoro-card">
+                <!-- Rendered by initAnalytics() -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Constelação de Ofensiva (Streak) -->
+          <div class="analytics-card analytics-card--constellation">
+            <div class="analytics-card__label">⭐ Constelação de Ofensiva</div>
+            <div class="constellation-container" id="analytics-constellation" aria-live="polite"></div>
+            <div class="constellation-footer" id="analytics-streak-text"
+                 aria-live="polite">...</div>
+          </div>
+
+        </div>
+      </section>
 
     <!-- ========================================================
          MOBILE BOTTOM NAV
@@ -451,6 +695,22 @@
         <span class="bottom-nav__icon">🏆</span>
         <span class="bottom-nav__label">Conquistas</span>
       </button>
+      <button class="bottom-nav__btn" data-view="board" id="m-nav-board">
+        <span class="bottom-nav__icon">📋</span>
+        <span class="bottom-nav__label">Projetos</span>
+      </button>
+      <button class="bottom-nav__btn" data-view="pomodoro" id="m-nav-pomodoro">
+        <span class="bottom-nav__icon">⏳</span>
+        <span class="bottom-nav__label">Sonhos</span>
+      </button>
+      <button class="bottom-nav__btn" data-view="talents" id="m-nav-talents">
+        <span class="bottom-nav__icon">✨</span>
+        <span class="bottom-nav__label">Talentos</span>
+      </button>
+      <button class="bottom-nav__btn" data-view="analytics" id="m-nav-analytics">
+        <span class="bottom-nav__icon">🔭</span>
+        <span class="bottom-nav__label">Destino</span>
+      </button>
     </nav>
 
   </div><!-- /#app-shell -->
@@ -458,6 +718,9 @@
   <!-- ============================================================
        GLOBAL OVERLAYS (outside app-shell, always in DOM)
        ============================================================ -->
+
+  <!-- Talent Tree Tooltip (global, fixed position) -->
+  <div class="talent-tooltip" id="talent-tooltip" role="tooltip" aria-hidden="true"></div>
 
   <!-- Modal Overlay -->
   <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" hidden>
@@ -518,7 +781,7 @@
   <!-- ============================================================
        SCRIPTS
        ============================================================ -->
-  <script type="module" src="src/ui/app.js"></script>
+  <script type="module" src="src/ui/app.js?v=2.6.2"></script>
 
 </body>
 </html>

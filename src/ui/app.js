@@ -24,7 +24,7 @@ import {
   playClick, playNightfall, playRankUp,
 } from '../engine/audio.js';
 
-import { loadState, saveState, getWeekId } from '../engine/core.js';
+import { loadState, saveState, getWeekId, checkBadgeUnlocks, equipBadge, unlockBadge } from '../engine/core.js';
 
 import { calcRank, RANKS, RANK_THRESHOLDS } from '../engine/drop_engine.js';
 
@@ -34,6 +34,18 @@ import { initBattle }       from '../modules/battle.js';
 import { initTaverna }      from '../modules/taverna.js';
 import { initCampaignMap }  from '../modules/campaign_map.js';
 import { initInventory }    from '../modules/inventory.js';
+import { initBoard }        from '../modules/board.js';      // v2.1 Diamond
+import { initPomodoro }     from '../modules/pomodoro.js';  // v2.2 Reino dos Sonhos
+import { initTalents }      from '../modules/talents.js';   // v2.3 Habilidades de Aspecto
+import { initAnalytics }    from '../modules/analytics.js'; // v2.4 Tear do Destino
+
+// ---- Badge System (v2.5) ----
+import {
+  BADGE_CATALOG, RARITY_META,
+  getBadgeById,
+  renderBadgeSVG, renderDefaultMedallionSVG,
+} from '../config/badges.js';
+import { saveBadgeState } from '../firebase/db.js';
 
 // ---- Audio Player (BGM + Spotify) ----
 import { initAudioPlayer } from './audio_player_ui.js';
@@ -51,12 +63,16 @@ export function getPlayerData()   { return _playerData; }
 //   VIEW CONFIG
 // ============================================================
 const VIEWS = {
-  quests:       { title: '📜 Quests Semanais',   init: initQuests    },
-  battle:       { title: '⚔️ Battle Ground',      init: initBattle    },
-  taverna:      { title: '🏰 Taverna — Finanças', init: initTaverna   },
-  bosses:       { title: '🐉 Modo Campanha',       init: initCampaignMap },
-  inventory:    { title: '💎 Memórias',           init: initInventory },
-  achievements: { title: '🏆 Conquistas',         init: renderAchievements },
+  quests:       { title: '📜 Quests Semanais',       init: initQuests      },
+  battle:       { title: '⚔️ Battle Ground',          init: initBattle      },
+  taverna:      { title: '🏰 Taverna — Finanças',     init: initTaverna     },
+  bosses:       { title: '🐉 Modo Campanha',           init: initCampaignMap },
+  inventory:    { title: '💎 Memórias',               init: initInventory   },
+  achievements: { title: '🏆 Conquistas',             init: renderAchievements },
+  board:        { title: '📋 Quadro de Missões',      init: initBoard       },  // v2.1 Diamond
+  pomodoro:     { title: '⏳ Reino dos Sonhos',       init: initPomodoro    },  // v2.2
+  talents:      { title: '✨ Habilidades de Aspecto', init: initTalents     },  // v2.3
+  analytics:    { title: '🔮 Tear do Destino',        init: initAnalytics   },  // v2.4
 };
 
 // ============================================================
@@ -108,7 +124,15 @@ async function syncFirestoreToLocalState(uid, playerFirestore) {
     local.settings = { ...local.settings, ...playerFirestore.settings };
   }
 
-  // 2. Sync Current Week
+  // 2. Sync Badge State (v2.5)
+  if (Array.isArray(playerFirestore.achievements)) {
+    local.player.achievements = playerFirestore.achievements;
+  }
+  if (playerFirestore.activeBadgeId !== undefined) {
+    local.player.activeBadgeId = playerFirestore.activeBadgeId ?? null;
+  }
+
+  // 3. Sync Current Week
   const weekId = getWeekId();
   const weekFirestore = await getWeek(uid, weekId);
   if (weekFirestore) {
@@ -220,7 +244,13 @@ function setupSyncHook() {
       if (currentWeekId && state.quests.weeks[currentWeekId]) {
         await saveWeek(_currentUser.uid, currentWeekId, state.quests.weeks[currentWeekId]);
       }
-      
+
+      // 3. Sync Badge State (v2.5)
+      await saveBadgeState(_currentUser.uid, {
+        achievements:  p.achievements  ?? [],
+        activeBadgeId: p.activeBadgeId ?? null,
+      });
+
       console.log('☁️ [Sync] Estado salvo no Firestore em background.');
     } catch (err) {
       console.error('🔴 [Sync Error] Falha ao sincronizar com Firestore:', err);
@@ -242,6 +272,10 @@ export async function renderHUDFromPlayer(player) {
   const rankInfo = calcRank(player.progression?.fragmentos_total ?? 0);
   renderRankBar(rankInfo);
   renderAttributeRadar({ player: _playerFirestore2HUDCompat(player) });
+
+  // v2.5 — Dynamic Sidebar Medallion
+  const state = loadState();
+  renderSidebarMedallion(state.player.activeBadgeId);
 }
 
 /** Adapts Firestore player shape to the HUD renderer's expected shape */
@@ -255,8 +289,10 @@ function _playerFirestore2HUDCompat(player) {
     xp_next:    _nextRankFragmentos(p.fragmentos_total ?? 0),
     hp:         p.hp     ?? 100,
     hp_max:     p.hp_max ?? 100,
-    attributes: p.attributes ?? {
+    attributes: {
       INT: { value: 1 }, ART: { value: 1 }, AVE: { value: 1 },
+      FOR: { value: 1 }, CAR: { value: 1 },
+      ...(p.attributes || {})
     },
     stats:      player.stats ?? {},
   };
@@ -572,13 +608,27 @@ function openProfileModal() {
   const prog = p.progression ?? {};
   const stats = p.stats ?? {};
   const rankInfo = calcRank(prog.fragmentos_total ?? 0);
+  
+  // Achievement stats
+  const totalBadges = BADGE_CATALOG.length;
+  const unlockedCount = (p.achievements ?? []).length;
+  const activeBadgeId = p.activeBadgeId ?? null;
+  const activeBadge = activeBadgeId ? getBadgeById(activeBadgeId) : null;
 
   openModal({
     title: '👤 Perfil do Caçador',
     confirmLabel: '💾 Salvar',
     bodyHTML: `
-      <div class="profile-avatar-big">🌑</div>
-      <div class="form-group">
+      <div class="profile-badge-header">
+        <div class="profile-badge-display">
+          ${activeBadge 
+            ? renderBadgeSVG(activeBadge, { size: 200, glow: true }) 
+            : renderDefaultMedallionSVG(200)}
+        </div>
+        ${activeBadge ? `<div class="profile-badge-name">${activeBadge.name}</div>` : ''}
+      </div>
+      
+      <div class="form-group" style="margin-top:20px">
         <label class="form-label">Nome do Caçador</label>
         <input class="form-input" id="profile-name" type="text" value="${p.display_name ?? ''}" maxlength="24" />
       </div>
@@ -591,7 +641,7 @@ function openProfileModal() {
         <div class="stat-box"><div class="stat-box__value">${stats.quests_completed ?? 0}</div><div class="stat-box__label">Quests</div></div>
         <div class="stat-box"><div class="stat-box__value">${stats.bosses_defeated ?? 0}</div><div class="stat-box__label">Bosses</div></div>
         <div class="stat-box"><div class="stat-box__value">${stats.workouts_completed ?? 0}</div><div class="stat-box__label">Treinos</div></div>
-        <div class="stat-box"><div class="stat-box__value">${stats.memories_collected ?? 0}</div><div class="stat-box__label">Memórias</div></div>
+        <div class="stat-box"><div class="stat-box__value">${unlockedCount}/${totalBadges}</div><div class="stat-box__label">Conquistas</div></div>
       </div>
     `,
     onConfirm: async () => {
@@ -607,16 +657,363 @@ function openProfileModal() {
 }
 
 // ============================================================
-//   ACHIEVEMENTS (placeholder — will use Firestore later)
+//   ACHIEVEMENTS — v2.5 Marcos do Despertar
 // ============================================================
+
+/**
+ * Renders the sidebar medallion: shows active badge SVG or the default D20 SVG.
+ * @param {string|null} activeBadgeId
+ */
+export function renderSidebarMedallion(activeBadgeId) {
+  const wrap = document.getElementById('sidebar-medallion');
+  if (!wrap) return;
+
+  if (activeBadgeId) {
+    const badge = getBadgeById(activeBadgeId);
+    if (badge) {
+      wrap.innerHTML = renderBadgeSVG(badge, { size: 60, glow: true, locked: false });
+      wrap.classList.add('badge-medallion-wrap--active');
+      wrap.title = `${badge.icon} ${badge.name} (equipado)`;
+      return;
+    }
+  }
+  // Default: D20 medallion
+  wrap.innerHTML = renderDefaultMedallionSVG(60);
+  wrap.classList.remove('badge-medallion-wrap--active');
+  wrap.title = 'Medalhão — sem badge equipada';
+}
+
+/**
+ * Full Arsenal de Conquistas renderer.
+ * Replaces the old placeholder in the achievements view.
+ */
 function renderAchievements() {
   const grid = document.getElementById('achievements-grid');
   if (!grid) return;
-  grid.innerHTML = `<div class="empty-state" style="text-align:center;padding:var(--space-8)">
-    🌑 Sistema de Conquistas em atualização para o Firebase...<br/>
-    <span style="font-family:var(--font-display);color:var(--text-muted)">Em breve.</span>
-  </div>`;
+
+  const state = loadState();
+  const unlockedIds   = state.player.achievements  ?? [];
+  const activeBadgeId = state.player.activeBadgeId ?? null;
+  
+  // Robust count: only count IDs that actually exist in our current catalog
+  const unlockedIDsValid = unlockedIds.filter(id => getBadgeById(id));
+  const unlockedSet      = new Set(unlockedIDsValid);
+  const total            = BADGE_CATALOG.length;
+  const unlockedCount    = unlockedIDsValid.length;
+
+  // --- First call: check for new unlocks based on current state ---
+  const newlyUnlocked = checkBadgeUnlocks(state);
+  if (newlyUnlocked.length > 0) {
+    saveState(state);
+    // Persist to Firestore asynchronously
+    if (_currentUser) {
+      saveBadgeState(_currentUser.uid, {
+        achievements:  state.player.achievements,
+        activeBadgeId: state.player.activeBadgeId,
+      }).catch(console.error);
+    }
+    // Show toast for each newly unlocked badge
+    newlyUnlocked.forEach(id => {
+      const b = getBadgeById(id);
+      if (b) showBadgeUnlockedToast(b);
+    });
+  }
+
+  // --- Build UI ---
+  grid.innerHTML = '';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'arsenal-wrap';
+  header.innerHTML = `
+    <div class="arsenal-header">
+      <div class="arsenal-header__title">⚔️ Arsenal de Conquistas</div>
+      <div class="arsenal-header__sub">Marcas do Despertar — Badges equipáveis</div>
+      <div class="arsenal-stats-bar">
+        <div class="arsenal-stat">
+          <div class="arsenal-stat__value">${unlockedCount}</div>
+          <div class="arsenal-stat__label">Desbloqueadas</div>
+        </div>
+        <div class="arsenal-stat">
+          <div class="arsenal-stat__value">${total - unlockedCount}</div>
+          <div class="arsenal-stat__label">Bloqueadas</div>
+        </div>
+        <div class="arsenal-stat">
+          <div class="arsenal-stat__value">${total}</div>
+          <div class="arsenal-stat__label">Total</div>
+        </div>
+        ${activeBadgeId ? `
+        <div class="arsenal-stat arsenal-stat--equipped" style="margin-left:auto">
+          <div class="arsenal-stat__label">Equipada</div>
+          <div class="arsenal-equipped-header">
+            ${renderBadgeSVG(getBadgeById(activeBadgeId), { size: 52, glow: true })}
+            <div class="arsenal-equipped-name">${getBadgeById(activeBadgeId)?.name ?? ''}</div>
+          </div>
+        </div>
+        ` : ''}
+      </div>
+    </div>
+
+    <div class="arsenal-filters" id="arsenal-filters" role="tablist">
+      <button class="arsenal-filter-btn arsenal-filter-btn--active" data-filter="all"
+              role="tab" aria-selected="true">Todas</button>
+      <button class="arsenal-filter-btn" data-filter="combat"
+              role="tab" aria-selected="false">⚔️ Combate</button>
+      <button class="arsenal-filter-btn" data-filter="discipline"
+              role="tab" aria-selected="false">🔥 Disciplina</button>
+      <button class="arsenal-filter-btn" data-filter="knowledge"
+              role="tab" aria-selected="false">📚 Conhecimento</button>
+      <button class="arsenal-filter-btn" data-filter="art"
+              role="tab" aria-selected="false">🎨 Arte</button>
+      <button class="arsenal-filter-btn" data-filter="mystery"
+              role="tab" aria-selected="false">🌑 Mistério</button>
+    </div>
+
+    <div class="arsenal-grid" id="arsenal-grid" role="list"></div>
+  `;
+  grid.appendChild(header);
+
+  const arsenalGrid = grid.querySelector('#arsenal-grid');
+  _renderArsenalGrid(arsenalGrid, BADGE_CATALOG, unlockedSet, activeBadgeId);
+
+  // Category filter wiring
+  const filtersEl = grid.querySelector('#arsenal-filters');
+  filtersEl?.querySelectorAll('.arsenal-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      filtersEl.querySelectorAll('.arsenal-filter-btn').forEach(b => {
+        b.classList.remove('arsenal-filter-btn--active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('arsenal-filter-btn--active');
+      btn.setAttribute('aria-selected', 'true');
+
+      const filter = btn.dataset.filter;
+      const filtered = filter === 'all'
+        ? BADGE_CATALOG
+        : BADGE_CATALOG.filter(b => b.category === filter);
+      _renderArsenalGrid(arsenalGrid, filtered, unlockedSet, activeBadgeId);
+    });
+  });
+
+  // Medallion click → achievements view
+  const medallion = document.getElementById('sidebar-medallion');
+  if (medallion && !medallion.dataset.wiredBadge) {
+    medallion.dataset.wiredBadge = '1';
+    medallion.style.cursor = 'pointer';
+    medallion.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigateTo('achievements');
+    });
+  }
 }
+
+/** Renders all badge cards into the grid element */
+function _renderArsenalGrid(gridEl, badges, unlockedSet, activeBadgeId) {
+  gridEl.innerHTML = '';
+  if (badges.length === 0) {
+    gridEl.innerHTML = '<div class="empty-state" style="grid-column:1/-1;text-align:center;padding:var(--space-6)">Nenhuma badge nesta categoria.</div>';
+    return;
+  }
+
+  // Sort: unlocked first, then alphabetical
+  const sorted = [...badges].sort((a, b) => {
+    const au = unlockedSet.has(a.id) ? 0 : 1;
+    const bu = unlockedSet.has(b.id) ? 0 : 1;
+    if (au !== bu) return au - bu;
+    return a.name.localeCompare(b.name);
+  });
+
+  sorted.forEach(badge => {
+    const isUnlocked = unlockedSet.has(badge.id);
+    const isEquipped = badge.id === activeBadgeId;
+    const rarityMeta = RARITY_META[badge.rarity] ?? RARITY_META.common;
+
+    const card = document.createElement('div');
+    card.className = [
+      'badge-card',
+      `badge-card--${badge.rarity}`,
+      isUnlocked ? 'badge-card--unlocked' : 'badge-card--locked',
+      isEquipped  ? 'badge-card--equipped'  : '',
+    ].filter(Boolean).join(' ');
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('aria-label', `${badge.name} — ${isUnlocked ? 'Desbloqueada' : 'Bloqueada'}`);
+    card.dataset.badgeId = badge.id;
+
+    card.innerHTML = `
+      <div class="badge-card__svg-wrap">
+        ${renderBadgeSVG(badge, { size: 160, glow: isUnlocked, locked: !isUnlocked })}
+        ${!isUnlocked ? '<span class="badge-lock-icon" aria-hidden="true">🔒</span>' : ''}
+      </div>
+      <div class="badge-card__name">${badge.name}</div>
+      <div class="badge-card__rarity" style="color:${rarityMeta.color}">
+        ${rarityMeta.label}
+      </div>
+      <div class="badge-card__hover-tooltip">
+        <div class="badge-hover-req">Critério de Desbloqueio</div>
+        <div class="badge-hover-desc">${badge.requirement ?? '???'}</div>
+        ${isUnlocked 
+          ? '<div class="badge-hover-status unlocked">✅ Adquirida</div>'
+          : '<div class="badge-hover-status">🔒 Bloqueada</div>'}
+      </div>
+    `;
+
+    if (isUnlocked) {
+      card.addEventListener('click', () => showBadgeTooltip(badge, isEquipped));
+    }
+
+    gridEl.appendChild(card);
+  });
+}
+
+/**
+ * Shows the RPG-style badge detail tooltip.
+ * @param {Object} badge - Badge from catalog
+ * @param {boolean} isEquipped - Whether this badge is currently equipped
+ */
+function showBadgeTooltip(badge, isEquipped) {
+  // Remove any existing tooltip
+  document.getElementById('badge-tooltip-overlay')?.remove();
+
+  const rarityMeta = RARITY_META[badge.rarity] ?? RARITY_META.common;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'badge-tooltip-overlay';
+  overlay.id = 'badge-tooltip-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', `Detalhes: ${badge.name}`);
+
+  overlay.innerHTML = `
+    <div class="badge-tooltip pixel-panel" role="document">
+      <button class="badge-tooltip__close" id="badge-tooltip-close"
+              aria-label="Fechar detalhes da badge">✕</button>
+
+      <div class="badge-tooltip__badge-display">
+        ${renderBadgeSVG(badge, { size: 90, glow: true, locked: false })}
+      </div>
+
+      <div class="badge-tooltip__name">${badge.icon} ${badge.name}</div>
+
+      <div class="badge-tooltip__rarity-tag" style="color:${rarityMeta.color};border-color:${rarityMeta.color}">
+        ${rarityMeta.label}
+      </div>
+
+      <div class="badge-tooltip__divider"></div>
+
+      <div class="badge-tooltip__category">
+        ${{ combat:'⚔️ Combate', discipline:'🔥 Disciplina', knowledge:'📚 Conhecimento', art:'🎨 Arte', mystery:'🌑 Mistério' }[badge.category] ?? badge.category}
+      </div>
+
+      <div class="badge-tooltip__lore">"${badge.lore}"</div>
+
+      <div class="badge-tooltip__divider"></div>
+
+      <div class="badge-tooltip__actions">
+        ${isEquipped
+          ? `<button class="btn-rp btn-rp--ghost badge-unequip-btn" id="badge-action-btn">
+               🗡️ Desequipar
+             </button>`
+          : `<button class="btn-rp btn-rp--gold" id="badge-action-btn">
+               ⚔️ Equipar Badge
+             </button>`
+        }
+        <button class="btn-rp btn-rp--ghost" id="badge-tooltip-cancel">Fechar</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Close handlers
+  const closeTooltip = () => overlay.remove();
+  overlay.getElementById = (id) => overlay.querySelector(`#${id}`);
+  overlay.querySelector('#badge-tooltip-close')?.addEventListener('click', closeTooltip);
+  overlay.querySelector('#badge-tooltip-cancel')?.addEventListener('click', closeTooltip);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeTooltip(); });
+
+  // Equip / Unequip action
+  overlay.querySelector('#badge-action-btn')?.addEventListener('click', async () => {
+    closeTooltip();
+    await handleEquipBadge(isEquipped ? null : badge.id);
+  });
+}
+
+/**
+ * Handles equipping or unequipping a badge.
+ * Updates local state, Firestore, sidebar medallion, and achievement grid.
+ * @param {string|null} badgeId - ID to equip, or null to unequip
+ */
+async function handleEquipBadge(badgeId) {
+  const state = loadState();
+  equipBadge(state, badgeId);
+  saveState(state);
+
+  // Persist badge state to Firestore
+  if (_currentUser) {
+    try {
+      await saveBadgeState(_currentUser.uid, {
+        achievements:  state.player.achievements,
+        activeBadgeId: state.player.activeBadgeId,
+      });
+    } catch (err) {
+      console.error('[App] Falha ao salvar badge state:', err);
+    }
+  }
+
+  // Update sidebar medallion immediately
+  renderSidebarMedallion(state.player.activeBadgeId);
+
+  // Re-render achievements grid to reflect new equipped state
+  renderAchievements();
+
+  // Toast
+  if (badgeId) {
+    const badge = getBadgeById(badgeId);
+    if (badge) {
+      showToast(`${badge.icon} ${badge.name} equipada no medalhão!`, 'info', 3500);
+    }
+  } else {
+    showToast('Medalhão padrão restaurado.', 'info', 2500);
+  }
+}
+
+/**
+ * Shows the badge-unlocked celebration toast.
+ * Creates the toast inline with innerHTML (bypasses showToast textContent limitation).
+ * @param {Object} badge
+ */
+function showBadgeUnlockedToast(badge) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const rarityMeta = RARITY_META[badge.rarity] ?? RARITY_META.common;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast toast--achievement';
+  toast.innerHTML = `
+    <div class="badge-unlock-toast">
+      <div class="badge-unlock-toast__icon">${badge.icon}</div>
+      <div class="badge-unlock-toast__text">
+        <div class="badge-unlock-toast__headline" style="color:${rarityMeta.color}">
+          🏅 Badge Desbloqueada!
+        </div>
+        <div class="badge-unlock-toast__name">${badge.name}</div>
+        <div class="badge-unlock-toast__lore">"${badge.lore}"</div>
+      </div>
+    </div>
+  `;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('removing');
+    toast.addEventListener('animationend', () => toast.remove(), { once: true });
+    setTimeout(() => toast.remove(), 600);
+  }, 5500);
+
+  incrementAchievementBadge();
+}
+
+
 
 // ============================================================
 //   MODAL & LEVEL UP SETUP
@@ -647,9 +1044,30 @@ async function checkDailyHP(uid, player) {
   const lastDay = player.stats?.last_active_date;
 
   if (lastDay && lastDay !== today) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+    let updates = { 'stats.last_active_date': today };
+
+    // Se o último dia não foi ontem, a streak quebrou
+    if (lastDay !== yesterdayStr) {
+       updates['stats.streak_days'] = 0;
+       updates['stats.streak_broken_date'] = today;
+       updates['stats.tasks_today_after_break'] = 0;
+       if (_playerData?.stats) {
+         _playerData.stats.streak_days = 0;
+         _playerData.stats.streak_broken_date = today;
+         _playerData.stats.tasks_today_after_break = 0;
+       }
+    }
+
     const decay = player.settings?.hp_decay_per_missed_day ?? 5;
     const newHp = Math.max(0, (player.progression?.hp ?? 100) - decay);
-    await savePlayer(uid, { 'progression.hp': newHp, 'stats.last_active_date': today });
+    
+    updates['progression.hp'] = newHp;
+    await savePlayer(uid, updates);
+
     if (_playerData?.progression) _playerData.progression.hp = newHp;
     setTimeout(() => showToast(`💔 -${decay} HP por inatividade ontem.`, 'damage', 4000), 1200);
   } else {

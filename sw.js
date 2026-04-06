@@ -3,7 +3,7 @@
  * Enables offline support and caching for PWA.
  */
 
-const CACHE_NAME = 'rpg-life-os-v28';
+const CACHE_NAME = 'rpg-life-os-v33';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -12,10 +12,12 @@ const ASSETS_TO_CACHE = [
     './src/ui/style.css',
     './src/ui/style-phase2.css',
     './src/ui/style-phase3.css',
+    './src/ui/style-badges.css',
     './src/ui/app.js',
     './src/engine/core.js',
     './src/engine/gamification.js',
     './src/engine/audio.js',
+    './src/config/badges.js',
     './src/modules/quests.js',
     './src/modules/battle.js',
     './src/modules/taverna.js',
@@ -54,27 +56,28 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Fetch: Cache-first strategy
+// Fetch: Network-first strategy (sempre busca do servidor primeiro se houver internet)
 self.addEventListener('fetch', (event) => {
     // Skip non-GET requests
     if (event.request.method !== 'GET') return;
 
     event.respondWith(
-        caches.match(event.request).then((cached) => {
-            if (cached) return cached;
-            return fetch(event.request).then((response) => {
-                // Cache successful responses
-                if (response && response.status === 200 && response.type === 'basic') {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-                }
-                return response;
-            });
-        }).catch(() => {
-            // Fallback to index.html for navigation requests
-            if (event.request.mode === 'navigate') {
-                return caches.match('./index.html');
+        fetch(event.request).then((response) => {
+            // Cache successful responses
+            if (response && response.status === 200 && response.type === 'basic') {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
             }
+            return response;
+        }).catch(() => {
+            // Se falhar (offline), tenta buscar do cache
+            return caches.match(event.request).then((cached) => {
+                if (cached) return cached;
+                // Fallback final
+                if (event.request.mode === 'navigate') {
+                    return caches.match('./index.html');
+                }
+            });
         })
     );
 });

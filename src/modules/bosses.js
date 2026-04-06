@@ -8,7 +8,7 @@ import {
   awardXP, awardAttributeXP,
   attackBoss, bossHpPercent,
   checkAchievements, genId,
-  getWeekId
+  getWeekId, ATTR_KEYS, ATTR_META
 } from '../engine/core.js';
 
 import {
@@ -322,6 +322,12 @@ function openNewBossModal() {
         <input class="form-input" id="boss-hp" type="number" value="1000" min="100" step="50" />
       </div>
       <div class="form-group">
+        <label class="form-label">Atributo de Bônus</label>
+        <select class="form-select" id="boss-attr-bonus">
+          ${ATTR_KEYS.map(k => `<option value="${k}">${ATTR_META[k].icon} ${k}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
         <label class="form-label">Sprite</label>
         <select class="form-select" id="boss-sprite">${spriteOptions}</select>
       </div>
@@ -343,7 +349,7 @@ function openNewBossModal() {
       let state = loadState();
       state.bosses.push({
         id: genId('boss'), name, description: desc, sprite,
-        hp_max: hp, hp_current: hp, attribute_bonus: 'ART',
+        hp_max: hp, hp_current: hp, attribute_bonus: document.getElementById('boss-attr-bonus')?.value ?? 'INT',
         xp_reward_on_defeat: xpReward, status: 'active',
         created_at: new Date().toISOString(), defeated_at: null, subtasks: [],
       });
@@ -386,9 +392,7 @@ function openAddSubtaskModal(bossId) {
       <div class="form-group">
         <label class="form-label">Atributo</label>
         <select class="form-select" id="sub-attr">
-          <option value="INT">🧠 INT</option>
-          <option value="ART" selected>🎨 ART</option>
-          <option value="AVE">🗡️ AVE</option>
+          ${ATTR_KEYS.map(k => `<option value="${k}">${ATTR_META[k].icon} ${k}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">

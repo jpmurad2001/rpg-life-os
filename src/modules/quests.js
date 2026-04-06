@@ -6,7 +6,7 @@
 import {
     loadState, saveState,
     ensureCurrentWeek, completeTask,
-    DAYS_OF_WEEK, DAYS_LABEL, ATTR_META,
+    DAYS_OF_WEEK, DAYS_LABEL, ATTR_KEYS, ATTR_META,
     getWeekId, getMondayOfWeek,
     todayDayKey, genId
 } from '../engine/core.js';
@@ -360,7 +360,7 @@ function buildTaskModalBody(task = {}) {
     const daysOptions = DAYS_OF_WEEK.map(d =>
         `<option value="${d}"${d === task.day ? ' selected' : ''}>${DAYS_LABEL[d]}</option>`
     ).join('');
-    const attrOptions = ['INT', 'ART', 'AVE'].map(a =>
+    const attrOptions = ATTR_KEYS.map(a =>
         `<option value="${a}"${a === task.attribute ? ' selected' : ''}>${ATTR_META[a].icon} ${a}</option>`
     ).join('');
 

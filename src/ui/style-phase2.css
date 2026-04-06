@@ -258,6 +258,12 @@ body::after {
     background: var(--color-ave);
     color: #000;
 }
+.filter-btn--FOR.filter-btn--active {
+    background: var(--color-for);
+}
+.filter-btn--CAR.filter-btn--active {
+    background: var(--color-car);
+}
 
 /* ============================================================
    WEEKLY PROGRESS BAR
