@@ -18,7 +18,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Firebase-Firestore-orange?style=for-the-badge&logo=firebase" alt="Firebase"/>
   &nbsp;
-  <img src="https://img.shields.io/badge/version-Gold_v1.0-gold?style=for-the-badge" alt="Version"/>
+  <img src="https://img.shields.io/badge/version-Diamond_v2.7-b9f2ff?style=for-the-badge" alt="Version"/>
 </p>
 
 ---
@@ -178,19 +178,46 @@ firebase deploy --only hosting
 ---
 
 ## 🛤️ Roadmap
+---
 
-### 💎 Pacote Diamond (v2.x) - Mecânicas de Punição e Foco
-A era Diamond é focada em trazer peso para as suas decisões e recompensar a disciplina absoluta.
+### 💎 Pacote Diamond (v2.0 - v2.7) - Mecânicas de Punição e Foco [CONCLUÍDO]
+A era Diamond focou em trazer peso para as suas decisões e recompensar a disciplina absoluta.
 
-- **v2.1 - O Defeito (Sistema de Flaw/Falha)**: Punições severas no jogo para tarefas atrasadas ou hábitos ignorados. Cada falha na vida real cobra um preço na sua jornada.
-- **v2.2 - O Reino dos Sonhos (Pomodoro Hardcore)**: Um timer implacável para manter o seu "flow". Quebrar o foco durante uma missão de trabalho ou estudo trará penalidades imediatas.
-- **v2.3 - Habilidades de Aspecto (Árvore de Talentos)**: Uso da sua experiência acumulada para desbloquear passivas e habilidades que otimizam sua rotina e seus combates.
-- **v2.4 - Tear do Destino (Analytics Gamificado)**: Relatórios chatos viram arte. Seus dados de produtividade e finanças transformados em teias ou constelações, mostrando sua performance de forma visual e épica.
-- **v2.5 - Marcos do Despertar (Sistema de Conquistas)**: Badges e troféus para eternizar seus grandes feitos, streaks e chefões derrotados.
+- [x] **v2.1 - O Defeito (Sistema de Flaw/Falha)**: Punições severas no jogo para tarefas atrasadas.
+- [x] **v2.2 - O Reino dos Sonhos (Pomodoro Hardcore)**: Timer implacável para manter o flow.
+- [x] **v2.3 - Habilidades de Aspecto (Árvore de Talentos)**: Desbloqueio de passivas.
+- [x] **v2.4 - Tear do Destino (Analytics Gamificado)**: Gráficos e constelações de produtividade.
+- [x] **v2.5 - Marcos do Despertar (Sistema de Conquistas)**: +20 Badges únicas em Pixel Art de alta resolução.
+- [x] **v2.6 - Títulos Dinâmicos (Title Manager)**: Sistema centralizado que concede títulos como *Lâmina Sábia* ou *Senhor das Sombras* com base em atributos e feitos.
+- [x] **v2.7 - Expansão da Campanha**: Suporte total a 5 atributos nos encontros (INT, ART, AVE, FOR, CAR).
 
-### 🏆 Pacote Platina (v3.x) - Endgame e Sinergia
-O pacote Platina traz o ecossistema definitivo, adicionando camadas de profundidade, criação e ameaças constantes.
+---
 
-- **v3.1 - A Forja de Memórias (Sistema de Crafting)**: Coleta de loot e recursos gerados pelas suas tarefas diárias para forjar itens, poções ou equipamentos virtuais.
-- **v3.2 - Sombras Corrompidas (Inimigos Dinâmicos)**: Além dos chefões fixos de cada bioma, ameaças aleatórias surgirão no seu mapa e exigirão ações específicas na vida real para serem expurgadas.
-- **v3.3 - Ressonância de Atributos (Sinergia Diária)**: Buffs combinados. Por exemplo: concluir um treino pesado (Força) e ler 20 páginas de um livro (Inteligência) no mesmo dia ativa uma "ressonância" que dobra seus ganhos no dia seguinte.
+### 🏆 Pacote Platina (v3.0 - v3.3) - Ecossistema, Criação e Transformação
+
+> [!IMPORTANT]
+> A fase Platina expande o Life OS de um rastreador de tarefas para um ecossistema vivo de progresso e customização.
+
+#### v3.0 - O Despertar da Identidade (Cosméticos e Avatares)
+- **Perfil do Usuário**: Seleção de avatares e customização visual.
+- **Temas Globais**: Interface adaptável (ex: *Blood Mode*, *Void Mode*, *Abyssal Dark*).
+- **Adornos de Perfil**: Molduras e títulos visuais baseados nas conquistas da era Diamond.
+
+#### v3.1 - A Forja de Memórias & O Mercado (Economia e Crafting)
+- **Economia de Sombras**: Quests, Pomodoros e Bosses agora dropam **Ouro** e **Fragmentos**.
+- **O Mercado**: Loja para comprar cosméticos, temas ou recompensas da vida real customizadas.
+- **A Forja**: Use fragmentos para craftar *Memórias* (Buffs: pular diárias sem perda de streak, multiplicar XP, etc).
+
+#### v3.2 - Sistema de Ecos (Companheiros Sombrios)
+- **Legião de Sombras**: Desbloqueie e equipe **Ecos** que aparecem no painel principal.
+- **Ressonância Passiva**: Ecos concedem buffs (Ex: Eco Bestial: +5% ganho FOR; Eco Espectro: margem de erro no Pomodoro).
+
+#### v3.3 - Templos da Dualidade (Deuses e Daemons)
+- **Endgame Hardcore**: Progressão lenta e punitiva focada em mudanças definitivas.
+- **Templos dos Daemons**: Focados em destruir maus hábitos e vícios. Falhar aqui zera o progresso do Templo.
+- **Templos dos Deuses**: Focados em forjar virtudes (disciplina, esforço profundo). Exige constância extrema.
+- **Recompensa Final**: Status de perfil único e os itens mais raros do jogo.
+
+---
+
+🔗 Live: **https://shadow-slave-life-os.web.app**
