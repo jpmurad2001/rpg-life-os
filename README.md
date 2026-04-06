@@ -35,15 +35,18 @@ Inspirado no sistema de progressão do universo *Shadow Slave* — com Ranks de 
 
 | Módulo | Descrição |
 |--------|-----------|
-| ⚔️ **Quests** | Crie tarefas diárias e subtarefas com atributos (INT / ART / AVE). Ganhe XP e HP ao concluir. |
+| ⚔️ **Quests** | Crie tarefas diárias e subtarefas com atributos (INT / ART / AVE / FOR / CAR). Ganhe XP e HP ao concluir. |
 | 🏋️ **Treino** | Registre sessões de exercício com templates. Ganhe HP e XP por série completada. |
-| 🏰 **Taverna (Finanças)** | Controle receitas, despesas e orçamento mensal com categorias e recorrência configurável. |
-| 🗺️ **Modo Campanha (Boss Maps)** | Crie campanhas com mapa visual interativo, posicione o Boss, adicione Encontros e navegue pelos nós SVG. |
-| 💎 **Memórias (Loot)** | Sistema de loot com itens únicos (Armas, Armaduras, Amuletos, Encantamentos) concedidos ao vencer Bosses e Quests. |
-| 📊 **Atributos & Radar** | Evolua INT, ART e AVE baseado no tipo de atividade. Visualize no gráfico radar dinâmico. |
-| 🎵 **BGM Engine** | Reprodutor de áudio nativo com playlist local, controles de play/pause/skip e volume. |
-| 🏆 **Conquistas** | Sistema de achievements desbloqueados por milestones do jogo. |
-| 🌗 **Temas Claro/Escuro** | UI completamente refinada para ambos os temas com design system de variáveis CSS. |
+| 🏰 **Taverna** | Controle receitas, despesas e orçamento mensal inspirado no gerenciamento de recursos de Shadow Slave. |
+| 🗺️ **Modo Campanha** | Mapa visual interativo com nós SVG dinâmicos. Encontre e derrote Bosses em jornadas épicas. |
+| 💎 **Memórias (Loot)** | Inventário de itens (Armas, Ecos, Armaduras) com raridades (Adormecido -> Divino). |
+| 📈 **Tear do Destino** | **Analytics Gamificado**: Visualize sua produtividade em constelações e gráficos radar de atributos. |
+| 🧘 **Reino dos Sonhos** | **Pomodoro Hardcore**: Timer imersivo focado em manter o flow e evitar a corrupção mental. |
+| 🌳 **Árvore de Talentos** | Desbloqueie **Habilidades de Aspecto** permanentes usando sua Memória Essencial. |
+| 📜 **Títulos Dinâmicos** | Receba títulos heróicos (Lâmina Sábia, Ceifador) baseados nos seus atributos e feitos. |
+| 📋 **Board de Planos** | Sistema Kanban para organizar projetos de longo prazo e metas estratégicas. |
+| 🎵 **BGM Engine** | Playlist nativa de músicas imersivas para foco e combate, com controles completos de player. |
+| 🏆 **Conquistas** | Ganhe **Badges em Pixel Art** de alta resolução ao atingir marcos históricos no jogo. |
 
 ---
 
@@ -183,7 +186,6 @@ firebase deploy --only hosting
 ### 💎 Pacote Diamond (v2.0 - v2.7) - Mecânicas de Punição e Foco [CONCLUÍDO]
 A era Diamond focou em trazer peso para as suas decisões e recompensar a disciplina absoluta.
 
-- [x] **v2.1 - O Defeito (Sistema de Flaw/Falha)**: Punições severas no jogo para tarefas atrasadas.
 - [x] **v2.2 - O Reino dos Sonhos (Pomodoro Hardcore)**: Timer implacável para manter o flow.
 - [x] **v2.3 - Habilidades de Aspecto (Árvore de Talentos)**: Desbloqueio de passivas.
 - [x] **v2.4 - Tear do Destino (Analytics Gamificado)**: Gráficos e constelações de produtividade.
