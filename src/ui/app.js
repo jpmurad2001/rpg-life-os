@@ -1241,7 +1241,7 @@ if ('serviceWorker' in navigator) {
       setupAuthGate();
       
       // Initialize audio UI
-      initAudioPlayerUI();
+      initAudioPlayer();
       
       console.log('— Shadow Slave Life OS v3.1.3 Awakened —');
     } catch (err) {
