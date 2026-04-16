@@ -326,20 +326,39 @@ export async function renderHUDFromPlayer(player) {
   if (!player) return;
   _playerData = player;
 
-  // Core HUD
+  // 1. Core HUD (Gamification context)
   renderHUD({ player: _playerFirestore2HUDCompat(player) });
 
-  // Rank bar
+  // 2. Rank bar
   const rankInfo = calcRank(player.progression?.fragmentos_total ?? 0);
   renderRankBar(rankInfo);
   renderAttributeRadar({ player: _playerFirestore2HUDCompat(player) });
 
-  // v2.5 — Dynamic Sidebar Medallion
+  // 3. Dynamic Sidebar Medallion (v2.5)
   const state = loadState();
   renderSidebarMedallion(state.player.activeBadgeId);
 
-  // v3.0 — Profile Widget hydration
+  // 4. Profile Widget hydration (v3.0)
   initProfileWidget(player, state);
+
+  // 5. HP/XP Bars (Direct DOM manipulation fallback)
+  const hpFill = document.getElementById('hp-fill');
+  const hpText = document.getElementById('hp-text');
+  const xpFill = document.getElementById('xp-fill');
+  
+  const prog = player.progression ?? {};
+  const hp = prog.hp ?? 100;
+  const maxHP = prog.hp_max ?? 100;
+  const hpPct = (hp / maxHP) * 100;
+
+  if (hpFill) hpFill.style.width = `${Math.min(100, Math.max(0, hpPct))}%`;
+  if (hpText) hpText.textContent = `${Math.floor(hp)} / ${Math.floor(maxHP)}`;
+
+  if (xpFill) {
+    const xpMax  = rankInfo.fragmentos_next;
+    const xpPct  = (prog.fragmentos_to_rank ?? 0) / (xpMax || 1) * 100;
+    xpFill.style.width = `${Math.min(100, Math.max(0, xpPct))}%`;
+  }
 }
 
 /** Adapts Firestore player shape to the HUD renderer's expected shape */
@@ -703,33 +722,7 @@ function setupProfileButton() {
   });
 }
 
-function renderHUDFromPlayer(player) {
-  if (!player) return;
-  const hpFill = document.getElementById('hp-fill');
-  const hpText = document.getElementById('hp-text');
-  
-  // XP was removed from index.html, so we handle it gracefully
-  const xpFill = document.getElementById('xp-fill');
-  
-  const prog = player.progression ?? {};
-  const stats = player.stats ?? {};
-
-  // For HP
-  const hp = prog.hp ?? 100;
-  const maxHP = prog.hp_max ?? 100;
-  const hpPct = (hp / maxHP) * 100;
-
-  if (hpFill) hpFill.style.width = `${Math.min(100, Math.max(0, hpPct))}%`;
-  if (hpText) hpText.textContent = `${Math.floor(hp)} / ${Math.floor(maxHP)}`;
-
-  // If someone re-adds XP to index.html, this will work again
-  if (xpFill) {
-    const rankInfo = calcRank(prog.fragmentos_total ?? 0);
-    const xpMax  = rankInfo.fragmentos_next; // Assuming calcRank returns this
-    const xpPct  = (prog.fragmentos_to_rank ?? 0) / (xpMax || 1) * 100;
-    xpFill.style.width = `${Math.min(100, Math.max(0, xpPct))}%`;
-  }
-}
+// renderHUDFromPlayer was merged into the export above to avoid duplicate declaration errors.
 
 function openProfileModal() {
   const p    = _playerData;
