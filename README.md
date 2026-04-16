@@ -18,7 +18,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Firebase-Firestore-orange?style=for-the-badge&logo=firebase" alt="Firebase"/>
   &nbsp;
-  <img src="https://img.shields.io/badge/version-Platina_v3.2.1-b9f2ff?style=for-the-badge" alt="Version"/>
+  <img src="https://img.shields.io/badge/version-Platina_v3.1.2-b9f2ff?style=for-the-badge" alt="Version"/>
 </p>
 
 ---
@@ -195,27 +195,22 @@ A era Diamond focou em trazer peso para as suas decisões e recompensar a discip
 
 ---
 
-### 🏆 Pacote Platina (v3.0 - v3.3) - Ecossistema, Criação e Transformação
+### 🏆 Pacote Platina (v3.0 - v3.3) - Ecossistema e Estabilização
 
 > [!IMPORTANT]
-> A fase Platina expande o Life OS de um rastreador de tarefas para um ecossistema vivo de progresso e customização.
+> A fase Platina expande o Life OS para um ecossistema focado em identidade e estabilidade cloud.
 
-#### v3.0 - O Despertar da Identidade (Cosméticos e Avatares)
+#### v3.1 - O Despertar da Identidade (Cosméticos e Estabilização) [ATUAL]
 - **Perfil do Usuário**: Seleção de avatares e customização visual.
 - **Temas Globais**: Interface adaptável (ex: *Blood Mode*, *Void Mode*, *Abyssal Dark*).
-- **Adornos de Perfil**: Molduras e títulos visuais baseados nas conquistas da era Diamond.
-
-#### v3.1 - A Forja de Memórias & O Mercado (Economia e Crafting) [DESATIVADO]
-- **Economia de Sombras**: Sistema de moedas ocultado para priorizar estabilidade e foco.
-- **O Mercado**: Interface removida para simplificação do core.
-- **A Forja**: Crafting desativado; foco em loot direto por Bosses.
-
-#### v3.2 - Estabilização de Core (v3.2.1) [ATUAL]
-- **Remoção de Instabilidade**: Limpeza de UI e remoção de módulos que impediam o login.
-- **HUD Focado**: Remoção de indicadores de moedas da barra superior para maior imersão.
+- **Adornos de Perfil**: Molduras e títulos visuais baseados nas conquistas.
+- **Estabilização de Core**: Limpeza de UI e correção de fluxos críticos de Auth (Login/Registro).
 - **Sincronização Cloud**: Melhorias no sync do Firestore para multi-dispositivos.
-- **Legião de Sombras**: Desbloqueie e equipe **Ecos** que aparecem no painel principal.
-- **Ressonância Passiva**: Ecos concedem buffs (Ex: Eco Bestial: +5% ganho FOR; Eco Espectro: margem de erro no Pomodoro).
+
+#### v3.2 - Legião de Sombras (Sistema de Ecos) [EM DESENVOLVIMENTO]
+- **Aviso**: Esta funcionalidade **AINDA NÃO** está disponível no jogo.
+- **Companheiros Sombrios**: Desbloqueie e equipe **Ecos** que aparecem no painel principal.
+- **Ressonância Passiva**: Ecos concederão buffs estratégicos de progressão.
 
 #### v3.3 - Templos da Dualidade (Deuses e Daemons)
 - **Endgame Hardcore**: Progressão lenta e punitiva focada em mudanças definitivas.

@@ -431,10 +431,20 @@ function setupAuthForms() {
 
 function switchAuthTab(tab) {
   const isLogin = tab === 'login';
-  document.getElementById('tab-login')?.classList.toggle('auth-tab--active', isLogin);
-  document.getElementById('tab-register')?.classList.toggle('auth-tab--active', !isLogin);
-  document.getElementById('form-login')?.classList.toggle('hidden', !isLogin);
-  document.getElementById('form-register')?.classList.toggle('hidden', isLogin);
+  const tabL = document.getElementById('tab-login');
+  const tabR = document.getElementById('tab-register');
+  const formL = document.getElementById('form-login');
+  const formR = document.getElementById('form-register');
+
+  tabL?.classList.toggle('auth-tab--active', isLogin);
+  tabR?.classList.toggle('auth-tab--active', !isLogin);
+  formL?.classList.toggle('hidden', !isLogin);
+  formR?.classList.toggle('hidden', isLogin);
+  
+  // Set accessibility/aria
+  tabL?.setAttribute('aria-selected', isLogin);
+  tabR?.setAttribute('aria-selected', !isLogin);
+
   clearAuthMessage();
 }
 
@@ -681,15 +691,31 @@ function setupProfileButton() {
 }
 
 function renderHUDFromPlayer(player) {
+  if (!player) return;
   const hpFill = document.getElementById('hp-fill');
   const hpText = document.getElementById('hp-text');
+  
+  // XP was removed from index.html, so we handle it gracefully
   const xpFill = document.getElementById('xp-fill');
-  const { hp, maxHP, xp, maxXp } = player.stats;
+  
+  const prog = player.progression ?? {};
+  const stats = player.stats ?? {};
+
+  // For HP
+  const hp = prog.hp ?? 100;
+  const maxHP = prog.hp_max ?? 100;
   const hpPct = (hp / maxHP) * 100;
-  const xpPct = (xp / maxXp) * 100;
+
   if (hpFill) hpFill.style.width = `${Math.min(100, Math.max(0, hpPct))}%`;
   if (hpText) hpText.textContent = `${Math.floor(hp)} / ${Math.floor(maxHP)}`;
-  if (xpFill) xpFill.style.width = `${Math.min(100, Math.max(0, xpPct))}%`;
+
+  // If someone re-adds XP to index.html, this will work again
+  if (xpFill) {
+    const rankInfo = calcRank(prog.fragmentos_total ?? 0);
+    const xpMax  = rankInfo.fragmentos_next; // Assuming calcRank returns this
+    const xpPct  = (prog.fragmentos_to_rank ?? 0) / (xpMax || 1) * 100;
+    xpFill.style.width = `${Math.min(100, Math.max(0, xpPct))}%`;
+  }
 }
 
 function openProfileModal() {
@@ -1207,7 +1233,7 @@ try {
       // Initialize audio UI
       initAudioPlayerUI();
       
-      console.log('— Shadow Slave Life OS v3.1.9.1 Awakened —');
+      console.log('— Shadow Slave Life OS v3.1.2 Awakened —');
     } catch (err) {
       console.error('[Boot] Application initialization failure:', err);
     }
