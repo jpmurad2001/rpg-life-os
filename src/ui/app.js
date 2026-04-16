@@ -8,7 +8,7 @@
 // ---- Firebase ----
 import { onAuthChanged, login, register, logout, resetPassword, deleteAccount } from '../firebase/auth.js';
 import {
-  initInventory as initInventoryDB, getPlayerData as loadPlayerDataFromDB, savePlayer, initNewPlayer, migrateFromLocalStorage, getLootTable, getWeek, saveWeek, deletePlayer
+  initInventory as initInventoryDB, getPlayerData as loadPlayerDataFromDB, savePlayer, initNewPlayer, migrateFromLocalStorage, getLootTable, getWeek, saveWeek, deletePlayer, saveBadgeState, saveCosmetics
 } from '../firebase/db.js';
 
 // ---- Engine ----
@@ -45,7 +45,7 @@ import {
   getBadgeById,
   renderBadgeSVG, renderDefaultMedallionSVG,
 } from '../config/badges.js';
-import { saveBadgeState, saveCosmetics } from '../firebase/db.js';
+
 
 // ---- Profile System (v3.0 — O Despertar da Identidade) ----
 import {
