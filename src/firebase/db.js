@@ -52,7 +52,7 @@ function _marketDocRef(uid, id)     { return doc(db, 'users', uid, 'market_items
  * Carrega o documento raiz do jogador.
  * Se não existe, retorna null (app criará na primeira sessão).
  */
-export async function getPlayer(uid) {
+export async function getPlayerData(uid) {
   const snap = await getDoc(_userRef(uid));
   return snap.exists() ? snap.data() : null;
 }
@@ -212,7 +212,7 @@ export async function addToInventory(uid, lootId, source, sourceId) {
   });
   // Incrementa contador no perfil
   await savePlayer(uid, {
-    'stats.memories_collected': /* incremento via transação */ (await getPlayer(uid))?.stats?.memories_collected + 1,
+    'stats.memories_collected': (await getPlayerData(uid))?.stats?.memories_collected + 1,
   });
   return ref.id;
 }
@@ -487,7 +487,7 @@ export async function migrateFromLocalStorage(uid) {
     const local = JSON.parse(raw);
     if (!local.player) return false;
 
-    const existingPlayer = await getPlayer(uid);
+    const existingPlayer = await getPlayerData(uid);
     if (existingPlayer) {
       console.log('[DB] Perfil Firestore já existe, migração abortada.');
       return false;
