@@ -8,7 +8,7 @@
 // ---- Firebase ----
 import { onAuthChanged, login, register, logout, resetPassword, deleteAccount } from '../firebase/auth.js';
 import {
-  initInventory, getPlayerData, savePlayer, initNewPlayer, migrateFromLocalStorage, getLootTable, getWeek, saveWeek, deletePlayer
+  initInventory as initInventoryDB, getPlayerData as getPlayerDataDB, savePlayer, initNewPlayer, migrateFromLocalStorage, getLootTable, getWeek, saveWeek, deletePlayer
 } from '../firebase/db.js';
 
 // ---- Engine ----
@@ -172,7 +172,7 @@ async function _onUserLogin(user) {
   try {
     setAuthMessage('🌑 Entrando no Vazio...', 'loading');
 
-    let player = await getPlayer(user.uid);
+    let player = await getPlayerDataDB(user.uid);
 
     if (!player) {
       // First-time login: init profile
