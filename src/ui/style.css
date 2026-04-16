@@ -9,6 +9,9 @@
 /* ---- GOOGLE FONTS FALLBACK ---- */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
 
+/* --- UTILS --- */
+.hidden { display: none !important; }
+
 /* ============================================================
    :ROOT — CSS DESIGN TOKENS (16-BIT THEME)
    ============================================================ */

@@ -8,7 +8,7 @@
 // ---- Firebase ----
 import { onAuthChanged, login, register, logout, resetPassword, deleteAccount } from '../firebase/auth.js';
 import {
-  getPlayer, savePlayer, initNewPlayer, migrateFromLocalStorage, getLootTable, getWeek, saveWeek, deletePlayer
+  initInventory, getPlayerData, savePlayer, initNewPlayer, migrateFromLocalStorage, getLootTable, getWeek, saveWeek, deletePlayer
 } from '../firebase/db.js';
 
 // ---- Engine ----
@@ -375,23 +375,34 @@ function _nextRankFragmentos(total) {
 //   AUTH FORMS SETUP
 // ============================================================
 function setupAuthForms() {
+  const loginForm = document.getElementById('form-login');
   // Already wired from first load — avoid double binding
-  if (document.getElementById('form-login')?.dataset.wired) return;
+  if (!loginForm || loginForm.dataset.wired) return;
+
+  console.log('[Auth] Wiring event listeners...');
 
   // Tab switching
-  document.getElementById('tab-login')?.addEventListener('click', () => switchAuthTab('login'));
-  document.getElementById('tab-register')?.addEventListener('click', () => switchAuthTab('register'));
+  document.getElementById('tab-login')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    switchAuthTab('login');
+  });
+  document.getElementById('tab-register')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    switchAuthTab('register');
+  });
 
   // Login
-  document.getElementById('form-login')?.addEventListener('submit', async e => {
+  loginForm.addEventListener('submit', async e => {
     e.preventDefault();
     const email = document.getElementById('login-email')?.value?.trim();
     const pass  = document.getElementById('login-password')?.value;
+    console.log('[Auth] Submit Login:', email);
     if (!email || !pass) return;
     setAuthLoading(true);
     try {
       await login(email, pass);
     } catch (err) {
+      console.error('[Auth] Login error:', err);
       setAuthMessage(_authErrorMsg(err.code), 'error');
       setAuthLoading(false);
     }
@@ -403,18 +414,21 @@ function setupAuthForms() {
     const name  = document.getElementById('reg-name')?.value?.trim();
     const email = document.getElementById('reg-email')?.value?.trim();
     const pass  = document.getElementById('reg-password')?.value;
+    console.log('[Auth] Submit Register:', email);
     if (!name || !email || !pass) return;
     setAuthLoading(true);
     try {
       await register(email, pass, name);
     } catch (err) {
+      console.error('[Auth] Register error:', err);
       setAuthMessage(_authErrorMsg(err.code), 'error');
       setAuthLoading(false);
     }
   });
 
   // Forgot password
-  document.getElementById('btn-forgot-pwd')?.addEventListener('click', async () => {
+  document.getElementById('btn-forgot-pwd')?.addEventListener('click', async (e) => {
+    e.preventDefault();
     const email = document.getElementById('login-email')?.value?.trim();
     if (!email) { setAuthMessage('⚠️ Digite seu email primeiro.', 'error'); return; }
     try {
@@ -425,8 +439,7 @@ function setupAuthForms() {
     }
   });
 
-  const loginForm = document.getElementById('form-login');
-  if (loginForm) loginForm.dataset.wired = '1';
+  loginForm.dataset.wired = '1';
 }
 
 function switchAuthTab(tab) {
@@ -1210,17 +1223,21 @@ if ('serviceWorker' in navigator) {
 //   STARTUP — Immediate execution for ESM
 // ============================================================
 
-// Wire auth forms immediately on module load
-try {
-  setupAuthForms();
-  setupModal();
-  setupLevelUpClose();
-} catch (e) {
-  console.error('[Boot] Critical: Failed to wire core forms:', e);
-}
+// No immediate execution here, moved to boot() for better sequencing
 
 // Full application boot
 (function boot() {
+  console.log('[Boot] Initializing Shadow Slave Life OS...');
+  
+  // Wire core UI listeners ASAP
+  try {
+    setupAuthForms();
+    setupModal();
+    setupLevelUpClose();
+  } catch (e) {
+    console.error('[Boot] Critical UI wiring failed:', e);
+  }
+
   window.requestAnimationFrame(() => {
     try {
       // Start time-of-day checker
@@ -1233,7 +1250,7 @@ try {
       // Initialize audio UI
       initAudioPlayerUI();
       
-      console.log('— Shadow Slave Life OS v3.1.2 Awakened —');
+      console.log('— Shadow Slave Life OS v3.1.3 Awakened —');
     } catch (err) {
       console.error('[Boot] Application initialization failure:', err);
     }
