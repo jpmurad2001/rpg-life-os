@@ -137,6 +137,8 @@
   --rank-mestre:     #f59e0b;
   --rank-santo:      #ec4899;
   --rank-soberano:   #ef4444;
+  --rank-sagrado:    #eab308;
+  --rank-divino:     #ffffff;
 }
 
 /* ---- Rank badge component ---- */
@@ -158,10 +160,17 @@
 .rank-badge--mestre     { color: var(--rank-mestre);     border-color: var(--rank-mestre);     box-shadow: 0 0 6px rgba(245,158,11,0.3); }
 .rank-badge--santo      { color: var(--rank-santo);      border-color: var(--rank-santo);      box-shadow: 0 0 6px rgba(236,72,153,0.3); }
 .rank-badge--soberano   { color: var(--rank-soberano);   border-color: var(--rank-soberano);   box-shadow: 0 0 10px rgba(239,68,68,0.4); animation: soberanoGlow 2s ease-in-out infinite; }
+.rank-badge--sagrado    { color: var(--rank-sagrado);    border-color: var(--rank-sagrado);    box-shadow: 0 0 12px rgba(234,179,8,0.5); }
+.rank-badge--divino     { color: var(--rank-divino);     border-color: var(--rank-divino);     box-shadow: 0 0 20px rgba(255,255,255,0.7); animation: divinoGlow 3s ease-in-out infinite; }
 
 @keyframes soberanoGlow {
   0%, 100% { box-shadow: 0 0 8px rgba(239,68,68,0.4); }
   50%       { box-shadow: 0 0 18px rgba(239,68,68,0.8); }
+}
+
+@keyframes divinoGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(255,255,255,0.5); filter: brightness(1); }
+  50%      { box-shadow: 0 0 35px rgba(255,255,255,1); filter: brightness(1.2); }
 }
 
 /* ---- Rank progress bar (sidebar) ---- */

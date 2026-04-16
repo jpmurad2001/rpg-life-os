@@ -1,0 +1,41 @@
+<!-- gold_single.svg — Uma única moeda de ouro, pixel art 16-bit -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="64" height="64"
+     shape-rendering="crispEdges" image-rendering="pixelated">
+  <title>1 Moeda de Ouro</title>
+  <defs>
+    <radialGradient id="coinFace" cx="38%" cy="35%" r="60%">
+      <stop offset="0%"   stop-color="#fff59d"/>
+      <stop offset="40%"  stop-color="#ffd700"/>
+      <stop offset="100%" stop-color="#b8860b"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Shadow -->
+  <ellipse cx="16" cy="29" rx="8" ry="2" fill="#000" opacity="0.35"/>
+
+  <!-- Coin edge (dark rim) -->
+  <ellipse cx="16" cy="16" rx="11" ry="11" fill="#7a5800"/>
+
+  <!-- Coin face -->
+  <ellipse cx="16" cy="15" rx="10" ry="10" fill="url(#coinFace)"/>
+
+  <!-- Inner ring -->
+  <ellipse cx="16" cy="15" rx="7"  ry="7"  fill="none" stroke="#b8860b" stroke-width="1"/>
+
+  <!-- "G" symbol — pixel style -->
+  <rect x="13" y="11" width="6" height="1" fill="#7a5800" opacity="0.8"/>
+  <rect x="12" y="12" width="1" height="1" fill="#7a5800" opacity="0.8"/>
+  <rect x="19" y="12" width="1" height="1" fill="#7a5800" opacity="0.8"/>
+  <rect x="12" y="13" width="1" height="1" fill="#7a5800" opacity="0.8"/>
+  <rect x="16" y="14" width="4" height="1" fill="#7a5800" opacity="0.8"/>
+  <rect x="19" y="14" width="1" height="2" fill="#7a5800" opacity="0.8"/>
+  <rect x="12" y="14" width="1" height="1" fill="#7a5800" opacity="0.8"/>
+  <rect x="12" y="15" width="1" height="1" fill="#7a5800" opacity="0.8"/>
+  <rect x="12" y="16" width="1" height="2" fill="#7a5800" opacity="0.8"/>
+  <rect x="13" y="18" width="6" height="1" fill="#7a5800" opacity="0.8"/>
+  <rect x="19" y="17" width="1" height="1" fill="#7a5800" opacity="0.8"/>
+
+  <!-- Highlight -->
+  <rect x="10" y="11" width="3" height="2" fill="#fff" opacity="0.6"/>
+  <rect x="10" y="13" width="1" height="2" fill="#fff" opacity="0.4"/>
+</svg>

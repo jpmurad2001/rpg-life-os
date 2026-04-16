@@ -31,8 +31,10 @@
   <link rel="stylesheet" href="src/ui/style-board.css" />     <!-- v2.1 Diamond -->
   <link rel="stylesheet" href="src/ui/style-pomodoro.css" /> <!-- v2.2 Reino dos Sonhos -->
   <link rel="stylesheet" href="src/ui/style-talents.css" />  <!-- v2.3 Habilidades de Aspecto -->
-  <link rel="stylesheet" href="src/ui/style-analytics.css" /> <!-- v2.4 Tear do Destino -->
+  <link rel="stylesheet" href="src/ui/style-analytics.css?v=3.1.1" /> <!-- v2.4 Tear do Destino -->
   <link rel="stylesheet" href="src/ui/style-badges.css?v=2.5.1" />   <!-- v2.5 Marcos do Despertar -->
+  <link rel="stylesheet" href="src/ui/style-identity.css" />        <!-- v3.0 O Despertar da Identidade -->
+  <link rel="stylesheet" href="src/ui/style-v31.css" />             <!-- v3.1 Forja & Mercado -->
 
   <!-- Icons -->
   <link rel="icon" type="image/png" href="assets/sprites/icon-192.png" />
@@ -133,21 +135,29 @@
          ======================================================== -->
     <aside id="sidebar" class="sidebar" role="navigation" aria-label="Menu Principal">
 
-      <!-- Player Card (click = profile modal) -->
-      <div class="sidebar__player-card" id="player-card" role="button" tabindex="0"
-           aria-label="Abrir perfil do personagem">
-        <div class="sidebar__profile">
-        <!-- Badge Medallion: substituído dinamicamente pelo JS -->
-        <div class="badge-medallion-wrap" id="sidebar-medallion"
-             role="img" aria-label="Medalhão do jogador — clique para ver conquistas"
-             title="Clique para ver conquistas">
+      <!-- Profile Widget v3.0 (click = profile drawer) -->
+      <div class="profile-widget" id="profile-widget"
+           role="button" tabindex="0"
+           aria-label="Abrir perfil do personagem"
+           aria-haspopup="dialog">
+
+        <!-- Medallion slot: badge SVG or D20 (injected by JS) -->
+        <div class="profile-widget__medallion badge-medallion-wrap" id="sidebar-medallion"
+             role="img" aria-label="Medalhão do jogador"
+             id="profile-widget-medallion">
           <!-- SVG injetado por renderSidebarMedallion() -->
         </div>
-        <div class="profile-info">
-          <div class="player-name" id="sidebar-player-name">Herói</div>
-          <div class="player-title" id="sidebar-player-title" style="font-size:0.75rem; color:#a1a1aa; margin-top:2px;">Iniciado</div>
-          <div class="player-level rank-tag" id="sidebar-player-level">Nível 1</div>
-        </div>
+
+        <div class="profile-widget__info">
+          <div class="profile-widget__name" id="profile-widget-name">Herói</div>
+          <!-- sidebar-player-name kept as alias for compatibility -->
+          <div style="display:none" id="sidebar-player-name"></div>
+          <div class="profile-widget__title" id="profile-widget-title">Iniciado</div>
+          <div class="profile-widget__rank" id="profile-widget-rank">Adormecido</div>
+          <!-- sidebar-player-level kept as alias -->
+          <div style="display:none" id="sidebar-player-level"></div>
+          <!-- sidebar-player-title kept as alias -->
+          <div style="display:none" id="sidebar-player-title"></div>
         </div>
       </div>
 
@@ -160,15 +170,6 @@
         <div class="rank-bar">
           <div class="rank-bar__fill" id="rank-bar-fill" style="width:0%"></div>
         </div>
-      </div>
-
-      <!-- XP (Fragmentos de Sombra) -->
-      <div class="xp-bar-wrapper" aria-label="Fragmentos de Sombra">
-        <label class="label-xp">Fragmentos</label>
-        <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-          <div class="xp-bar__fill" id="sidebar-xp-fill" style="width:0%"></div>
-        </div>
-        <span class="xp-text" id="sidebar-xp-text">0 / 100</span>
       </div>
 
       <!-- HP -->
@@ -274,8 +275,8 @@
       </nav>
 
       <div class="sidebar__footer">
-        <span class="version-badge">Diamond v2.5</span>
-        <button class="theme-toggle-btn" id="btn-theme-toggle" aria-label="Trocar tema">☀️ Light Mode</button>
+        <span class="version-badge">Platina v3.2.1</span>
+        <button class="theme-toggle-btn" id="btn-theme-toggle" aria-label="Trocar tema">&#x2600;&#xFE0F; Light Mode</button>
       </div>
     </aside>
 
@@ -291,6 +292,18 @@
           <h1 class="page-title" id="page-title">📜 Quests Semanais</h1>
         </div>
         <div class="page-header__right">
+          <!-- Economy HUD (v3.1) -->
+          <div class="economy-hud" id="economy-hud">
+            <div class="currency-badge currency-gold" title="Ouro">
+              <span class="currency-icon">🪙</span>
+              <span class="currency-val" id="hud-gold">0</span>
+            </div>
+            <div class="currency-badge currency-shadow" title="Fragmentos de Sombra">
+              <span class="currency-icon">🔮</span>
+              <span class="currency-val" id="hud-shadow">0</span>
+            </div>
+          </div>
+
           <!-- Mini BGM player — visível no desktop, oculto no mobile (a barra fica acima do bottom nav) -->
           <button class="topbar-bgm-btn" id="topbar-bgm-btn"
                   aria-label="Player de música" title="BGM — Abrir player">
@@ -683,6 +696,10 @@
         <span class="bottom-nav__icon">⚔️</span>
         <span class="bottom-nav__label">Treino</span>
       </button>
+      <button class="bottom-nav__btn" data-view="taverna" id="m-nav-taverna">
+        <span class="bottom-nav__icon">🏰</span>
+        <span class="bottom-nav__label">Taverna</span>
+      </button>
       <button class="bottom-nav__btn" data-view="bosses" id="m-nav-bosses">
         <span class="bottom-nav__icon">🐉</span>
         <span class="bottom-nav__label">Bosses</span>
@@ -690,22 +707,6 @@
       <button class="bottom-nav__btn" data-view="inventory" id="m-nav-inventory">
         <span class="bottom-nav__icon">💎</span>
         <span class="bottom-nav__label">Memórias</span>
-      </button>
-      <button class="bottom-nav__btn" data-view="achievements" id="m-nav-achievements">
-        <span class="bottom-nav__icon">🏆</span>
-        <span class="bottom-nav__label">Conquistas</span>
-      </button>
-      <button class="bottom-nav__btn" data-view="board" id="m-nav-board">
-        <span class="bottom-nav__icon">📋</span>
-        <span class="bottom-nav__label">Projetos</span>
-      </button>
-      <button class="bottom-nav__btn" data-view="pomodoro" id="m-nav-pomodoro">
-        <span class="bottom-nav__icon">⏳</span>
-        <span class="bottom-nav__label">Sonhos</span>
-      </button>
-      <button class="bottom-nav__btn" data-view="talents" id="m-nav-talents">
-        <span class="bottom-nav__icon">✨</span>
-        <span class="bottom-nav__label">Talentos</span>
       </button>
       <button class="bottom-nav__btn" data-view="analytics" id="m-nav-analytics">
         <span class="bottom-nav__icon">🔭</span>
@@ -721,6 +722,135 @@
 
   <!-- Talent Tree Tooltip (global, fixed position) -->
   <div class="talent-tooltip" id="talent-tooltip" role="tooltip" aria-hidden="true"></div>
+
+  <!-- ============================================================
+       PROFILE DRAWER v3.0 (O Despertar da Identidade)
+       ============================================================ -->
+
+  <!-- Backdrop -->
+  <div id="profile-drawer-backdrop" class="profile-drawer-backdrop"
+       aria-hidden="true"></div>
+
+  <!-- Drawer -->
+  <aside id="profile-drawer" class="profile-drawer"
+         role="dialog" aria-modal="true" aria-label="Ficha do Caçador"
+         aria-labelledby="profile-drawer-title-heading">
+
+    <!-- Header -->
+    <div class="profile-drawer__header">
+      <h2 class="profile-drawer__header-title" id="profile-drawer-title-heading">
+        &#x1F5E1;&#xFE0F; Ficha do Caçador
+      </h2>
+      <button class="profile-drawer__close" id="drawer-close-btn"
+              aria-label="Fechar perfil">✕</button>
+    </div>
+
+    <!-- Avatar + Name + Title -->
+    <div class="profile-drawer__avatar-section">
+
+      <!-- Avatar + Frame -->
+      <div class="profile-drawer__avatar-wrap" id="drawer-avatar-wrap">
+        <div class="profile-drawer__avatar-placeholder">&#x1F311;</div>
+      </div>
+
+      <div class="profile-drawer__name" id="drawer-player-name-display">Herói</div>
+      <div class="profile-drawer__title-badge" id="drawer-player-title">Iniciado</div>
+      <div class="profile-drawer__rank" id="drawer-player-rank">Adormecido</div>
+    </div>
+
+    <!-- Stats mini-grid -->
+    <div class="profile-drawer__stats">
+      <div class="profile-drawer__stat-box">
+        <div class="profile-drawer__stat-val" id="drawer-stat-quests">0</div>
+        <div class="profile-drawer__stat-label">Quests</div>
+      </div>
+      <div class="profile-drawer__stat-box">
+        <div class="profile-drawer__stat-val" id="drawer-stat-bosses">0</div>
+        <div class="profile-drawer__stat-label">Bosses</div>
+      </div>
+      <div class="profile-drawer__stat-box">
+        <div class="profile-drawer__stat-val" id="drawer-stat-workouts">0</div>
+        <div class="profile-drawer__stat-label">Treinos</div>
+      </div>
+    </div>
+
+    <!-- Theme Selector -->
+    <div class="profile-drawer__section-label">&#x1F3A8; Tema da Interface</div>
+    <div class="theme-selector" role="group" aria-label="Selecionar tema">
+
+      <button class="theme-option" data-theme-id="abyssal-dark"
+              aria-label="Abyssal Dark">
+        <div class="theme-option__swatch" aria-hidden="true"></div>
+        <div class="theme-option__info">
+          <div class="theme-option__name">&#x1F311; Abyssal Dark</div>
+          <div class="theme-option__desc">Obsidiana + Azul Espectral</div>
+        </div>
+        <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
+      </button>
+
+      <button class="theme-option" data-theme-id="blood-mode"
+              aria-label="Blood Mode">
+        <div class="theme-option__swatch" aria-hidden="true"></div>
+        <div class="theme-option__info">
+          <div class="theme-option__name">&#x1F578;&#xFE0F; Blood Mode</div>
+          <div class="theme-option__desc">Carmesim + Sombra Vampírica</div>
+        </div>
+        <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
+      </button>
+
+      <button class="theme-option" data-theme-id="void-mode"
+              aria-label="Void Mode">
+        <div class="theme-option__swatch" aria-hidden="true"></div>
+        <div class="theme-option__info">
+          <div class="theme-option__name">&#x1F30C; Void Mode</div>
+          <div class="theme-option__desc">Roxo Cósmico + Corrupção</div>
+        </div>
+        <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
+      </button>
+
+    </div>
+
+    <!-- Molduras por Rank -->
+    <div class="profile-drawer__section-label">🖼️ Moldura do Perfil</div>
+    <div class="frame-selector" id="drawer-frame-selector" role="group" aria-label="Selecionar moldura">
+      <!-- Rendered dynamically by profile.js -->
+    </div>
+
+    <!-- Títulos Desbloqueáveis -->
+    <div class="profile-drawer__section-label">🏅 Título Equipado</div>
+    <div class="title-grid" id="drawer-title-grid" role="group" aria-label="Selecionar título">
+      <!-- Rendered dynamically by profile.js -->
+    </div>
+
+    <!-- Editar Perfil (nome + avatar) -->
+    <div class="profile-drawer__section-label">✏️ Editar Perfil</div>
+    <div class="profile-drawer__form">
+
+      <label class="profile-drawer__input-label" for="drawer-name-input">Nome do Caçador</label>
+      <input class="profile-drawer__input" id="drawer-name-input"
+             type="text" maxlength="24" placeholder="Caçador do Vazio" />
+
+      <label class="profile-drawer__input-label" for="drawer-avatar-url">URL do Avatar</label>
+      <div class="avatar-input-row">
+        <input class="profile-drawer__input" id="drawer-avatar-url"
+               type="url" placeholder="Cole a URL da imagem aqui…" />
+        <button class="avatar-paste-btn" id="drawer-paste-avatar"
+                title="Colar da área de transferência">📋</button>
+      </div>
+      <div class="avatar-preview-status" id="drawer-avatar-preview-status" aria-live="polite"></div>
+
+    </div>
+
+
+    <!-- Footer -->
+    <div class="profile-drawer__footer">
+      <button class="btn-rp btn-rp--primary profile-drawer__save-btn" id="drawer-save-btn">
+        &#x1F4BE; Salvar Perfil
+      </button>
+      <div id="drawer-toast" style="font-family:var(--font-display);font-size:var(--fs-display);color:var(--color-success);text-align:center;opacity:0;transition:opacity 300ms;"></div>
+    </div>
+
+  </aside>
 
   <!-- Modal Overlay -->
   <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" hidden>
@@ -765,6 +895,7 @@
     </div>
   </div>
 
+
   <!-- Night Indicator -->
   <div class="night-indicator" aria-hidden="true">
     <span class="night-indicator__moon">🌙</span>
@@ -781,7 +912,7 @@
   <!-- ============================================================
        SCRIPTS
        ============================================================ -->
-  <script type="module" src="src/ui/app.js?v=2.6.2"></script>
+  <script type="module" src="src/ui/app.js?v=3.1.9.1"></script>
 
 </body>
 </html>

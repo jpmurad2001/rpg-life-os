@@ -12,6 +12,7 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
   deleteUser,
+  updateProfile,
 } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 
 import { auth } from './firebase.js';

@@ -26,6 +26,11 @@ export const PLAYLIST = [
   '/assets/sfx/musics/The_Hearth_at_Sunset.mp3',
   '/assets/sfx/musics/The_View_from_Oakhaven.mp3',
   '/assets/sfx/musics/Where_the_Tide_Breaks.mp3',
+  '/assets/sfx/musics/Sunrise_at_the_South_Gate.mp3',
+  '/assets/sfx/musics/A_Restful_Night_at_the_Iron_Tankard.mp3',
+  '/assets/sfx/musics/The_Temple_at_Dawn.mp3',
+  '/assets/sfx/musics/Lanterns_at_Dawn.mp3',
+  '/assets/sfx/musics/Temple_Path_at_Dawn.mp3',
 ];
 
 export const TRACK_NAMES = [
@@ -39,6 +44,11 @@ export const TRACK_NAMES = [
   'The Hearth at Sunset',
   'The View from Oakhaven',
   'Where the Tide Breaks',
+  'Sunrise at the South Gate',
+  'A Restful Night at the Iron Tankard',
+  'The Temple at Dawn',
+  'Lanterns at Dawn',
+  'Temple Path at Dawn',
 ];
 
 // ============================================================

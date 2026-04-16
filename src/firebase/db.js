@@ -12,7 +12,7 @@
 import {
   doc, collection, getDoc, getDocs, setDoc, updateDoc,
   addDoc, deleteDoc, serverTimestamp, query, where,
-  orderBy, limit, onSnapshot,
+  orderBy, limit, onSnapshot, runTransaction, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 
 import { db } from './firebase.js';
@@ -37,6 +37,12 @@ function _sessionRef(uid)           { return collection(db, 'users', uid, 'battl
 function _tavernaRef(uid, monthKey) { return doc(db, 'users', uid, 'taverna', monthKey); }
 function _bossMapRef(mapId)         { return doc(db, 'boss_maps', mapId); }
 function _userBossesRef(uid)        { return query(collection(db, 'boss_maps'), where('uid', '==', uid)); }
+
+// v3.1 — Economia, Forja e Mercado
+function _forgeInvRef(uid)          { return collection(db, 'users', uid, 'forge_inventory'); }
+function _forgeInvDocRef(uid, id)   { return doc(db, 'users', uid, 'forge_inventory', id); }
+function _marketRef(uid)            { return collection(db, 'users', uid, 'market_items'); }
+function _marketDocRef(uid, id)     { return doc(db, 'users', uid, 'market_items', id); }
 
 // ============================================================
 //   PLAYER (documento raiz do usuário)
@@ -75,6 +81,19 @@ export async function saveBadgeState(uid, { achievements, activeBadgeId }) {
     last_active: serverTimestamp(),
   }, { merge: true });
   console.log('🏅 [DB] Badge state salvo:', { achievements, activeBadgeId });
+}
+
+/**
+ * Salva os cosméticos do jogador (avatar, frame, título, tema).
+ * @param {string} uid
+ * @param {Object} cosmetics - { avatar_image, profile_frame, equipped_title, active_theme }
+ */
+export async function saveCosmetics(uid, cosmetics) {
+  await setDoc(_userRef(uid), {
+    cosmetics,
+    last_active: serverTimestamp(),
+  }, { merge: true });
+  console.log('✨ [DB] Cosméticos salvos:', cosmetics);
 }
 
 /**
@@ -142,6 +161,13 @@ export async function initNewPlayer(uid, displayName) {
     // v2.5 — Marcos do Despertar
     achievements:  [],
     activeBadgeId: null,
+    // v3.0 — O Despertar da Identidade
+    cosmetics: {
+      avatar_image:   '',
+      profile_frame:  '',
+      equipped_title: 'Iniciado',
+      active_theme:   'abyssal-dark',
+    },
   };
 
   await setDoc(_userRef(uid), defaultPlayer, { merge: false });
@@ -223,13 +249,52 @@ export async function getBossRegistry(forceRefresh = false) {
 // ============================================================
 
 export async function getUserBossMaps(uid) {
-  const snap = await getDocs(_userBossesRef(uid));
-  return snap.docs.map(d => ({ map_id: d.id, ...d.data() }));
+  try {
+    const snap = await getDocs(_userBossesRef(uid));
+    return snap.docs.map(d => {
+      const data = d.data();
+      return {
+        map_id: d.id,
+        ...data,
+        gold_reward:   data.gold_reward   ?? 0,
+        shadow_reward: data.shadow_reward ?? 0,
+        nodes: (data.nodes || []).map(n => ({
+          ...n,
+          damage_to_boss: n.damage_to_boss ?? 0,
+          xp_reward:      n.xp_reward      ?? 0,
+          gold_reward:    n.gold_reward    ?? 0,
+          shadow_reward:  n.shadow_reward  ?? 0
+        }))
+      };
+    });
+  } catch (e) {
+    console.error(`[DB] Erro em getUserBossMaps (uid: ${uid}):`, e);
+    throw e; // Propagar para que o módulo saiba que falhou
+  }
 }
 
 export async function getBossMap(mapId) {
-  const snap = await getDoc(_bossMapRef(mapId));
-  return snap.exists() ? { map_id: snap.id, ...snap.data() } : null;
+  try {
+    const snap = await getDoc(_bossMapRef(mapId));
+    if (!snap.exists()) return null;
+    const data = snap.data();
+    return {
+      map_id: snap.id,
+      ...data,
+      gold_reward:   data.gold_reward   ?? 0,
+      shadow_reward: data.shadow_reward ?? 0,
+      nodes: (data.nodes || []).map(n => ({
+        ...n,
+        damage_to_boss: n.damage_to_boss ?? 0,
+        xp_reward:      n.xp_reward      ?? 0,
+        gold_reward:    n.gold_reward    ?? 0,
+        shadow_reward:  n.shadow_reward  ?? 0
+      }))
+    };
+  } catch (e) {
+    console.error(`[DB] Erro em getBossMap (mapId: ${mapId}):`, e);
+    throw e;
+  }
 }
 
 export async function saveBossMap(uid, mapId, data) {
@@ -275,6 +340,8 @@ export async function addNodeToMap(mapId, nodeData) {
     status:         newStatus,
     damage_to_boss: nodeData.damage_to_boss ?? 100,
     xp_reward:      nodeData.xp_reward      ?? 40,
+    gold_reward:    nodeData.gold_reward    ?? 0,
+    shadow_reward:  nodeData.shadow_reward  ?? 0,
     attribute:      nodeData.attribute      ?? 'ART',
     x:              nodeData.x              ?? 50,
     y:              nodeData.y              ?? 50,
@@ -469,4 +536,290 @@ export async function migrateFromLocalStorage(uid) {
     console.warn('[DB] Falha na migração:', e);
     return false;
   }
+}
+
+// ============================================================
+//   v3.1 — ECONOMIA: TRANSAÇÕES ATÔMICAS
+// ============================================================
+
+/**
+ * Deduz gold_coins e/ou shadow_fragments do documento do jogador.
+ * Usa runTransaction — sem race conditions, sem saldo negativo.
+ *
+ * @param {string} uid
+ * @param {number} goldCost      — Custo em gold_coins (0 = sem custo)
+ * @param {number} fragmentCost  — Custo em shadow_fragments (0 = sem custo)
+ * @throws {Error} se saldo insuficiente
+ */
+export async function spendCurrencyTx(uid, goldCost = 0, fragmentCost = 0) {
+  const userRef = _userRef(uid);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists()) throw new Error('Perfil não encontrado.');
+
+    const data  = snap.data();
+    const prog  = data.progression ?? {};
+    const gold  = prog.gold_coins       ?? 0;
+    const frags = prog.shadow_fragments ?? 0;
+
+    if (goldCost > 0 && gold < goldCost) {
+      throw new Error(`Ouro insuficiente. Você tem ${gold} e precisa de ${goldCost}.`);
+    }
+    if (fragmentCost > 0 && frags < fragmentCost) {
+      throw new Error(`Fragmentos insuficientes. Você tem ${frags} e precisa de ${fragmentCost}.`);
+    }
+
+    const updates = { last_active: serverTimestamp() };
+    if (goldCost > 0)     updates['progression.gold_coins']       = gold  - goldCost;
+    if (fragmentCost > 0) updates['progression.shadow_fragments'] = frags - fragmentCost;
+
+    tx.update(userRef, updates);
+  });
+
+  console.log(`[DB] spendCurrencyTx: -${goldCost}g / -${fragmentCost}f uid=${uid}`);
+}
+
+/**
+ * Adiciona gold_coins e/ou shadow_fragments ao jogador (batch atômico).
+ *
+ * @param {string} uid
+ * @param {number} goldAmount
+ * @param {number} fragmentAmount
+ */
+export async function earnCurrencyBatch(uid, goldAmount = 0, fragmentAmount = 0) {
+  if (goldAmount === 0 && fragmentAmount === 0) return;
+
+  const userRef = _userRef(uid);
+  const snap    = await getDoc(userRef);
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+  const prog = data.progression ?? {};
+
+  const updates = { last_active: serverTimestamp() };
+  if (goldAmount > 0) {
+    updates['progression.gold_coins'] = (prog.gold_coins ?? 0) + goldAmount;
+  }
+  if (fragmentAmount > 0) {
+    updates['progression.shadow_fragments'] =
+      (prog.shadow_fragments ?? 0) + fragmentAmount;
+    updates['progression.shadow_fragments_total'] =
+      (prog.shadow_fragments_total ?? 0) + fragmentAmount;
+  }
+
+  const batch = writeBatch(db);
+  batch.update(userRef, updates);
+  await batch.commit();
+
+  console.log(`[DB] earnCurrencyBatch: +${goldAmount}g / +${fragmentAmount}f uid=${uid}`);
+}
+
+/**
+ * Forja uma Memória: deduz shadow_fragments e adiciona ao forge_inventory.
+ * Operação atômica via runTransaction.
+ *
+ * @param {string} uid
+ * @param {string} recipeId       — ID da receita (ex: 'forge_mestre')
+ * @param {number} fragmentCost
+ * @returns {{ newInventory: Array, newItemId: string }}
+ */
+export async function craftMemoryTx(uid, recipeId, fragmentCost) {
+  const userRef = _userRef(uid);
+  let   newItemId;
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists()) throw new Error('Perfil não encontrado.');
+
+    const data  = snap.data();
+    const frags = data.progression?.shadow_fragments ?? 0;
+
+    if (frags < fragmentCost) {
+      throw new Error(
+        `Fragmentos insuficientes. Você tem ${frags} e precisa de ${fragmentCost}.`
+      );
+    }
+
+    // Deduzir fragmentos
+    tx.update(userRef, {
+      'progression.shadow_fragments': frags - fragmentCost,
+      last_active:                    serverTimestamp(),
+    });
+
+    // Adicionar ao forge_inventory
+    const newRef = doc(_forgeInvRef(uid));
+    newItemId    = newRef.id;
+    tx.set(newRef, {
+      recipe_id:   recipeId,
+      forged_at:   serverTimestamp(),
+      equipped_in: null,
+    });
+  });
+
+  const newInventory = await getForgeInventory(uid);
+  console.log(`[DB] craftMemoryTx: ${recipeId} (${fragmentCost}f) uid=${uid}`);
+  return { newInventory, newItemId };
+}
+
+/**
+ * Compra item cosmético do Mercado com dedução atômica de gold_coins.
+ *
+ * @param {string} uid
+ * @param {string} itemId     — ex: 'theme_blood_mode'
+ * @param {number} goldCost
+ */
+export async function purchaseMarketItemTx(uid, itemId, goldCost) {
+  const userRef = _userRef(uid);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists()) throw new Error('Perfil não encontrado.');
+
+    const data = snap.data();
+    const gold = data.progression?.gold_coins ?? 0;
+
+    if (gold < goldCost) {
+      throw new Error(`Ouro insuficiente. Você tem ${gold} e precisa de ${goldCost}.`);
+    }
+
+    const unlockedItems = data.cosmetics?.unlocked_market_items ?? [];
+    if (unlockedItems.includes(itemId)) throw new Error('Item já adquirido.');
+
+    tx.update(userRef, {
+      'progression.gold_coins':          gold - goldCost,
+      'cosmetics.unlocked_market_items': [...unlockedItems, itemId],
+      last_active:                       serverTimestamp(),
+    });
+  });
+
+  console.log(`[DB] purchaseMarketItemTx: ${itemId} (${goldCost}g) uid=${uid}`);
+}
+
+/**
+ * Compra recompensa IRL com limite semanal — operação atômica.
+ *
+ * @param {string} uid
+ * @param {string} rewardId
+ * @param {number} goldCost
+ * @param {string} weekKey    — ex: "2026-W16"
+ */
+export async function purchaseIRLRewardTx(uid, rewardId, goldCost, weekKey) {
+  const userRef   = _userRef(uid);
+  const rewardRef = _marketDocRef(uid, rewardId);
+
+  await runTransaction(db, async (tx) => {
+    const [userSnap, rewardSnap] = await Promise.all([
+      tx.get(userRef),
+      tx.get(rewardRef),
+    ]);
+
+    if (!userSnap.exists())   throw new Error('Perfil não encontrado.');
+    if (!rewardSnap.exists()) throw new Error('Recompensa não encontrada.');
+
+    const gold = userSnap.data().progression?.gold_coins ?? 0;
+    if (gold < goldCost) {
+      throw new Error(`Ouro insuficiente. Você tem ${gold} e precisa de ${goldCost}.`);
+    }
+
+    const rewardData        = rewardSnap.data();
+    const weekLimit         = rewardData.week_limit ?? 1;
+    const purchasesByWeek   = rewardData.purchases_by_week ?? {};
+    const purchasedThisWeek = purchasesByWeek[weekKey] ?? 0;
+
+    if (purchasedThisWeek >= weekLimit) {
+      throw new Error('Limite semanal atingido para esta recompensa.');
+    }
+
+    tx.update(userRef,   { 'progression.gold_coins': gold - goldCost, last_active: serverTimestamp() });
+    tx.update(rewardRef, { [`purchases_by_week.${weekKey}`]: purchasedThisWeek + 1 });
+  });
+
+  console.log(`[DB] purchaseIRLRewardTx: ${rewardId} semana=${weekKey} (${goldCost}g) uid=${uid}`);
+}
+
+/**
+ * Equipa (ou desequipa) uma Memória forjada em um Slot.
+ * writeBatch — atualiza raiz + forge_inventory atomicamente.
+ *
+ * @param {string}      uid
+ * @param {string}      slotKey       — ex: 'Slot_XP'
+ * @param {string|null} inventoryId   — null = desequipar
+ * @param {string|null} lootId
+ */
+export async function equipMemorySlotTx(uid, slotKey, inventoryId, lootId) {
+  const userRef = _userRef(uid);
+  const batch   = writeBatch(db);
+
+  const slotPayload = inventoryId
+    ? { inventory_id: inventoryId, loot_id: lootId, equipped_at: new Date().toISOString() }
+    : null;
+
+  batch.update(userRef, {
+    [`memory_slots.${slotKey}`]: slotPayload,
+    last_active:                 serverTimestamp(),
+  });
+
+  if (inventoryId) {
+    const invRef = _forgeInvDocRef(uid, inventoryId);
+    batch.update(invRef, { equipped_in: slotKey });
+  }
+
+  await batch.commit();
+  console.log(`[DB] equipMemorySlotTx: slot=${slotKey} inv=${inventoryId} uid=${uid}`);
+}
+
+// ============================================================
+//   v3.1 — FORGE INVENTORY
+// ============================================================
+
+/**
+ * Carrega todas as Memórias forjadas do inventário do jogador.
+ * @param {string} uid
+ * @returns {Promise<Array>}
+ */
+export async function getForgeInventory(uid) {
+  const snap = await getDocs(_forgeInvRef(uid));
+  return snap.docs.map(d => ({ inventory_id: d.id, ...d.data() }));
+}
+
+// ============================================================
+//   v3.1 — MARKET ITEMS CRUD
+// ============================================================
+
+/**
+ * Retorna todos os itens do Mercado do jogador (recompensas IRL).
+ * @param {string} uid
+ * @returns {Promise<Array>}
+ */
+export async function getMarketItems(uid) {
+  const snap = await getDocs(_marketRef(uid));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/**
+ * Cria ou atualiza um item do Mercado (recompensa IRL).
+ * @param {string} uid
+ * @param {Object} data
+ * @returns {Promise<Object>}
+ */
+export async function saveMarketItem(uid, data) {
+  if (data.id) {
+    await setDoc(_marketDocRef(uid, data.id), data, { merge: true });
+    return { id: data.id, ...data };
+  }
+  const ref = await addDoc(_marketRef(uid), {
+    ...data,
+    created_at: serverTimestamp(),
+  });
+  return { id: ref.id, ...data };
+}
+
+/**
+ * Remove um item do Mercado.
+ * @param {string} uid
+ * @param {string} itemId
+ */
+export async function deleteMarketItem(uid, itemId) {
+  await deleteDoc(_marketDocRef(uid, itemId));
 }

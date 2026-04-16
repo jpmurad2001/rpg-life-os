@@ -1,0 +1,49 @@
+<!-- shadow_fragment.svg — Cristal negro e roxo, estilo pixel art 16-bit -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="64" height="64"
+     shape-rendering="crispEdges" image-rendering="pixelated">
+  <title>Fragmento de Sombra</title>
+  <defs>
+    <radialGradient id="crystalGlow" cx="45%" cy="30%" r="60%">
+      <stop offset="0%"   stop-color="#e040fb" stop-opacity="0.9"/>
+      <stop offset="50%"  stop-color="#7b1fa2" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0a0010" stop-opacity="1"/>
+    </radialGradient>
+    <radialGradient id="innerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#f3e5f5" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#4a148c" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Shadow base (offset) -->
+  <rect x="10" y="28" width="12" height="2" fill="#000" opacity="0.5"/>
+
+  <!-- Crystal body — main facets -->
+  <!-- Left dark facet -->
+  <polygon points="8,20 14,8 16,14 12,26" fill="#1a0030"/>
+  <!-- Center bright facet -->
+  <polygon points="14,8 18,8 22,16 16,26 12,26 16,14" fill="url(#crystalGlow)"/>
+  <!-- Right dark facet -->
+  <polygon points="18,8 24,18 20,26 16,26 22,16" fill="#2d004d"/>
+  <!-- Top tip -->
+  <polygon points="15,4 17,4 18,8 14,8" fill="#e040fb"/>
+
+  <!-- Inner glow center -->
+  <ellipse cx="16" cy="17" rx="3" ry="5" fill="url(#innerGlow)" opacity="0.7"/>
+
+  <!-- Pixel highlight specs -->
+  <rect x="14" y="9"  width="2" height="1" fill="#f3e5f5" opacity="0.9"/>
+  <rect x="15" y="11" width="1" height="1" fill="#fff"     opacity="0.7"/>
+  <rect x="13" y="13" width="1" height="1" fill="#ce93d8" opacity="0.5"/>
+  <rect x="19" y="14" width="1" height="1" fill="#ce93d8" opacity="0.4"/>
+
+  <!-- Floating sparkles -->
+  <rect x="6"  y="10" width="2" height="2" fill="#e040fb" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0;0.6" dur="1.8s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="24" y="16" width="1" height="1" fill="#ce93d8" opacity="0.5">
+    <animate attributeName="opacity" values="0.5;0;0.5" dur="2.3s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="8"  y="22" width="1" height="1" fill="#9c27b0" opacity="0.4">
+    <animate attributeName="opacity" values="0.4;0;0.4" dur="1.5s" repeatCount="indefinite"/>
+  </rect>
+</svg>

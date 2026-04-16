@@ -9,7 +9,12 @@
  *  - Funções puras: sem side effects, fácil de testar unitariamente.
  *  - Suporta tanto drops de tarefas normais (chance %) quanto drops de Boss (100% garantido,
  *    filtrado por rank adequado).
+ *
+ *  v3.1: Re-exporta GOLD_DROP_CONFIG do economy_engine para conveniência dos consumidores.
  */
+
+// Re-export para backward-compat: consumidores podem importar de drop_engine
+export { GOLD_DROP_CONFIG, FORGE_RECIPES, rollEconomyDrop } from './economy_engine.js';
 
 // ============================================================
 //   RANKS DO SISTEMA
@@ -68,7 +73,11 @@ function getEligibleItems(lootTable, playerRank, source) {
     if (!item.is_active) return false;
 
     // O item precisa indicar que a fonte (quest ou boss) pode dropá-lo
-    if (!item.eligible_for.includes(source)) return false;
+    // v3.1: boss_subtask também pode dropar itens de 'quest'
+    const eligibleSources = [...item.eligible_for];
+    if (eligibleSources.includes('quest')) eligibleSources.push('boss_subtask');
+    
+    if (!eligibleSources.includes(source)) return false;
 
     // O jogador precisa ter atingido o rank mínimo para receber o item
     const minRankIdx = rankIndex(item.min_rank_to_drop ?? 'Adormecido');
@@ -91,17 +100,18 @@ function getEligibleItems(lootTable, playerRank, source) {
  * @returns {Object|null}        - Item selecionado ou null se lista vazia
  */
 export function weightedRandom(items, rng = Math.random) {
-  if (items.length === 0) return null;
-
+  if (!items || items.length === 0) return null;
+  
   const totalWeight = items.reduce((sum, item) => sum + (item.rarity_weight ?? 1), 0);
-  let roll = rng() * totalWeight;
+  if (totalWeight <= 0) return items[0] || null;
 
+  let roll = rng() * totalWeight;
+  
   for (const item of items) {
     roll -= (item.rarity_weight ?? 1);
     if (roll <= 0) return item;
   }
-
-  // Fallback (floating point edge case)
+  
   return items[items.length - 1];
 }
 
@@ -132,7 +142,7 @@ export function rollQuestDrop({ lootTable, player, isBossSub = false, rng = Math
     return { dropped: false, item: null, roll, threshold };
   }
 
-  const source = 'quest';
+  const source = isBossSub ? 'boss_subtask' : 'quest';
   const eligible = getEligibleItems(lootTable, player, source);
   const item = weightedRandom(eligible, rng);
 
@@ -201,17 +211,16 @@ export const RANK_THRESHOLDS = {
 };
 
 /**
- * Calcula o Rank atual do jogador com base nos Fragmentos totais acumulados.
- *
- * @param {number} fragmentosTotal - Total de Fragmentos acumulados (nunca reseta)
- * @returns {{ rank: string, rank_index: number, next_rank: string|null, fragmentos_to_next: number }}
+ * Calcula o Rank baseado no total histórico de Fragmentos de Sombra.
+ * v3.1 "Platina" — Sistema hardcore baseado em fragmentos (moeda), não XP.
  */
 export function calcRank(fragmentosTotal) {
+  const val = Number(fragmentosTotal ?? 0);
   let currentRank = 'Adormecido';
   let currentIdx  = 0;
 
   for (const [rank, threshold] of Object.entries(RANK_THRESHOLDS)) {
-    if (fragmentosTotal >= threshold) {
+    if (val >= threshold) {
       currentRank = rank;
       currentIdx  = rankIndex(rank);
     }

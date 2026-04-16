@@ -23,7 +23,7 @@ import {
 } from '../engine/core.js';
 
 import { calcRank, formatDropResult, rollQuestDrop } from '../engine/drop_engine.js';
-import { playBossAttack, playBossDefeat } from '../engine/audio.js';
+import { playSound } from '../engine/audio.js';
 import { MAPS_GALLERY, BOSS_GALLERY } from '../config/assets_gallery.js';
 
 // ============================================================
@@ -59,7 +59,6 @@ export async function initCampaignMap() {
       ?.addEventListener('click', openNewCampaignModal);
 
     // Botões dinâmicos (back + add-node) via event delegation no container pai
-    // que sempre existe no DOM, evitando o problema de botoes criados depois do init
     const section = document.getElementById('view-bosses') ??
                     document.querySelector('[data-view="bosses"]') ??
                     document.body;
@@ -67,7 +66,6 @@ export async function initCampaignMap() {
     section.addEventListener('click', (e) => {
       if (e.target.closest('#btn-back-to-campaigns')) {
         showCampaignList();
-        // Scroll para o topo da section de campanhas
         document.getElementById('campaign-list-view')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
       if (e.target.closest('#btn-add-node')) {
@@ -78,8 +76,15 @@ export async function initCampaignMap() {
     _initialized = true;
   }
 
-  // Sempre re-renderizar a lista ao entrar na view
-  await renderCampaignList();
+  // Sempre re-renderizar a lista ao entrar na view, com proteção contra falhas
+  try {
+    const list = document.getElementById('campaign-list');
+    if (list) list.innerHTML = '<div class="empty-state">🌑 Abrindo os Olhos...</div>';
+    await renderCampaignList();
+  } catch (e) {
+    console.error('[CampaignMap] Falha crítica no init:', e);
+    showToast('⚠️ Falha ao conectar com o Reino das Sombras.', 'info');
+  }
 }
 
 // ============================================================
@@ -98,6 +103,21 @@ async function renderCampaignList() {
     _allMaps = await getUserBossMaps(uid);
   } catch (e) {
     console.warn('[CampaignMap] Erro ao carregar mapas:', e);
+    
+    // Feedback amigável para erro de permissão (comum após atualizações de regras ou expiração de token)
+    if (e.code === 'permission-denied') {
+      list.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1; padding: var(--space-7);">
+          <div style="font-size:2.5rem; margin-bottom:var(--space-4);">🔒</div>
+          <p style="font-family:var(--font-pixel); font-size:var(--fs-xs); text-align:center; color: var(--color-danger);">
+            Portal trancado. Verifique sua conexão ou tente recarregar a página para renovar seu pacto.
+          </p>
+          <button class="btn-primary" style="margin-top: var(--space-4)" onclick="location.reload()">Recarregar App</button>
+        </div>
+      `;
+      return;
+    }
+    
     _allMaps = [];
   }
 
@@ -142,7 +162,7 @@ function buildCampaignCard(map) {
   const done      = nodes.filter(n => n.status === 'completed').length;
   const hpMax     = map.boss_hp_max     ?? 1000;
   const hpCurrent = map.boss_hp_current ?? hpMax;
-  const hpPct     = Math.max(0, Math.min(100, (hpCurrent / hpMax) * 100));
+  const hpPct     = hpMax > 0 ? Math.max(0, Math.min(100, (hpCurrent / hpMax) * 100)) : 0;
   const sprite    = BOSS_SPRITES[map.boss_sprite] ?? '👾';
 
   // Thumbnail — background do mapa, sprite do boss, ou emoji placeholder
@@ -212,7 +232,11 @@ async function openCampaignMap(mapId) {
   try {
     _currentMap = await getBossMap(mapId);
   } catch (e) {
-    showToast('⚠️ Erro ao carregar mapa.', 'info');
+    console.error('[CampaignMap] Falha ao abrir mapa:', e);
+    const errorMsg = e.code === 'permission-denied' 
+      ? '⚠️ Acesso negado ao mapa. Tente recarregar.' 
+      : '⚠️ Erro ao carregar mapa.';
+    showToast(errorMsg, 'info');
     showCampaignList();
     return;
   }
@@ -260,10 +284,12 @@ function renderCampaignMap(mapData) {
 }
 
 function updateBossTopbar(mapData) {
-  const sprite  = BOSS_SPRITES[mapData.boss_sprite] ?? '👾';
+  // Resolver sprite (asset galeria ou emoji fallback)
+  const asset = BOSS_GALLERY.find(b => b.id === mapData.boss_sprite || b.path === mapData.boss_sprite);
+  
   const hpMax   = mapData.boss_hp_max     ?? 1000;
   const hpCur   = mapData.boss_hp_current ?? hpMax;
-  const hpPct   = Math.max(0, Math.min(100, (hpCur / hpMax) * 100));
+  const hpPct   = hpMax > 0 ? Math.max(0, Math.min(100, (hpCur / hpMax) * 100)) : 0;
 
   const nameEl    = document.getElementById('map-boss-name');
   const hpTextEl  = document.getElementById('map-boss-hp-text');
@@ -272,14 +298,14 @@ function updateBossTopbar(mapData) {
 
   if (nameEl)   nameEl.textContent = mapData.name;
   if (spriteEl) {
-    if (mapData.boss_sprite_url) {
-      spriteEl.innerHTML = `<img class="boss-sprite-topbar" src="${mapData.boss_sprite_url}" alt="${mapData.name}">`;
+    if (asset) {
+      spriteEl.innerHTML = `<img src="${asset.path}" style="width:36px;height:36px;object-fit:contain;" />`;
     } else {
-      spriteEl.textContent = sprite; // fallback emoji
+      spriteEl.textContent = BOSS_SPRITES[mapData.boss_sprite] ?? '👾';
     }
   }
   if (hpTextEl) hpTextEl.textContent = `${Math.round(hpCur)} / ${hpMax}`;
-  if (hpFillEl) hpFillEl.style.width = `${hpPct.toFixed(1)}%`;
+  if (hpFillEl) hpFillEl.style.width   = `${hpPct}%`;
 }
 
 function renderMapCanvas(mapData) {
@@ -512,11 +538,15 @@ async function handleNodeComplete(node, mapData) {
           </div>
           <div style="text-align:center;">
             <div style="font-size:var(--fs-xxs); color:var(--text-muted); font-family:var(--font-pixel);">XP</div>
-            <div style="font-size:var(--fs-display); font-family:var(--font-display); color:var(--color-xp);">+${node.xp_reward}</div>
+            <div style="font-size:var(--fs-display); font-family:var(--font-display); color:var(--color-xp);">+${node.xp_reward ?? 0}</div>
           </div>
           <div style="text-align:center;">
-            <div style="font-size:var(--fs-xxs); color:var(--text-muted); font-family:var(--font-pixel);">ATTR</div>
-            <div style="font-size:var(--fs-display); font-family:var(--font-display); color:var(--text-gold);">${ATTR_META[node.attribute]?.label}</div>
+            <div style="font-size:var(--fs-xxs); color:var(--text-muted); font-family:var(--font-pixel);">GOLD</div>
+            <div style="font-size:var(--fs-display); font-family:var(--font-display); color:var(--color-gold);">+${node.gold_reward ?? 0}</div>
+          </div>
+          <div style="text-align:center;">
+             <div style="font-size:var(--fs-xxs); color:var(--text-muted); font-family:var(--font-pixel);">SHADOW</div>
+             <div style="font-size:var(--fs-display); font-family:var(--font-display); color:var(--color-shadow);">+${node.shadow_reward ?? 0}</div>
           </div>
         </div>
         ${node.description ? `<p style="margin-top:var(--space-3); font-family:var(--font-display); font-size:var(--fs-display); color:var(--text-secondary);">${node.description}</p>` : ''}
@@ -548,16 +578,25 @@ async function executeNodeComplete(uid, node, mapData) {
     renderHUD(s2);
 
     // 3. Feedback visual
-    playBossAttack();
+    // 3. Feedback visual & Rewards
+    playSound('boss_hit');
     animateBossHit();
-    showToast(`⚔️ Encontro concluído! -${damageDone} HP do Boss  +${node.xp_reward} XP`, 'damage');
+    
+    // Earn currencies (Firestore)
+    const goldEarned   = node.gold_reward   ?? 0;
+    const shadowEarned = node.shadow_reward ?? 0;
+    if (goldEarned > 0 || shadowEarned > 0) {
+      await import('../firebase/db.js').then(m => m.earnCurrencyBatch(uid, goldEarned, shadowEarned));
+    }
+
+    showToast(`⚔️ Encontro concluído! -${damageDone} HP  +${node.xp_reward} XP${goldEarned > 0 ? ` +${goldEarned}g` : ''}`, 'damage');
     spawnMapDamageFloat(damageDone);
 
     if (leveledUp) {
       setTimeout(() => showLevelUp(newLevel), 500);
     }
 
-    // 4. Atualizar mapa em memória e re-renderizar (com animação da linha recém-concluída)
+    // 4. Atualizar mapa em memória e re-renderizar
     const completedIdx = mapData.nodes.findIndex(n => n.id === node.id);
     _lastCompletedNodeIdx = completedIdx;
     _currentMap = updatedMap;
@@ -565,21 +604,32 @@ async function executeNodeComplete(uid, node, mapData) {
 
     // 5. Boss derrotado!
     if (bossDefeated) {
-      playBossDefeat();
+      playSound('boss_defeat');
       setTimeout(async () => {
-        showToast(`🏆 BOSS DERROTADO! +${updatedMap.xp_reward_on_defeat ?? 500} XP bônus!`, 'defeat', 5000);
+        // Economy engine drops
+        const { rollEconomyDrop } = await import('../engine/drop_engine.js');
+        const economyDrop = rollEconomyDrop('boss');
+        const baseXP = updatedMap.xp_reward_on_defeat ?? 500;
+        
+        showToast(`🏆 BOSS DERROTADO! +${baseXP} XP | +${economyDrop.gold} Gold | +${economyDrop.fragments} Shadow!`, 'defeat', 5000);
 
-        // Bônus de XP de derrota
+        // Bônus de XP e Currency de derrota
         let st = loadState();
-        const { state: sBonus, leveledUp: bl, newLevel: bn } = awardXP(st, updatedMap.xp_reward_on_defeat ?? 500);
+        const { state: sBonus, leveledUp: bl, newLevel: bn } = awardXP(st, baseXP);
+        st.player.stats.gold_coins = (st.player.stats.gold_coins ?? 0) + economyDrop.gold;
+        st.player.stats.shadow_fragments = (st.player.stats.shadow_fragments ?? 0) + economyDrop.fragments;
         st.player.stats.bosses_defeated = (st.player.stats.bosses_defeated ?? 0) + 1;
+        
+        // Sync total rewards to Firestore
+        await import('../firebase/db.js').then(m => m.earnCurrencyBatch(uid, economyDrop.gold, economyDrop.fragments));
+
         checkAchievements(sBonus);
         saveState(sBonus);
         renderHUD(sBonus);
 
         if (bl) setTimeout(() => showLevelUp(bn), 600);
 
-        // Drop engine
+        // Drop engine (Memories)
         await processBossDrops(updatedMap, sBonus);
       }, 800);
     } else {
@@ -600,7 +650,8 @@ async function processNodeDrop(node, state) {
   if (!auth.currentUser) return;
   try {
     const table  = await getLootTable();
-    const pRank  = calcRank(state.player.stats.total_xp_earned ?? state.player.xp);
+    const fragTotal = state.player.progression?.shadow_fragments_total ?? state.player.stats?.shadow_fragments_total ?? 0;
+    const pRank  = calcRank(fragTotal);
     const result = rollQuestDrop({ lootTable: table, player: pRank, isBossSub: true });
 
     if (result.dropped && result.item) {
@@ -617,7 +668,8 @@ async function processBossDrops(mapData, state) {
   if (!auth.currentUser) return;
   try {
     const table = await getLootTable();
-    const pRank = calcRank(state.player.stats.total_xp_earned ?? state.player.xp);
+    const fragTotal = state.player.progression?.shadow_fragments_total ?? state.player.stats?.shadow_fragments_total ?? 0;
+    const pRank = calcRank(fragTotal);
 
     const { rollBossDrop } = await import('../engine/drop_engine.js');
     const drops = rollBossDrop({
@@ -704,8 +756,8 @@ function showNodeTooltip(event, node) {
     <div class="map-node-tooltip__title">${node.title}</div>
     <div class="map-node-tooltip__meta">
       ${statusLabel}<br/>
-      -${node.damage_to_boss} HP &nbsp;·&nbsp; +${node.xp_reward} XP<br/>
-      ${ATTR_META[node.attribute]?.icon} ${ATTR_META[node.attribute]?.label}
+      -${node.damage_to_boss ?? 0} HP &nbsp;·&nbsp; +${node.xp_reward ?? 0} XP<br/>
+      ${ATTR_META[node.attribute]?.icon ?? '⚔️'} ${ATTR_META[node.attribute]?.label ?? 'Combat'}
     </div>
   `;
 
@@ -726,7 +778,7 @@ function showBossTooltip(event, mapData) {
 
   const hpMax = mapData.boss_hp_max     ?? 1000;
   const hpCur = mapData.boss_hp_current ?? hpMax;
-  const hpPct = Math.max(0, Math.round((hpCur / hpMax) * 100));
+  const hpPct = hpMax > 0 ? Math.max(0, Math.round((hpCur / hpMax) * 100)) : 0;
   const rank  = mapData.boss_rank ?? 'Desperto';
 
   tip.innerHTML = `

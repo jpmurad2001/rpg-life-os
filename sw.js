@@ -3,7 +3,7 @@
  * Enables offline support and caching for PWA.
  */
 
-const CACHE_NAME = 'rpg-life-os-v33';
+const CACHE_NAME = 'rpg-life-os-v41';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -13,7 +13,8 @@ const ASSETS_TO_CACHE = [
     './src/ui/style-phase2.css',
     './src/ui/style-phase3.css',
     './src/ui/style-badges.css',
-    './src/ui/app.js',
+    './src/ui/style-identity.css',    // v3.0
+    './src/ui/app.js?v=3.1.7',
     './src/engine/core.js',
     './src/engine/gamification.js',
     './src/engine/audio.js',
@@ -21,11 +22,16 @@ const ASSETS_TO_CACHE = [
     './src/modules/quests.js',
     './src/modules/battle.js',
     './src/modules/taverna.js',
+    './src/modules/profile.js',       // v3.0
+    './src/modules/market.js',        // v3.1
     './src/ui/style-campaign.css',
     './src/ui/style-player.css',
     './src/modules/campaign_map.js',
     './src/engine/music_player.js',
     './src/ui/audio_player_ui.js',
+    './src/firebase/auth.js',
+    './src/firebase/db.js',
+    './src/firebase/firebase.js',
     './assets/sprites/icon-192.png',
     './assets/sprites/icon-512.png',
     'https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap',

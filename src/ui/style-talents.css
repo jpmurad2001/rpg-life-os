@@ -75,9 +75,10 @@
 /* ── Grid wrapper ── */
 .talent-grid-wrap {
   position: relative;
-  width:  660px;
-  height: 420px;
+  width:  810px;
+  height: 1170px;
   flex-shrink: 0;
+  margin: 0 auto;
 }
 
 .talent-svg {
@@ -99,8 +100,8 @@
 
 .talent-grid {
   display: grid;
-  grid-template-columns: repeat(7, 90px);
-  grid-template-rows:    repeat(3, 130px);
+  grid-template-columns: repeat(9, 90px);
+  grid-template-rows:    repeat(9, 130px);
   width: 100%;
   height: 100%;
   position: relative;
@@ -305,12 +306,12 @@
     gap: var(--space-4);
   }
   .talent-grid-wrap {
-    width: 510px;
-    height: 360px;
+    width: 630px;
+    height: 990px;
   }
   .talent-grid {
-    grid-template-columns: repeat(7, 68px);
-    grid-template-rows:    repeat(3, 110px);
+    grid-template-columns: repeat(9, 70px);
+    grid-template-rows:    repeat(9, 110px);
   }
   .talent-node { width: 56px; height: 56px; }
   .talent-node__icon { font-size: 1.4rem; }

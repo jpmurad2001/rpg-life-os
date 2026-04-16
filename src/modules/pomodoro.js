@@ -17,7 +17,7 @@ import {
   renderHUD, showToast, showLevelUp,
   openModal, closeModal,
 } from '../engine/gamification.js';
-import { playClick, playXpGain, playError } from '../engine/audio.js';
+import { playSound, playError } from '../engine/audio.js';
 
 // ============================================================
 //   CONSTANTS
@@ -265,7 +265,7 @@ function _onFocusComplete() {
   renderHUD(s1);
 
   // 5. FX
-  playXpGain();
+  playSound('pomodoro_end');
   showToast(`✨ +${xp} XP — Ciclo ${_t.cyclesCompleted} concluído!`, 'xp', 4000);
   _showSuccessFlash(`✨ +${xp} XP`);
 
@@ -596,7 +596,7 @@ export function initPomodoro() {
     const btn = _el(id);
     if (btn && !btn.dataset.wired) {
       btn.dataset.wired = '1';
-      btn.addEventListener('click', () => { playClick(); fn(); });
+      btn.addEventListener('click', () => { playSound('ui_click'); fn(); });
     }
   };
 

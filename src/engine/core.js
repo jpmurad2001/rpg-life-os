@@ -5,6 +5,9 @@
  */
 
 import { BADGE_CATALOG } from '../config/badges.js';
+import { TITLE_CATALOG, TITLE_BY_KEY } from '../config/titles.js';
+import { calculateSkillModifiers, TALENT_DEFINITIONS } from '../modules/talents.js';
+import { playSound } from './audio.js';
 
 // ============================================================
 //   CONSTANTS
@@ -70,17 +73,39 @@ function buildDefaultState() {
         streak_days: 0,
         last_active_date: '',
         pomodoro_sessions_completed: 0,
-        gold: 0,
+        gold: 0,                    // legacy — manter por compat. Use progression.gold_coins
         dawn_quests: 0,
         night_quests: 0,
         streak_broken_date: null,
         tasks_today_after_break: 0,
+        gold_coins: 0,              // v3.1 — campo canônico de moedas
+        shadow_fragments: 0,        // v3.1 — fragmentos de sombra
+        shadow_fragments_total: 0,  // v3.1 — fragmentos acumulados (nunca reseta)
       },
-      skill_points:  10,    // v2.3 Habilidades de Aspecto
+      skill_points:  5,     // v2.3 Habilidades de Aspecto (Nerfado p/ 5 no Patch 3)
       xpMultiplier:  1.0,   // v2.3 — multiplicado pelos talentos comprados
       talents:       {},    // v2.3 — { [nodeId]: 'purchased' | 'available' | 'locked' }
       achievements:  [],    // v2.5 — badge IDs desbloqueados
       activeBadgeId: null,  // v2.5 — badge ID equipado para o medalhão
+      // v3.0 — O Despertar da Identidade
+      cosmetics: {
+        avatar_image:            '',
+        profile_frame_id:        '',
+        active_theme:            'abyssal-dark',
+        active_title_id:         'title_default',
+        unlocked_titles:         ['title_default'],
+        unlocked_market_items:   [],             // v3.1 — itens comprados no Mercado
+      },
+      // v3.1 — A Forja de Memórias & O Mercado
+      memory_slots: {                            // 7 Slots de Memória
+        Slot_XP:    null,
+        Slot_Attr1: null,
+        Slot_Attr2: null,
+        Slot_Attr3: null,
+        Slot_Attr4: null,
+        Slot_Attr5: null,
+        Slot_DropRate: null,
+      },
     },
     quests: {
       current_week_start: '',
@@ -160,7 +185,7 @@ export function loadState() {
 
     // v2.3 migration: ensure talent tree fields exist
     if (parsed.player) {
-      if (parsed.player.skill_points === undefined) parsed.player.skill_points = 10;
+      if (parsed.player.skill_points === undefined) parsed.player.skill_points = 5;
       if (parsed.player.xpMultiplier === undefined) parsed.player.xpMultiplier = 1.0;
       if (!parsed.player.talents || typeof parsed.player.talents !== 'object') parsed.player.talents = {};
     }
@@ -169,6 +194,56 @@ export function loadState() {
     if (parsed.player) {
       if (!Array.isArray(parsed.player.achievements)) parsed.player.achievements = [];
       if (parsed.player.activeBadgeId === undefined) parsed.player.activeBadgeId = null;
+    }
+
+    // v3.0 migration: ensure cosmetics object exists
+    if (parsed.player) {
+      if (!parsed.player.cosmetics || typeof parsed.player.cosmetics !== 'object') {
+        parsed.player.cosmetics = {
+          avatar_image:     '',
+          profile_frame_id: '',
+          active_theme:     'abyssal-dark',
+          active_title_id:  'title_default',
+          unlocked_titles:  ['title_default'],
+        };
+      } else {
+        const c = parsed.player.cosmetics;
+        // Patch missing sub-fields (handles upgrade from old schema)
+        if (c.avatar_image     === undefined) c.avatar_image     = '';
+        if (c.profile_frame_id === undefined) c.profile_frame_id = c.profile_frame ?? '';
+        if (c.active_theme     === undefined) c.active_theme     = 'abyssal-dark';
+        if (c.active_title_id  === undefined) c.active_title_id  = 'title_default';
+        if (!Array.isArray(c.unlocked_titles)) {
+          // Migrate from old equipped_title string if present
+          c.unlocked_titles = ['title_default'];
+        }
+        // Remove old fields no longer used
+        delete c.profile_frame;
+        delete c.equipped_title;
+
+        // v3.1 — Patch cosmetics sub-field
+        if (!Array.isArray(c.unlocked_market_items)) c.unlocked_market_items = [];
+      }
+    }
+
+    // v3.1 migration: gold_coins, shadow_fragments, memory_slots
+    if (parsed.player) {
+      const s = parsed.player.stats ?? {};
+      if (s.gold_coins          === undefined) s.gold_coins          = s.gold ?? 0;
+      if (s.shadow_fragments     === undefined) s.shadow_fragments     = 0;
+      if (s.shadow_fragments_total === undefined) s.shadow_fragments_total = 0;
+
+      if (!parsed.player.memory_slots || typeof parsed.player.memory_slots !== 'object') {
+        parsed.player.memory_slots = {
+          Slot_XP:    null, Slot_Attr1: null, Slot_Attr2: null,
+          Slot_Attr3: null, Slot_Attr4: null, Slot_Attr5: null,
+          Slot_DropRate: null,
+        };
+      } else {
+        const ms = parsed.player.memory_slots;
+        ['Slot_XP','Slot_Attr1','Slot_Attr2','Slot_Attr3','Slot_Attr4','Slot_Attr5','Slot_DropRate']
+          .forEach(k => { if (!(k in ms)) ms[k] = null; });
+      }
     }
 
     return parsed;
@@ -316,12 +391,21 @@ export function attackBoss(state, bossId, subtaskId) {
   const subtask = boss.subtasks.find(s => s.id === subtaskId);
   if (!subtask || subtask.status === 'completed') return { state, bossDefeated: false, boss };
 
-  // Mark subtask done
-  subtask.status       = 'completed';
-  subtask.completed_at = new Date().toISOString();
+  // --- INJEÇÃO PATCH PARTE 4: MODIFICADORES E CRÍTICOS ---
+  const unlockedIds = Object.keys(state.player.talents || {}).filter(k => state.player.talents[k] === 'purchased');
+  const mods = calculateSkillModifiers(unlockedIds, TALENT_DEFINITIONS);
+
+  let finalDamage = subtask.damage * mods.bossDamageMulti;
+
+  // Lógica de Crítico: 10% de chance base
+  const isCrit = Math.random() < 0.10;
+  if (isCrit) {
+    finalDamage *= 2;
+    playSound('critical_hit');
+  }
 
   // Deal damage
-  boss.hp_current = Math.max(0, boss.hp_current - subtask.damage);
+  boss.hp_current = Math.max(0, boss.hp_current - finalDamage);
 
   let bossDefeated = false;
   if (boss.hp_current <= 0) {
@@ -403,14 +487,28 @@ export function completeTask(state, weekId, taskId) {
   task.status        = 'completed';
   task.completed_at  = new Date().toISOString();
   state.player.stats.quests_completed += 1;
-  state.player.stats.gold += 15; // Ganho base de ouro por quest
+  // --- INJEÇÃO PATCH PARTE 4: DROP ENGINE (XP/GOLD/DBL DROP) ---
+  const unlockedIds = Object.keys(state.player.talents || {}).filter(k => state.player.talents[k] === 'purchased');
+  const mods = calculateSkillModifiers(unlockedIds, TALENT_DEFINITIONS);
 
-  // Lógica de horários para Badges
+  let xpGained   = (task.xp_reward ?? 20) * mods.questXpMulti;
+  let attrAmount = 1 * mods.attrXpMulti;
+  let goldGained = 15 * mods.goldDropMulti;
+
+  // Lógica de Drop Duplo
+  if (Math.random() < mods.doubleDropChance) {
+    goldGained *= 2;
+    playSound('loot_drop');
+  }
+
+  state.player.stats.gold += goldGained;
+
+  // Lógica de horários para Badges (Restaurada)
   const hour = new Date().getHours();
   if (hour >= 0 && hour < 8) state.player.stats.dawn_quests += 1;
   if (hour >= 0 && hour < 4) state.player.stats.night_quests += 1;
 
-  // Lógica de Recuperação de Streak (Fênix Negra)
+  // Lógica de Recuperação de Streak (Fênix Negra) (Restaurada)
   if (state.player.stats.streak_broken_date) {
     const brokenDate = new Date(state.player.stats.streak_broken_date).toDateString();
     const today = new Date().toDateString();
@@ -419,9 +517,7 @@ export function completeTask(state, weekId, taskId) {
     }
   }
 
-  const xpGained   = task.xp_reward ?? 20;
-  const attrAmount = 1; // 1 flat point per task
-  const hpGain     = task.hp_reward ?? 0;
+  const hpGain = task.hp_reward ?? 0;
 
   // Award XP
   const { state: s1, leveledUp, newLevel } = awardXP(state, xpGained);
@@ -546,25 +642,58 @@ export const BADGE_UNLOCK_CONDITIONS = {
 
 /**
  * Checks all badges and unlocks any whose conditions are now met.
- * Returns an array of newly unlocked badge IDs.
+ * Also unlocks corresponding titles via same unlockKey.
+ * Returns { newBadgeIds, newTitleIds }.
  * @param {Object} state - Current app state
- * @returns {string[]} - Array of newly unlocked badge IDs
+ * @returns {{ newBadgeIds: string[], newTitleIds: string[] }}
  */
 export function checkBadgeUnlocks(state) {
   if (!state.player.achievements) state.player.achievements = [];
   const unlocked = new Set(state.player.achievements);
-  const newlyUnlocked = [];
+  const newBadgeIds = [];
+  const unlockedKeys = []; // track keys that fired this run
 
   for (const badge of BADGE_CATALOG) {
     if (unlocked.has(badge.id)) continue;
     const condition = BADGE_UNLOCK_CONDITIONS[badge.unlockKey];
     if (condition && condition(state)) {
       state.player.achievements.push(badge.id);
-      newlyUnlocked.push(badge.id);
+      newBadgeIds.push(badge.id);
+      unlockedKeys.push(badge.unlockKey);
     }
   }
 
-  return newlyUnlocked;
+  // Co-unlock titles with same unlockKey
+  const newTitleIds = checkTitleUnlocks(state, unlockedKeys);
+
+  return { newBadgeIds, newTitleIds };
+}
+
+/**
+ * Unlocks titles in state for the given list of unlockKeys.
+ * Returns newly unlocked title IDs.
+ * @param {Object}   state
+ * @param {string[]} unlockedKeys  - Badge unlockKeys that just fired
+ * @returns {string[]}
+ */
+export function checkTitleUnlocks(state, unlockedKeys = []) {
+  if (!state.player.cosmetics) return [];
+  if (!Array.isArray(state.player.cosmetics.unlocked_titles)) {
+    state.player.cosmetics.unlocked_titles = ['title_default'];
+  }
+  const alreadySet = new Set(state.player.cosmetics.unlocked_titles);
+  const newTitleIds = [];
+
+  for (const title of TITLE_CATALOG) {
+    if (alreadySet.has(title.id)) continue;
+    if (title.unlockKey === 'DEFAULT') continue;
+    if (unlockedKeys.includes(title.unlockKey)) {
+      state.player.cosmetics.unlocked_titles.push(title.id);
+      newTitleIds.push(title.id);
+    }
+  }
+
+  return newTitleIds;
 }
 
 /**

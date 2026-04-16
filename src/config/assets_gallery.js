@@ -27,6 +27,12 @@ export const MAPS_GALLERY = [
   { id: 'planicies_verdejantes', path: '/assets/maps/planicies_verdejantes_da_antiguidade.webp', name: 'Planícies Verdejantes' },
   { id: 'sepulcro_visceral', path: '/assets/maps/sepulcro_visceral_do_deus_caido.webp', name: 'Sepulcro Visceral' },
   { id: 'bastiao_do_lago', path: '/assets/maps/bastiao_do_lago.webp', name: 'Bastião do Lago' },
+  { id: 'arquipelago_sombras', path: '/assets/maps/arquipelago_das_sombras.webp', name: 'Arquipélago Sombras' },
+  { id: 'caverna_obsidiana', path: '/assets/maps/caverna_de_obsidiana.webp', name: 'Caverna Obsidiana' },
+  { id: 'godgrave', path: '/assets/maps/godgrave.webp', name: 'Godgrave' },
+  { id: 'o_abismo', path: '/assets/maps/o_abismo.webp', name: 'O Abismo' },
+  { id: 'observatorio_49', path: '/assets/maps/observatorio_lunar_49.webp', name: 'Observatório 49' },
+  { id: 'vale_colossos', path: '/assets/maps/vale_dos_colossos.webp', name: 'Vale dos Colossos' },
 ];
 
 // ============================================================
@@ -45,4 +51,9 @@ export const BOSS_GALLERY = [
   { id: 'semente_escuridao', path: '/assets/bosses/semente_da_escuridao_principio_da_corrupcao.webp', name: 'Semente da Escuridão' },
   { id: 'soberano_esqueleto', path: '/assets/bosses/soberano_esqueleto_de_quatro_bracos.webp', name: 'Soberano Esqueleto' },
   { id: 'espadachim_desolado', path: '/assets/bosses/espadachim_desolado.webp', name: 'Espadachim Desolado' },
+  { id: 'abominacao_aguas', path: '/assets/bosses/abominacao_das_aguas_negras.webp', name: 'Abominação Águas' },
+  { id: 'arauto_frio', path: '/assets/bosses/arauto_do_frio_eterno.webp', name: 'Arauto do Frio' },
+  { id: 'dragao_onix', path: '/assets/bosses/dragao_de_onix_purpura.webp', name: 'Dragão de Ônix' },
+  { id: 'espreitador_vazio', path: '/assets/bosses/espreitador_do_vazio.webp', name: 'Espreitador Vazio' },
+  { id: 'sacerdote_profanado', path: '/assets/bosses/sacerdote_profanado.webp', name: 'Sacerdote Profanado' },
 ];

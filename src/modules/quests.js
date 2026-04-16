@@ -21,7 +21,7 @@ import { getLootTable, addToInventory } from '../firebase/db.js';
 import { auth } from '../firebase/firebase.js';
 
 import {
-    playClick, playXpGain, playWoosh, playDrop, playError
+    playSound, playWoosh, playDrop, playError
 } from '../engine/audio.js';
 
 // ============================================================
@@ -138,7 +138,7 @@ function buildDayCard(day, tasks, weekId, isToday, state) {
         card.classList.remove('drag-target');
         if (draggedTask && dragOriginDay && dragOriginDay !== day) {
             moveTaskToDay(weekId, draggedTask, dragOriginDay, day);
-            playDrop();
+            playDrop(); // Manter procedural para feedback imediato
         }
         draggedTask = null;
         dragOriginDay = null;
@@ -278,7 +278,7 @@ async function handleCompleteTask(weekId, taskId) {
 
     // Spawn floating XP above the task item
     spawnFloatingText(`+${result.xpGained} XP`, document.querySelector(`[data-task-id="${taskId}"]`), false);
-    playXpGain();
+    playSound('quest_done');
     // Use the attribute name explicitly for clarity
     const attrName = task?.attribute || 'Atributo';
     showToast(`⚔️ +${result.xpGained} XP  🎯 +${result.attrGained} XP de ${attrName}`, 'xp');
@@ -294,7 +294,8 @@ async function handleCompleteTask(weekId, taskId) {
     if (auth.currentUser) {
         try {
             const table = await getLootTable();
-            const pRank = calcRank(result.state.player.stats.total_xp_earned ?? result.state.player.xp);
+            const fragTotal = result.state.player.progression?.shadow_fragments_total ?? result.state.player.stats?.shadow_fragments_total ?? 0;
+            const pRank = calcRank(fragTotal);
             
             if (result.bossDefeated && result.defeatedBoss) {
                 // Boss defeat drops (100% guaranteed + RNG bonuses)

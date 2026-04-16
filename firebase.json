@@ -1,46 +1,44 @@
 {
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "hosting": {
     "public": ".",
     "ignore": [
       "firebase.json",
-      ".firebaserc",
-      "**/.git/**",
-      "**/.gitignore",
-      "**/node_modules/**",
+      "firestore.rules",
+      "**/*.bat",
+      "**/*.exe",
+      "**/*.py",
+      "**/*.sh",
+      ".git/**",
+      "tmp/**",
       "backups/**",
-      "gerar_backup.py",
-      "*.bat",
-      "*.exe",
-      "*.py"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
+      "node_modules/**",
+      "setup_firebase.bat",
+      "deploy.bat",
+      "Abrir RPG Life OS.bat",
+      "gerar_backup.py"
     ],
     "headers": [
       {
-        "source": "**/*.@(js|mjs|css)",
+        "source": "**/*.@(js|html|json)",
         "headers": [
-          { "key": "Cache-Control", "value": "max-age=0, no-cache" }
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+          { "key": "Pragma", "value": "no-cache" },
+          { "key": "Expires", "value": "0" }
         ]
       },
       {
-        "source": "/sw.js",
+        "source": "sw.js",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-        ]
-      },
-      {
-        "source": "/index.html",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+          { "key": "Service-Worker-Allowed", "value": "/" }
         ]
       }
+    ],
+    "rewrites": [
+      { "source": "**", "destination": "/index.html" }
     ]
-  },
-  "firestore": {
-    "rules": "firestore.rules"
   }
 }

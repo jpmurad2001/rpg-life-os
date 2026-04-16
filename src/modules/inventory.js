@@ -9,7 +9,7 @@
 import { getInventory, getLootTable } from '../firebase/db.js';
 import { currentUser }                from '../firebase/auth.js';
 import { openModal, closeModal, showToast } from '../engine/gamification.js';
-import { playClick }                  from '../engine/audio.js';
+import { playSound }                  from '../engine/audio.js';
 
 /** Cache: loot_id → item completo */
 let _lootCache = {};
@@ -71,8 +71,20 @@ function renderInventoryGrid(container, inventory) {
   });
 
   sorted.forEach(entry => {
-    const item = _lootCache[entry.loot_id];
-    if (!item) return;
+    let item = _lootCache[entry.loot_id];
+    
+    // Fallback for orphaned items
+    if (!item) {
+      item = {
+        id: entry.loot_id,
+        name: 'Memória Desconhecida',
+        rank: 'Adormecido',
+        type: 'Fragmento',
+        description: 'Os detalhes desta memória se perderam no Vazio.',
+        image_url: null,
+        is_orphaned: true
+      };
+    }
 
     const card = document.createElement('div');
     card.className = 'memory-card';
@@ -91,7 +103,7 @@ function renderInventoryGrid(container, inventory) {
     `;
 
     card.addEventListener('click', () => {
-      playClick();
+      playSound('ui_click');
       showMemoriaDetailModal(item, entry.obtained_at);
     });
 
@@ -170,6 +182,8 @@ function showMemoriaDetailModal(item, obtainedAt) {
 export function showMemoriaObtidaOverlay(item, onCollect) {
   const overlay = document.getElementById('memoria-overlay');
   if (!overlay) return;
+
+  playSound('loot_drop');
 
   const imgHtml = item.image_url
     ? `<img class="memoria-image" src="${item.image_url}" alt="${item.name}" onerror="this.style.display='none'">`

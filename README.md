@@ -18,7 +18,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Firebase-Firestore-orange?style=for-the-badge&logo=firebase" alt="Firebase"/>
   &nbsp;
-  <img src="https://img.shields.io/badge/version-Diamond_v2.7-b9f2ff?style=for-the-badge" alt="Version"/>
+  <img src="https://img.shields.io/badge/version-Platina_v3.2.1-b9f2ff?style=for-the-badge" alt="Version"/>
 </p>
 
 ---
@@ -35,10 +35,10 @@ Inspirado no sistema de progressão do universo *Shadow Slave* — com Ranks de 
 
 | Módulo | Descrição |
 |--------|-----------|
-| ⚔️ **Quests** | Crie tarefas diárias e subtarefas com atributos (INT / ART / AVE / FOR / CAR). Ganhe XP e HP ao concluir. |
-| 🏋️ **Treino** | Registre sessões de exercício com templates. Ganhe HP e XP por série completada. |
-| 🏰 **Taverna** | Controle receitas, despesas e orçamento mensal inspirado no gerenciamento de recursos de Shadow Slave. |
-| 🗺️ **Modo Campanha** | Mapa visual interativo com nós SVG dinâmicos. Encontre e derrote Bosses em jornadas épicas. |
+| ⚔️ **Quests** | Crie tarefas diárias e subtarefas com atributos (INT / ART / AVE / FOR / CAR). Ganhe progressão de Rank e HP. |
+| 🏋️ **Treino** | Registre sessões de exercício com templates. Ganhe HP e progressão por série completada. |
+| 🏰 **Taverna** | Controle receitas, despesas e orçamento mensal inspirado no gerenciamento de recursos. |
+| 🗺️ **Modo Campanha** | Mapa visual interativo com nós SVG dinâmicos. Encontre e derrote Bosses. |
 | 💎 **Memórias (Loot)** | Inventário de itens (Armas, Ecos, Armaduras) com raridades (Adormecido -> Divino). |
 | 📈 **Tear do Destino** | **Analytics Gamificado**: Visualize sua produtividade em constelações e gráficos radar de atributos. |
 | 🧘 **Reino dos Sonhos** | **Pomodoro Hardcore**: Timer imersivo focado em manter o flow e evitar a corrupção mental. |
@@ -205,12 +205,15 @@ A era Diamond focou em trazer peso para as suas decisões e recompensar a discip
 - **Temas Globais**: Interface adaptável (ex: *Blood Mode*, *Void Mode*, *Abyssal Dark*).
 - **Adornos de Perfil**: Molduras e títulos visuais baseados nas conquistas da era Diamond.
 
-#### v3.1 - A Forja de Memórias & O Mercado (Economia e Crafting)
-- **Economia de Sombras**: Quests, Pomodoros e Bosses agora dropam **Ouro** e **Fragmentos**.
-- **O Mercado**: Loja para comprar cosméticos, temas ou recompensas da vida real customizadas.
-- **A Forja**: Use fragmentos para craftar *Memórias* (Buffs: pular diárias sem perda de streak, multiplicar XP, etc).
+#### v3.1 - A Forja de Memórias & O Mercado (Economia e Crafting) [DESATIVADO]
+- **Economia de Sombras**: Sistema de moedas ocultado para priorizar estabilidade e foco.
+- **O Mercado**: Interface removida para simplificação do core.
+- **A Forja**: Crafting desativado; foco em loot direto por Bosses.
 
-#### v3.2 - Sistema de Ecos (Companheiros Sombrios)
+#### v3.2 - Estabilização de Core (v3.2.1) [ATUAL]
+- **Remoção de Instabilidade**: Limpeza de UI e remoção de módulos que impediam o login.
+- **HUD Focado**: Remoção de indicadores de moedas da barra superior para maior imersão.
+- **Sincronização Cloud**: Melhorias no sync do Firestore para multi-dispositivos.
 - **Legião de Sombras**: Desbloqueie e equipe **Ecos** que aparecem no painel principal.
 - **Ressonância Passiva**: Ecos concedem buffs (Ex: Eco Bestial: +5% ganho FOR; Eco Espectro: margem de erro no Pomodoro).
 

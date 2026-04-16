@@ -1,9 +1,37 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Modo Teste: Permite leitura/escrita global por tempo limitado para a fase de testes
-    match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 4, 16);
+
+    // ── Coleções globais (loot_table, boss_registry) ──────────────
+    // Qualquer usuário autenticado pode ler; apenas admins escrevem (via backend)
+    match /loot_table/{doc} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /boss_registry/{doc} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── Perfil do usuário (documento raiz) ────────────────────────
+    // Cada usuário lê e escreve apenas seus próprios dados
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      // Subcoleções do usuário: quests, inventory, templates, battle_sessions, taverna
+      // v3.1: forge_inventory, market_items
+      match /{subcollection}/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // ── Boss Maps (campanhas) ─────────────────────────────────────
+    // Cada usuário lê e escreve apenas seus próprios mapas (field uid == auth.uid)
+    match /boss_maps/{mapId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
   }
 }

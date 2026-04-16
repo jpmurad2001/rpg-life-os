@@ -8,7 +8,7 @@
 
 import { loadState, saveState, genId } from '../engine/core.js';
 import { openModal, closeModal, showToast } from '../engine/gamification.js';
-import { playClick, playDrop, playWoosh } from '../engine/audio.js';
+import { playSound, playClick, playDrop, playWoosh } from '../engine/audio.js';
 
 // ============================================================
 //   PRIORITY CONFIG (RPG Rarity)
@@ -729,7 +729,7 @@ export function initBoard() {
   if (btnNew && !btnNew.dataset.wired) {
     btnNew.dataset.wired = '1';
     btnNew.addEventListener('click', () => {
-      playClick();
+      playSound('ui_click');
       openCreateBoardModal();
     });
   }
@@ -739,7 +739,7 @@ export function initBoard() {
   if (btnNewEmpty && !btnNewEmpty.dataset.wired) {
     btnNewEmpty.dataset.wired = '1';
     btnNewEmpty.addEventListener('click', () => {
-      playClick();
+      playSound('ui_click');
       openCreateBoardModal();
     });
   }

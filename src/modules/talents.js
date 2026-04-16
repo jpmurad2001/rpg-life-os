@@ -7,158 +7,125 @@
 
 import { loadState, saveState }  from '../engine/core.js';
 import { showToast, renderHUD }  from '../engine/gamification.js';
-import { playClick, playXpGain } from '../engine/audio.js';
+import { playSound } from '../engine/audio.js';
 
 // ============================================================
 //   BRANCH COLORS
 // ============================================================
 const BRANCH_COLORS = {
-  core: '#ffd700',  // gold
-  INT:  '#9c7cf4',  // violet
-  ART:  '#ff6b9d',  // pink
-  AVE:  '#4fc3f7',  // cyan
   FOR:  '#ff5252',  // red
+  INT:  '#9c7cf4',  // violet
+  AVE:  '#4fc3f7',  // cyan
+  ART:  '#ff6b9d',  // pink
   CAR:  '#ffb74d',  // orange
+  CORE: '#ffd700',  // gold
 };
 
 // ============================================================
-//   TALENT NODE DEFINITIONS (immutable template)
+//   TALENT NODE DEFINITIONS (Proper Tree Graph)
+// ============================================================
+// ============================================================
+//   TALENT NODE DEFINITIONS (Proper Tree Graph — 7 Tiers)
 // ============================================================
 const TALENT_DEFINITIONS = [
-  // ── CORE ROOT ─────────────────────────────────────────────
-  {
-    id: 'root', name: 'Despertar da Sombra',
-    description: 'O primeiro passo no caminho das trevas.\nO portal para todos os aspectos do poder.',
-    icon: '🌑', cost: 0, deps: [], branch: 'core',
-    position: { col: 3, row: 0 },
-    effect: { type: 'none', label: 'Ponto de partida — todos os caminhos começam aqui' },
-  },
-  // ── INT BRANCH ────────────────────────────────────────────
-  {
-    id: 'int_1', name: 'Lente do Conhecimento',
-    description: 'Sua mente absorve informações com mais eficiência.\nO aprendizado se torna instinto.',
-    icon: '🧠', cost: 2, deps: ['root'], branch: 'INT',
-    position: { col: 1, row: 1 },
-    effect: { type: 'xpMultiplier', value: 1.05, label: '+5% XP em todas as missões' },
-  },
-  {
-    id: 'int_2', name: 'Tomo Arcano',
-    description: 'Conhecimento ancestral flui por você como água.\nVocê vê padrões onde outros veem caos.',
-    icon: '📚', cost: 3, deps: ['int_1'], branch: 'INT',
-    position: { col: 0, row: 2 },
-    effect: { type: 'xpMultiplier', value: 1.10, label: '+10% XP total acumulado' },
-  },
-  // ── ART BRANCH ────────────────────────────────────────────
-  {
-    id: 'art_1', name: 'Toque do Criador',
-    description: 'Suas criações ganham vida própria.\nA intenção molda a realidade ao redor.',
-    icon: '🎨', cost: 2, deps: ['root'], branch: 'ART',
-    position: { col: 3, row: 1 },
-    effect: { type: 'placeholder', label: 'Amplia o XP de missões ART — Em breve' },
-  },
-  {
-    id: 'art_2', name: 'Voz das Sombras',
-    description: 'A arte se torna linguagem. As sombras obedecem\nà melodia que você compõe.',
-    icon: '🎭', cost: 4, deps: ['art_1'], branch: 'ART',
-    position: { col: 3, row: 2 },
-    effect: { type: 'placeholder', label: 'Desbloqueia missões de criação especiais — Em breve' },
-  },
-  // ── AVE BRANCH ────────────────────────────────────────────
-  {
-    id: 'ave_1', name: 'Pulmões de Ferro',
-    description: 'Seu corpo endurece. Cada treino forja\nalgo além da carne.',
-    icon: '⚔️', cost: 2, deps: ['root'], branch: 'AVE',
-    position: { col: 5, row: 1 },
-    effect: { type: 'placeholder', label: 'Reduz custo de HP em treinos — Em breve' },
-  },
-  {
-    id: 'ave_2', name: 'Fúria da Penumbra',
-    description: 'A sombra em você desperta durante o combate.\nVocê nunca para. Nunca recua.',
-    icon: '🌪️', cost: 3, deps: ['ave_1'], branch: 'AVE',
-    position: { col: 6, row: 2 },
-    effect: { type: 'placeholder', label: '+Resistência nos Bosses — Em breve' },
-  },
-  // ── FOR BRANCH ──────────────────────────────────────────── (New v2.6)
-  {
-    id: 'for_1', name: 'Sangue de Ferro',
-    description: 'Seu corpo se torna um templo de determinação.\nA fadiga é apenas um rumor.',
-    icon: '💪', cost: 2, deps: ['root'], branch: 'FOR',
-    position: { col: 2, row: 1 },
-    effect: { type: 'placeholder', label: '+Dano base contra Bosses — Em breve' },
-  },
-  {
-    id: 'for_2', name: 'Colosso de Sombras',
-    description: 'Você se torna uma força da natureza.\nNada pode mover quem já é a própria montanha.',
-    icon: '🧱', cost: 4, deps: ['for_1'], branch: 'FOR',
-    position: { col: 2, row: 2 },
-    effect: { type: 'placeholder', label: 'Imunidade a penalidades de HP — Em breve' },
-  },
-  // ── CAR BRANCH ──────────────────────────────────────────── (New v2.6)
-  {
-    id: 'car_1', name: 'Voz de Comando',
-    description: 'Suas palavras carregam o peso do destino.\nTodos param para ouvir o som do Vazio.',
-    icon: '🎭', cost: 2, deps: ['root'], branch: 'CAR',
-    position: { col: 4, row: 1 },
-    effect: { type: 'placeholder', label: '+Chances de Drop raro em Quests — Em breve' },
-  },
-  {
-    id: 'car_2', name: 'Presença Soberana',
-    description: 'Sua aura é tão vasta que eclipsa a própria luz.\nInimigos hesitam antes do primeiro golpe.',
-    icon: '✨', cost: 4, deps: ['car_1'], branch: 'CAR',
-    position: { col: 4, row: 2 },
-    effect: { type: 'placeholder', label: 'Multiplicador de Ouro passivo — Em breve' },
-  },
+  // --- TIER 0: ROOT (Row 0) ---
+  { id: 'root', name: 'Despertar da Sombra', desc: 'O início de sua jornada. Todas as sombras se originam deste ponto.', cost: 0, type: 'core', value: 0, req: [], attr: 'CORE', position: { col: 4, row: 0 }, icon: '🌑', tier: 0 },
+
+  // --- TIER 1: BASES (Row 1) ---
+  { id: 'for_t1', name: 'Músculos Densos', desc: '+2% Dano em Chefes', cost: 1, type: 'boss_damage', value: 0.02, req: ['root'], attr: 'FOR', position: { col: 2, row: 1 }, icon: '💪', tier: 1 },
+  { id: 'int_t1', name: 'Mente Clara',    desc: '+2% XP em Quests',  cost: 1, type: 'quest_xp', value: 0.02, req: ['root'], attr: 'INT', position: { col: 3, row: 1 }, icon: '🧠', tier: 1 },
+  { id: 'ave_t1', name: 'Passos Leves',   desc: '+2% Ouro Dropado',  cost: 1, type: 'gold_drop', value: 0.02, req: ['root'], attr: 'AVE', position: { col: 4, row: 1 }, icon: '🗡️', tier: 1 },
+  { id: 'art_t1', name: 'Mãos Precisas',  desc: '+2% XP de Atributo', cost: 1, type: 'attr_xp',  value: 0.02, req: ['root'], attr: 'ART', position: { col: 5, row: 1 }, icon: '🎨', tier: 1 },
+  { id: 'car_t1', name: 'Presença Notável', desc: '+2% Chance Drop Duplo', cost: 1, type: 'double_drop', value: 0.02, req: ['root'], attr: 'CAR', position: { col: 6, row: 1 }, icon: '🎭', tier: 1 },
+
+  // --- TIER 2: SPECIALIZATIONS (Row 2) ---
+  { id: 'for_t2', name: 'Golpe Pesado',    desc: '+3% Dano em Chefes', cost: 2, type: 'boss_damage', value: 0.03, req: ['for_t1'], attr: 'FOR', position: { col: 1, row: 2 }, icon: '⚔️', tier: 2 },
+  { id: 'int_t2', name: 'Foco Profundo',   desc: '+3% XP em Quests',  cost: 2, type: 'quest_xp', value: 0.03, req: ['int_t1'], attr: 'INT', position: { col: 3, row: 2 }, icon: '📚', tier: 2 },
+  { id: 'ave_t2', name: 'Explorador Ágil', desc: '+3% Ouro Dropado',  cost: 2, type: 'gold_drop', value: 0.03, req: ['ave_t1'], attr: 'AVE', position: { col: 4, row: 2 }, icon: '🏃', tier: 2 },
+  { id: 'art_t2', name: 'Toque de Mestre', desc: '+3% XP de Atributo', cost: 2, type: 'attr_xp',  value: 0.03, req: ['art_t1'], attr: 'ART', position: { col: 5, row: 2 }, icon: '🎭', tier: 2 },
+  { id: 'car_t2', name: 'Sussurros Sedutores', desc: '+3% Chance Drop Duplo', cost: 2, type: 'double_drop', value: 0.03, req: ['car_t1'], attr: 'CAR', position: { col: 7, row: 2 }, icon: '✨', tier: 2 },
+
+  // --- TIER 3: HYBRIDS (Row 3) ---
+  { id: 'war_t3', name: 'Mente Marcial', desc: '+6% Dano Boss & XP Quest', cost: 3, type: 'boss_damage', value: 0.06, req: ['for_t1', 'int_t1'], attr: 'FOR', position: { col: 2, row: 3 }, icon: '🛡️', tier: 3 },
+  { id: 'tra_t3', name: 'Mercador Viajante', desc: '+6% Ouro & Drop Duplo', cost: 3, type: 'gold_drop', value: 0.06, req: ['ave_t1', 'car_t1'], attr: 'AVE', position: { col: 6, row: 3 }, icon: '⚖️', tier: 3 },
+  { id: 'cre_t3', name: 'Visionário Arcano', desc: '+6% Attr XP & XP Quest', cost: 3, type: 'attr_xp', value: 0.06, req: ['int_t1', 'art_t1'], attr: 'ART', position: { col: 4, row: 3 }, icon: '🧿', tier: 3 },
+
+  // --- TIER 4: ADVANCED EXTENSIONS (Row 4) ---
+  { id: 'for_t4', name: 'Força Titânica',   desc: '+5% Dano em Chefes', cost: 3, type: 'boss_damage', value: 0.05, req: ['for_t2'], attr: 'FOR', position: { col: 0, row: 4 }, icon: '🧱', tier: 4 },
+  { id: 'int_t4', name: 'Sábio Imortal',    desc: '+5% XP em Quests',  cost: 3, type: 'quest_xp', value: 0.05, req: ['int_t2'], attr: 'INT', position: { col: 3, row: 4 }, icon: '🔮', tier: 4 },
+  { id: 'ave_t4', name: 'Caminhante do Abismo', desc: '+5% Ouro Dropado',  cost: 3, type: 'gold_drop', value: 0.05, req: ['ave_t2'], attr: 'AVE', position: { col: 4, row: 4 }, icon: '🌪️', tier: 4 },
+  { id: 'art_t4', name: 'Obra Prima',       desc: '+5% XP de Atributo', cost: 3, type: 'attr_xp',  value: 0.05, req: ['art_t2'], attr: 'ART', position: { col: 5, row: 4 }, icon: '🏛️', tier: 4 },
+  { id: 'car_t4', name: 'Líder de Culto',   desc: '+5% Chance Drop Duplo', cost: 3, type: 'double_drop', value: 0.05, req: ['car_t2'], attr: 'CAR', position: { col: 8, row: 4 }, icon: '👑', tier: 4 },
+
+  // --- TIER 5: LEGENDARY PATHS (Row 5) ---
+  { id: 'for_t5', name: 'Soberano da Guerra', desc: '+10% Dano Boss', cost: 4, type: 'boss_damage', value: 0.10, req: ['for_t4', 'war_t3'], attr: 'FOR', position: { col: 1, row: 5 }, icon: '🌋', tier: 5 },
+  { id: 'int_t5', name: 'Arquivista do Vazio', desc: '+10% XP Quest', cost: 4, type: 'quest_xp', value: 0.10, req: ['int_t4', 'cre_t3'], attr: 'INT', position: { col: 3, row: 5 }, icon: '📜', tier: 5 },
+  { id: 'ave_t5', name: 'Nômade Estelar',     desc: '+10% Ouro Drop',  cost: 4, type: 'gold_drop', value: 0.10, req: ['ave_t4', 'tra_t3'], attr: 'AVE', position: { col: 5, row: 5 }, icon: '✨', tier: 5 },
+  { id: 'art_t5', name: 'Mestre da Realidade', desc: '+10% Attr XP',   cost: 4, type: 'attr_xp',  value: 0.10, req: ['art_t4', 'cre_t3'], attr: 'ART', position: { col: 7, row: 5 }, icon: '💎', tier: 5 },
+
+
+  // --- TIER 6: MYTHIC CONVERGENCE (Row 6) ---
+  { id: 'ult_1', name: 'Avatar do Vazio', desc: '+15% All Stats (XP/Gold/Dmg)', cost: 5, type: 'quest_xp', value: 0.15, req: ['for_t5', 'int_t5'], attr: 'CORE', position: { col: 2, row: 6 }, icon: '🌌', tier: 6 },
+  { id: 'ult_2', name: 'Deus da Prosperidade', desc: '+15% All Stats (XP/Gold/Dmg)', cost: 5, type: 'gold_drop', value: 0.15, req: ['ave_t5', 'art_t5'], attr: 'CORE', position: { col: 6, row: 6 }, icon: '💠', tier: 6 },
+
+  // --- TIER 7: THE SINGULARITY (Row 7) ---
+  { id: 'singular_root', name: 'A Singularidade', desc: 'O ápice da existência Shadow.\n+25% Multiplicador Final.', cost: 10, type: 'quest_xp', value: 0.25, req: ['ult_1', 'ult_2'], attr: 'CORE', position: { col: 4, row: 7 }, icon: '👁️', tier: 7 },
 ];
 
-// Connection edges (for SVG drawing)
-const EDGES = [
-  { from: 'root',  to: 'int_1' },
-  { from: 'root',  to: 'art_1' },
-  { from: 'root',  to: 'ave_1' },
-  { from: 'root',  to: 'for_1' },
-  { from: 'root',  to: 'car_1' },
-  { from: 'int_1', to: 'int_2' },
-  { from: 'art_1', to: 'art_2' },
-  { from: 'ave_1', to: 'ave_2' },
-  { from: 'for_1', to: 'for_2' },
-  { from: 'car_1', to: 'car_2' },
-];
+// Connection edges (Calculated between Tier requirements)
+const EDGES = TALENT_DEFINITIONS
+  .filter(s => s.req && s.req.length > 0)
+  .flatMap(s => s.req.map(rId => ({ from: rId, to: s.id })));
 
 // ============================================================
 //   RUNTIME STATE
 // ============================================================
 let _nodes       = [];
-let _skillPoints = 10;
+let _skillPoints = 5;
 
 function _syncFromState() {
   const state = loadState();
-  _skillPoints  = state.player.skill_points ?? 10;
+  _skillPoints  = state.player.skill_points ?? 5;
   const saved   = state.player.talents ?? {};
+
+  // BALANCE FIX: If player has 10 unspent points and no talents bought, force reset to 5
+  if (_skillPoints === 10 && Object.keys(saved).length === 0) {
+    _skillPoints = 5;
+    state.player.skill_points = 5;
+    saveState(state);
+  }
 
   _nodes = TALENT_DEFINITIONS.map(def => ({
     ...def,
-    status: saved[def.id] ?? (def.deps.length === 0 ? 'purchased' : 'locked'),
+    // THE ROOT IS ALWAYS PURCHASED BY DEFAULT
+    status: (def.id === 'root') ? 'purchased' : (saved[def.id] ?? (def.req.length === 0 ? 'available' : 'locked')),
   }));
 
-  // On first use (no saved talents): unlock nodes whose deps are already purchased
-  if (Object.keys(saved).length === 0) {
-    _nodes.forEach(n => {
-      if (n.status === 'locked') {
-        const allDepsOk = n.deps.every(d => _getNode(d)?.status === 'purchased');
-        if (allDepsOk) n.status = 'available';
-      }
-    });
-  }
+  // Re-verify availability for all locked nodes
+  _nodes.forEach(n => {
+    if (n.status === 'locked' && n.id !== 'root') {
+      const allDepsOk = n.req.every(rId => _getNode(rId)?.status === 'purchased');
+      if (allDepsOk) n.status = 'available';
+    }
+  });
 }
 
 function _syncToState() {
   const state = loadState();
   state.player.skill_points = _skillPoints;
-  state.player.xpMultiplier = _nodes
-    .filter(n => n.status === 'purchased' && n.effect.type === 'xpMultiplier')
-    .reduce((acc, n) => acc * (n.effect.value ?? 1), 1.0);
+  
+  // Calculate Bonuses based on purchased nodes
+  const purchased = _nodes.filter(n => n.status === 'purchased');
+  
+  // Update state multipliers (additive)
+  state.player.talentBonuses = calculateSkillModifiers(Object.keys(saved), TALENT_DEFINITIONS);
+
+  // Legacy compatibility: update xpMultiplier (mapped to quest_xp)
+  state.player.xpMultiplier = state.player.talentBonuses.questXpMulti;
+
   state.player.talents = {};
   _nodes.forEach(n => { state.player.talents[n.id] = n.status; });
+  
   saveState(state);
   renderHUD(state);
 }
@@ -190,13 +157,13 @@ export function purchaseTalent(nodeId) {
 
   // Unlock dependents
   _nodes
-    .filter(n => n.deps.includes(nodeId) && n.status === 'locked')
+    .filter(n => n.req.includes(nodeId) && n.status === 'locked')
     .forEach(n => {
-      if (n.deps.every(d => _getNode(d)?.status === 'purchased')) n.status = 'available';
+      if (n.req.every(rId => _getNode(rId)?.status === 'purchased')) n.status = 'available';
     });
 
   _syncToState();
-  playXpGain();
+  playSound('quest_done');
   showToast(`✨ ${node.name} desbloqueado!`, 'xp', 3000);
   renderTalents();
 }
@@ -208,8 +175,8 @@ function _showTooltip(node, e) {
   const tip = document.getElementById('talent-tooltip');
   if (!tip) return;
 
-  const branchLabel = { core: 'NÚCLEO', INT: 'INT', ART: 'ART', AVE: 'AVE', FOR: 'FOR', CAR: 'CAR' }[node.branch] ?? node.branch;
-  const color       = BRANCH_COLORS[node.branch] ?? '#ffd700';
+  const branchLabel = node.attr;
+  const color       = BRANCH_COLORS[node.attr] ?? '#ffd700';
 
   const statusHTML = {
     purchased: `<span class="talent-tooltip__status talent-tt-purchased">✅ Comprado</span>`,
@@ -219,9 +186,9 @@ function _showTooltip(node, e) {
 
   tip.innerHTML = `
     <div class="talent-tooltip__title" style="color:${color}">${node.icon} ${node.name}</div>
-    <div class="talent-tooltip__branch" style="color:${color}99">[${branchLabel}]</div>
-    <div class="talent-tooltip__desc">${node.description.replace(/\n/g, '<br>')}</div>
-    <div class="talent-tooltip__effect">${node.effect.label}</div>
+    <div class="talent-tooltip__branch" style="color:${color}99">[TIER ${node.tier} - ${branchLabel}]</div>
+    <div class="talent-tooltip__desc">${node.desc.replace(/\n/g, '<br>')}</div>
+    <div class="talent-tooltip__effect">Tier ${node.tier} ${node.attr}</div>
     ${statusHTML}
   `;
 
@@ -283,7 +250,7 @@ function _drawConnections(svgEl, gridEl) {
     const fromNode = _getNode(edge.from);
     const toNode   = _getNode(edge.to);
     const isActive = fromNode?.status === 'purchased';
-    const color    = BRANCH_COLORS[toNode?.branch ?? 'core'];
+    const color    = BRANCH_COLORS[toNode?.attr ?? 'FOR'];
 
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', x1); line.setAttribute('y1', y1);
@@ -324,7 +291,7 @@ function _buildNodeEl(node) {
   // CSS Grid placement (CSS Grid is 1-indexed)
   el.style.gridColumn = node.position.col + 1;
   el.style.gridRow    = node.position.row + 1;
-  el.style.setProperty('--branch-color', BRANCH_COLORS[node.branch] ?? '#ffd700');
+  el.style.setProperty('--branch-color', BRANCH_COLORS[node.attr] ?? '#ffd700');
 
   el.innerHTML = `
     <span class="talent-node__icon" aria-hidden="true">${node.icon}</span>
@@ -334,9 +301,9 @@ function _buildNodeEl(node) {
   `;
 
   // Interactions
-  el.addEventListener('click',   () => { playClick(); purchaseTalent(node.id); });
+  el.addEventListener('click',   () => { playSound('ui_click'); purchaseTalent(node.id); });
   el.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playClick(); purchaseTalent(node.id); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playSound('ui_click'); purchaseTalent(node.id); }
   });
   el.addEventListener('mouseenter', ev => _showTooltip(node, ev));
   el.addEventListener('mousemove',  ev => _positionTooltip(ev));
@@ -377,3 +344,38 @@ export function renderTalents() {
 export function initTalents() {
   renderTalents();
 }
+
+/**
+ * Calcula os multiplicadores finais baseados nas habilidades desbloqueadas.
+ * @param {Array<string>} unlockedSkillIds Array com os IDs desbloqueados (ex: ['for_t1', 'int_t2'])
+ * @param {Array} skillTreeDef O array de definição da árvore
+ * @returns {Object} Objeto contendo os multiplicadores finais.
+ */
+export function calculateSkillModifiers(unlockedSkillIds, skillTreeDef) {
+  const modifiers = {
+    bossDamageMulti: 1.0,
+    questXpMulti: 1.0,
+    goldDropMulti: 1.0,
+    attrXpMulti: 1.0,
+    doubleDropChance: 0.0 // Base é 0 (chance percentual adicional)
+  };
+
+  if (!unlockedSkillIds || !Array.isArray(unlockedSkillIds)) return modifiers;
+
+  unlockedSkillIds.forEach(id => {
+    const skill = skillTreeDef.find(s => s.id === id);
+    if (skill) {
+      switch (skill.type) {
+        case 'boss_damage': modifiers.bossDamageMulti += skill.value; break;
+        case 'quest_xp':    modifiers.questXpMulti += skill.value; break;
+        case 'gold_drop':   modifiers.goldDropMulti += skill.value; break;
+        case 'attr_xp':     modifiers.attrXpMulti += skill.value; break;
+        case 'double_drop': modifiers.doubleDropChance += skill.value; break;
+      }
+    }
+  });
+
+  return modifiers;
+}
+
+export { TALENT_DEFINITIONS };

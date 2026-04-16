@@ -1,15 +1,35 @@
 /**
- * Shadow Slave Life OS — Dark Synth Audio Engine (Phase 4)
+ * Shadow Slave Life OS — Dark Synth Audio Engine (Phase 4.1)
  * ==========================================================
- * Revisão completa dos sons para um timbre sombrio e grave.
- * Osciladores com frequências mais baixas, decays longos, reverb sintético.
+ * Refactor: Added SFX_MAP support for high-quality MP3 assets.
+ * Supports procedural synth tones AND file-based SFX.
  */
+
+const SFX_MAP = {
+  ui_click: '/assets/sfx/fx/sfx_ui_click.mp3',
+  quest_done: '/assets/sfx/fx/sfx_quest_done.mp3',
+  pomodoro_end: '/assets/sfx/fx/sfx_pomodoro_end.mp3',
+  boss_hit: '/assets/sfx/fx/sfx_boss_hit.mp3',
+  boss_defeat: '/assets/sfx/fx/sfx_boss_defeat.mp3',
+  level_up: '/assets/sfx/fx/sfx_level_up.mp3',
+  critical_hit: '/assets/sfx/fx/sfx_critical_hit.mp3',
+  loot_drop: '/assets/sfx/fx/sfx_loot_drop.mp3',
+  rank_ascension: '/assets/sfx/fx/sfx_rank_ascension.mp3',
+  // Tiers dinâmicos para conquistas, badges e títulos
+  unlock_tier1: '/assets/sfx/fx/sfx_unlock_tier1.mp3',
+  unlock_tier2: '/assets/sfx/fx/sfx_unlock_tier2.mp3',
+  unlock_tier3: '/assets/sfx/fx/sfx_unlock_tier3.mp3',
+  unlock_tier4: '/assets/sfx/fx/sfx_unlock_tier4.mp3',
+  unlock_tier5: '/assets/sfx/fx/sfx_unlock_tier5.mp3',
+  unlock_tier6: '/assets/sfx/fx/sfx_unlock_tier6.mp3'
+};
 
 class SoundManager {
   constructor() {
     this._ctx    = null;
     this.enabled = true;
     this.volume  = 0.15;
+    this._cache  = {}; // To avoid redundant Audio object creation (minimal latency gain)
   }
 
   get ctx() {
@@ -27,7 +47,33 @@ class SoundManager {
   }
 
   /**
-   * Tom simples com envelope de decay.
+   * Toca um efeito sonoro baseado na chave do SFX_MAP.
+   * @param {string} key Chave do som no SFX_MAP
+   */
+  playSound(key) {
+    if (!this.enabled) return;
+    const path = SFX_MAP[key];
+    if (!path) {
+      console.warn(`[SoundManager] Som não encontrado: ${key}`);
+      return;
+    }
+
+    try {
+      const audio = new Audio(path);
+      audio.volume = this.volume;
+      audio.play().catch(e => {
+        // Ignorar erros de interação do navegador se necessário
+        if (e.name !== 'NotAllowedError') {
+          console.error(`[SoundManager] Erro ao tocar ${key}:`, e);
+        }
+      });
+    } catch (err) {
+      console.error(`[SoundManager] Falha crítica ao inicializar áudio ${key}:`, err);
+    }
+  }
+
+  /**
+   * Tom simples com envelope de decay (Procedural).
    */
   tone(freq, duration, type = 'square', startOffset = 0, gainMod = 1.0, pitchEnd = null) {
     if (!this.enabled) return;
@@ -65,113 +111,93 @@ class SoundManager {
 export const sfx = new SoundManager();
 
 // ============================================================
-//   SONS DARK SYNTH — Revisados para Shadow Slave
+//   HELPERS DINÂMICOS
+// ============================================================
+
+/**
+ * Toca o efeito sonoro de destravamento correspondente ao Tier da recompensa.
+ * @param {number} tier Nível da recompensa (1 a 6)
+ */
+export function playUnlockSound(tier) {
+  const safeTier = Math.max(1, Math.min(6, tier)); // Garante que fique entre 1 e 6
+  const soundKey = `unlock_tier${safeTier}`;
+  sfx.playSound(soundKey);
+}
+
+/** Função principal exposta para tocar sons dinâmicos */
+export function playSound(name) {
+  sfx.playSound(name);
+}
+
+// ============================================================
+//   RETRORRECOMPATIBILIDADE — Mapeando funções antigas para o novo motor
 // ============================================================
 
 /** Clique seco e grave */
 export function playClick() {
-  sfx.tone(220, 0.05, 'square', 0, 0.5);
+  sfx.playSound('ui_click');
 }
 
-/** Fragmentos de Sombra ganhos — descida sombria em vez de acorde alegre */
+/** Conclusão de Quest ou ganho de XP */
 export function playXpGain() {
-  sfx.tone(330, 0.09, 'square', 0.00, 0.65);
-  sfx.tone(247, 0.09, 'square', 0.07, 0.55);
-  sfx.tone(196, 0.12, 'square', 0.14, 0.45);
+  sfx.playSound('quest_done');
 }
 
-/** Level-up → Rank Up agora chama playRankUp() */
+/** Level-up */
 export function playLevelUp() {
-  playRankUp();
+  sfx.playSound('level_up');
 }
 
-/** Fanfarra sombria do Rank Up — descendente, grave, épica */
+/** Rank Up */
 export function playRankUp() {
-  // Acordes descendentes — Do menor natural
-  const seq = [
-    { f: 523, t: 0.00, type: 'sawtooth' },
-    { f: 440, t: 0.15, type: 'sawtooth' },
-    { f: 349, t: 0.30, type: 'sawtooth' },
-    { f: 294, t: 0.48, type: 'sawtooth' },
-    { f: 196, t: 0.68, type: 'sawtooth' },   // nota final grave, longa
-  ];
-  seq.forEach(({ f, t, type }, i) =>
-    sfx.tone(f, i === seq.length - 1 ? 0.8 : 0.18, type, t, 0.7)
-  );
-  // Drone de fundo
-  sfx.tone(98, 1.4, 'sine', 0.0, 0.3);
+  sfx.playSound('rank_ascension');
 }
 
-/** Ataque de boss — percussivo, impactante */
+/** Ataque de boss */
 export function playBossAttack() {
-  sfx.tone(180, 0.12, 'sawtooth', 0.00, 0.85, 60);
-  sfx.tone(60,  0.18, 'sine',     0.02, 0.6);
+  sfx.playSound('boss_hit');
 }
 
-/** Derrota épica do Boss — queda dramática */
+/** Derrota do Boss */
 export function playBossDefeat() {
-  const melody = [
-    { f: 392, t: 0.00 },
-    { f: 330, t: 0.12 },
-    { f: 294, t: 0.24 },
-    { f: 246, t: 0.36 },
-    { f: 196, t: 0.52 },
-    { f: 147, t: 0.72 },
-    { f: 110, t: 0.95 },  // grave final
-  ];
-  melody.forEach(({ f, t }, i) =>
-    sfx.tone(f, i === melody.length - 1 ? 1.0 : 0.15, 'sawtooth', t, 0.75)
-  );
-  sfx.tone(55, 1.8, 'sine', 0.5, 0.25);  // sub-bass
+  sfx.playSound('boss_defeat');
 }
 
-/** Memória obtida — shimmer etéreo e misterioso */
+/** Memória obtida */
 export function playMemoriaObtida() {
-  // Arpejo ascendente em tom menor
-  const notes = [220, 261, 311, 370];
-  notes.forEach((f, i) => {
-    sfx.tone(f * 2, 0.4, 'sine',     i * 0.09, 0.4);  // harmônico superior
-    sfx.tone(f,     0.6, 'triangle', i * 0.09, 0.3);  // base
-  });
-  // Shimmer final
-  sfx.tone(880, 1.2, 'sine', 0.38, 0.2);
+  sfx.playSound('loot_drop');
 }
 
-/** Achievement desbloqueado */
+/** Achievement desbloqueado — usa o Tier 2 como padrão para conquistas normais */
 export function playAchievement() {
-  const arp = [262, 311, 370, 440];
-  arp.forEach((f, i) => sfx.tone(f, 0.14, 'triangle', i * 0.07, 0.7));
-  sfx.tone(440, 0.5, 'sine', 0.3, 0.35);
+  playUnlockSound(2);
 }
 
-/** Timer de descanso — dois bipes graves */
+/** Timer de descanso / Fim de Pomodoro */
 export function playTimerDing() {
-  sfx.tone(220, 0.15, 'sine', 0.00, 0.65);
-  sfx.tone(330, 0.18, 'sine', 0.20, 0.55);
+  sfx.playSound('pomodoro_end');
 }
 
-/** Erro / ação inválida */
+/** Erro / ação inválida (Mantido procedural por ser reativo) */
 export function playError() {
   sfx.tone(100, 0.10, 'square', 0, 0.6);
   sfx.tone(80,  0.10, 'square', 0.08, 0.5);
 }
 
-/** Drag de tarefa — woosh sombrio */
+/** Woosh e Drop (Mantidos procedurais para evitar latência em interações de UI constantes) */
 export function playWoosh() {
   sfx.tone(300, 0.08, 'sawtooth', 0, 0.35, 100);
 }
 
-/** Drop de tarefa — clique satisfatório */
 export function playDrop() {
   sfx.tone(196, 0.06, 'sine', 0.00);
   sfx.tone(262, 0.06, 'sine', 0.06);
 }
 
-/** Anoitecer — drone grave ao entrar no modo noturno */
+/** Anoitecer — drone grave ao entrar no modo noturno (Mistura procedural + novo SFX se disponível futuramente) */
 export function playNightfall() {
-  sfx.tone(55,  3.0, 'sine',      0.0, 0.2);  // sub-bass long
+  sfx.tone(55,  3.0, 'sine',      0.0, 0.2);
   sfx.tone(110, 2.0, 'triangle',  0.5, 0.15);
-  sfx.tone(82,  2.5, 'sawtooth',  1.0, 0.05);
 }
 
 // ============================================================
@@ -179,3 +205,4 @@ export function playNightfall() {
 // ============================================================
 export function setSoundEnabled(val)  { sfx.enabled = val; }
 export function setSoundVolume(val)   { sfx.volume = Math.max(0, Math.min(1, val)); }
+

@@ -1,0 +1,75 @@
+<!-- gold_chest.svg — Baú de madeira aberto transbordando ouro, pixel art -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="96" height="96"
+     shape-rendering="crispEdges" image-rendering="pixelated">
+  <title>Baú de Ouro</title>
+  <defs>
+    <radialGradient id="chestGold" cx="50%" cy="20%" r="80%">
+      <stop offset="0%"   stop-color="#fff176"/>
+      <stop offset="50%"  stop-color="#ffd700"/>
+      <stop offset="100%" stop-color="#a07000"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Shadow -->
+  <ellipse cx="24" cy="46" rx="16" ry="2" fill="#000" opacity="0.3"/>
+
+  <!-- Chest body (bottom) -->
+  <rect x="4"  y="26" width="40" height="18" fill="#5d3a1a"/>
+  <rect x="4"  y="26" width="40" height="2"  fill="#8b572a"/>  <!-- top edge -->
+  <rect x="4"  y="26" width="2"  height="18" fill="#3e2410"/>  <!-- left shadow -->
+  <rect x="42" y="26" width="2"  height="18" fill="#3e2410"/>  <!-- right shadow -->
+  <!-- Wood grain lines -->
+  <rect x="6"  y="30" width="36" height="1" fill="#4a2e12" opacity="0.6"/>
+  <rect x="6"  y="35" width="36" height="1" fill="#4a2e12" opacity="0.6"/>
+  <rect x="6"  y="40" width="36" height="1" fill="#4a2e12" opacity="0.6"/>
+
+  <!-- Metal bands on body -->
+  <rect x="4"  y="28" width="40" height="3" fill="#3a3a3a"/>
+  <rect x="4"  y="28" width="40" height="1" fill="#666"/>
+  <rect x="4"  y="39" width="40" height="3" fill="#3a3a3a"/>
+  <rect x="4"  y="39" width="40" height="1" fill="#666"/>
+
+  <!-- Lock plate -->
+  <rect x="20" y="30" width="8" height="7" fill="#888"/>
+  <rect x="21" y="31" width="6" height="5" fill="#aaa"/>
+  <rect x="22" y="32" width="4" height="3" fill="#666"/>
+  <!-- Keyhole -->
+  <rect x="23" y="33" width="2" height="2" fill="#333"/>
+
+  <!-- Chest lid (open, angled back) -->
+  <rect x="4"  y="14" width="40" height="14" fill="#6d4520"/>
+  <rect x="4"  y="14" width="40" height="2"  fill="#9a6030"/>
+  <rect x="4"  y="14" width="2"  height="14" fill="#4a2e12"/>
+  <rect x="42" y="14" width="2"  height="14" fill="#4a2e12"/>
+  <!-- Lid wood grain -->
+  <rect x="6"  y="18" width="36" height="1" fill="#5a3820" opacity="0.6"/>
+  <rect x="6"  y="23" width="36" height="1" fill="#5a3820" opacity="0.6"/>
+  <!-- Lid metal band -->
+  <rect x="4"  y="20" width="40" height="3" fill="#444"/>
+  <rect x="4"  y="20" width="40" height="1" fill="#777"/>
+
+  <!-- Gold OVERFLOW — coins tumbling out -->
+  <ellipse cx="24" cy="27" rx="18" ry="5" fill="url(#chestGold)"/>
+
+  <!-- Scattered coins on top -->
+  <ellipse cx="12" cy="24" rx="4" ry="2" fill="#ffd700"/>
+  <ellipse cx="12" cy="23" rx="4" ry="2" fill="#ffe082"/>
+  <ellipse cx="36" cy="24" rx="4" ry="2" fill="#ffd700"/>
+  <ellipse cx="36" cy="23" rx="4" ry="2" fill="#ffe082"/>
+  <ellipse cx="24" cy="22" rx="5" ry="2" fill="#fff176"/>
+  <ellipse cx="18" cy="20" rx="3" ry="2" fill="#ffd700"/>
+  <ellipse cx="30" cy="20" rx="3" ry="2" fill="#ffd700"/>
+  <ellipse cx="8"  cy="22" rx="3" ry="2" fill="#c9a000"/>
+  <ellipse cx="40" cy="22" rx="3" ry="2" fill="#c9a000"/>
+
+  <!-- Glint sparkles -->
+  <rect x="22" y="18" width="2" height="2" fill="#fff" opacity="0.9">
+    <animate attributeName="opacity" values="0.9;0.2;0.9" dur="1.2s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="32" y="21" width="2" height="2" fill="#fff" opacity="0.7">
+    <animate attributeName="opacity" values="0.7;0;0.7" dur="1.8s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="11" y="21" width="1" height="1" fill="#fff" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0;0.8" dur="2.1s" repeatCount="indefinite"/>
+  </rect>
+</svg>

@@ -209,7 +209,29 @@ body {
   height: 100dvh;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1001; /* Above mobile bottom nav */
+  transition: transform var(--transition-slow);
+}
+
+/* --- Mobile / Table Breakpoint --- */
+@media (max-width: 850px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: var(--sidebar-width);
+    transform: translateX(-100%);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+  }
+
+  #app-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas: "main";
+  }
 }
 
 .main-content {
@@ -239,7 +261,7 @@ body {
   }
 
   .sidebar {
-    display: none; /* hidden on mobile */
+    /* Drawer logic handled by 850px breakpoint */
   }
 
   .main-content {

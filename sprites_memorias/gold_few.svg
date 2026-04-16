@@ -1,0 +1,39 @@
+<!-- gold_few.svg — 3 moedas em pilha, perspectiva 2.5D pixel art -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="72" height="72"
+     shape-rendering="crispEdges" image-rendering="pixelated">
+  <title>Poucas Moedas de Ouro</title>
+  <defs>
+    <radialGradient id="cf1" cx="38%" cy="35%" r="60%">
+      <stop offset="0%"   stop-color="#fff59d"/>
+      <stop offset="40%"  stop-color="#ffd700"/>
+      <stop offset="100%" stop-color="#b8860b"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Shadow -->
+  <ellipse cx="18" cy="33" rx="10" ry="2" fill="#000" opacity="0.3"/>
+
+  <!-- Coin 3 (back, bottom) -->
+  <ellipse cx="18" cy="26" rx="10" ry="3" fill="#7a5800"/>
+  <ellipse cx="18" cy="25" rx="9"  ry="3" fill="#c9a000"/>
+  <rect    x="8"  y="22" width="20" height="3" fill="#b8860b"/>
+  <ellipse cx="18" cy="22" rx="9"  ry="3" fill="url(#cf1)"/>
+  <rect x="11" y="19" width="2" height="1" fill="#fff" opacity="0.5"/>
+
+  <!-- Coin 2 (middle) -->
+  <ellipse cx="18" cy="20" rx="10" ry="3" fill="#7a5800"/>
+  <ellipse cx="18" cy="19" rx="9"  ry="3" fill="#c9a000"/>
+  <rect    x="8"  y="16" width="20" height="3" fill="#b8860b"/>
+  <ellipse cx="18" cy="16" rx="9"  ry="3" fill="url(#cf1)"/>
+  <rect x="11" y="13" width="2" height="1" fill="#fff" opacity="0.5"/>
+
+  <!-- Coin 1 (front, top) -->
+  <ellipse cx="18" cy="14" rx="10" ry="3" fill="#7a5800"/>
+  <ellipse cx="18" cy="13" rx="9"  ry="3" fill="#c9a000"/>
+  <rect    x="8"  y="10" width="20" height="3" fill="#b8860b"/>
+  <ellipse cx="18" cy="10" rx="9"  ry="3" fill="url(#cf1)"/>
+
+  <!-- Top highlight -->
+  <rect x="10" y="8" width="3" height="1" fill="#fff" opacity="0.7"/>
+  <rect x="10" y="9" width="1" height="1" fill="#fff" opacity="0.4"/>
+</svg>

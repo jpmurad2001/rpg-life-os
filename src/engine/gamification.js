@@ -4,13 +4,13 @@
  */
 
 import {
-    hpPercent, ATTR_KEYS, ATTR_META
+    loadState, hpPercent, ATTR_KEYS, ATTR_META
 } from './core.js';
 
 import { getPlayerTitle } from './titleManager.js';
 
 import {
-    playClick, playLevelUp, playAchievement, playRankUp
+    playSound, playUnlockSound
 } from './audio.js';
 
 // ============================================================
@@ -22,8 +22,20 @@ export function renderHUD(state) {
     const hpPct = hpPercent(state) * 100;
 
     _setText('sidebar-player-name', p.name);
-    _setText('sidebar-player-title', getPlayerTitle(state));
+    _setText('profile-widget-name', p.name);
+    
+    const { title } = getPlayerTitle(state);
+    _setText('sidebar-player-title', title);
+    _setText('profile-widget-title', title);
+    
     _setText('sidebar-player-level', p.rank ?? `Nível ${p.level}`);
+    _setText('profile-widget-rank', p.rank ?? `Nível ${p.level}`);
+
+    // v3.1 Economy HUD
+    const gold = state.player.progression?.gold_coins ?? state.player.stats?.gold ?? 0;
+    const frags = state.player.progression?.shadow_fragments ?? 0;
+    _setText('hud-gold', Number(gold).toLocaleString('pt-BR'));
+    _setText('hud-shadow', Number(frags).toLocaleString('pt-BR'));
 
     const xpFill = document.getElementById('sidebar-xp-fill');
     if (xpFill) {
@@ -32,7 +44,7 @@ export function renderHUD(state) {
         xpFill.classList.add('xp-gained-anim');
         setTimeout(() => xpFill.classList.remove('xp-gained-anim'), 700);
     }
-    _setText('sidebar-xp-text', `${p.xp} / ${p.xp_next}`);
+    _setText('sidebar-xp-text', `${Math.floor(p.xp)} / ${Math.floor(p.xp_next)}`);
 
     const hpFill = document.getElementById('sidebar-hp-fill');
     if (hpFill) {
@@ -206,16 +218,26 @@ export function renderRankBar(rankInfo) {
 // ============================================================
 //   RANK UP OVERLAY (Phase 4)
 // ============================================================
-const RANK_LORE = {
-    Desperto:  'As sombras sussurram seu nome. Você não é mais o mesmo.',
-    Ascendido: 'O Vazio reconhece sua presença. Sua sombra agora é viva.',
-    Mestre:    'Criaturas do pesadelo recuam ante seus passos.',
-    Santo:     'O mundo real parece uma memória distante.',
-    Soberano:  'Você transcendeu o que era possível. O Vazio é seu domínio.',
+export const RANK_LORE = {
+  Adormecido: 'Ainda sonhando. O Feitiço aguarda o seu despertar.',
+  Desperto: 'As sombras sussurram seu nome. Você não é mais o mesmo.',
+  Ascendido: 'O Vazio reconhece sua presença. Sua sombra agora é viva.',
+  Mestre: 'Criaturas do pesadelo recuam ante seus passos.',
+  Santo: 'O mundo real parece uma memória distante.',
+  Soberano: 'Você transcendeu o que era possível. O Vazio é seu domínio.',
+  Sagrado: 'Sua alma é uma fornalha imortal. As leis da realidade se dobram a você.',
+  Divino: 'O Tecelão sorri. Você se tornou a própria essência do pesadelo.'
 };
-const RANK_GLYPHS = {
-    Desperto:  '🟦', Ascendido: '🟣', Mestre: '🟡',
-    Santo:     '🔴', Soberano:  '⬛',
+
+export const RANK_GLYPHS = {
+  Adormecido: '🌑',
+  Desperto: '🟦', 
+  Ascendido: '🟣', 
+  Mestre: '🟡',
+  Santo: '🔴', 
+  Soberano: '⬛',
+  Sagrado: '✨',
+  Divino: '🌌'
 };
 
 export function showRankUpOverlay(newRank) {
@@ -230,7 +252,11 @@ export function showRankUpOverlay(newRank) {
     if (rankEl) rankEl.style.color = `var(--rank-${newRank.toLowerCase()}, #e5d9f2)`;
 
     overlay.classList.remove('hidden');
-    playRankUp();
+    
+    // Toca o som baseado no Tier do novo título
+    const state = loadState();
+    const { audioTier } = getPlayerTitle(state);
+    playUnlockSound(audioTier);
 }
 
 // ============================================================
@@ -304,7 +330,7 @@ export function showLevelUp(newLevel) {
     if (label) label.textContent = `Nível ${newLevel}`;
     overlay.hidden = false;
     spawnLevelUpStars();
-    playLevelUp();
+    playSound('level_up');
 }
 
 function spawnLevelUpStars() {
@@ -362,7 +388,7 @@ export function showAchievementToast(ach) {
   `;
     container.appendChild(toast);
     _scheduleToastRemoval(toast, 5000);
-    playAchievement();
+    playUnlockSound(2);
 }
 
 function _scheduleToastRemoval(toast, durationMs) {
@@ -459,7 +485,7 @@ export function openModal({ title, bodyHTML, confirmLabel = 'Confirmar', cancelL
         }
     }
 
-    playClick();
+    playSound('ui_click');
     overlay.hidden = false;
 
     // Chama callback após o modal estar visível no DOM

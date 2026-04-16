@@ -21,7 +21,7 @@ import {
 
 import {
   sfx, setSoundEnabled, setSoundVolume,
-  playClick, playNightfall, playRankUp,
+  playSound, playNightfall
 } from '../engine/audio.js';
 
 import { loadState, saveState, getWeekId, checkBadgeUnlocks, equipBadge, unlockBadge } from '../engine/core.js';
@@ -45,7 +45,12 @@ import {
   getBadgeById,
   renderBadgeSVG, renderDefaultMedallionSVG,
 } from '../config/badges.js';
-import { saveBadgeState } from '../firebase/db.js';
+import { saveBadgeState, saveCosmetics } from '../firebase/db.js';
+
+// ---- Profile System (v3.0 — O Despertar da Identidade) ----
+import {
+  initProfileWidget, openProfileDrawer, applyThemeV3, initProfileDeps,
+} from '../modules/profile.js';
 
 // ---- Audio Player (BGM + Spotify) ----
 import { initAudioPlayer } from './audio_player_ui.js';
@@ -116,6 +121,14 @@ async function syncFirestoreToLocalState(uid, playerFirestore) {
     local.player.attributes.ART = pData.attributes.ART || local.player.attributes.ART;
     local.player.attributes.AVE = pData.attributes.AVE || local.player.attributes.AVE;
   }
+  
+  // Talent Sync
+  if (pData.talents) {
+    local.player.talents = pData.talents;
+  }
+  if (pData.skill_points !== undefined) {
+    local.player.skill_points = pData.skill_points;
+  }
   local.player.stats.total_xp_earned = pData.fragmentos_total || 0;
   local.player.stats.quests_completed = stats.quests_completed || 0;
   local.player.stats.bosses_defeated = stats.bosses_defeated || 0;
@@ -130,6 +143,14 @@ async function syncFirestoreToLocalState(uid, playerFirestore) {
   }
   if (playerFirestore.activeBadgeId !== undefined) {
     local.player.activeBadgeId = playerFirestore.activeBadgeId ?? null;
+  }
+
+  // 3. Sync Cosmetics (v3.0)
+  if (playerFirestore.cosmetics && typeof playerFirestore.cosmetics === 'object') {
+    local.player.cosmetics = {
+      ...local.player.cosmetics,
+      ...playerFirestore.cosmetics,
+    };
   }
 
   // 3. Sync Current Week
@@ -180,6 +201,17 @@ async function _onUserLogin(user) {
     setupThemeToggleButton(player.settings?.theme);
     checkDailyHP(user.uid, player);
     setupSyncHook();
+
+    // v3.0 — Inject profile module dependencies
+    initProfileDeps({
+      getCurrentUser: () => _currentUser,
+      getPlayerData:  () => _playerData,
+      onNameSaved: (name) => {
+        if (_playerData) _playerData.display_name = name;
+      },
+    });
+
+
     navigateTo('quests');
 
     console.log('[App] Booted v4.0 — Caçador:', user.displayName, '| Rank:', player.progression?.rank);
@@ -195,7 +227,7 @@ async function _onUserLogin(user) {
 // ============================================================
 function navigateTo(viewName) {
   if (!VIEWS[viewName]) return;
-  playClick();
+  playSound('ui_click');
 
   setActiveNav(viewName);
   switchView(viewName);
@@ -208,12 +240,34 @@ function navigateTo(viewName) {
 }
 
 function setupNav() {
+  const sidebar = document.getElementById('sidebar');
+  const mobileMenuBtn = document.getElementById('btn-mobile-menu');
+
   document.querySelectorAll('.nav-btn[data-view]').forEach(btn =>
-    btn.addEventListener('click', () => navigateTo(btn.dataset.view))
+    btn.addEventListener('click', () => {
+      navigateTo(btn.dataset.view);
+      // Close sidebar on mobile after navigation
+      sidebar?.classList.remove('sidebar--open');
+    })
   );
+  
   document.querySelectorAll('.bottom-nav__btn[data-view]').forEach(btn =>
     btn.addEventListener('click', () => navigateTo(btn.dataset.view))
   );
+  
+
+  // Mobile Menu Toggle
+  mobileMenuBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sidebar?.classList.toggle('sidebar--open');
+  });
+
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', (e) => {
+    if (sidebar?.classList.contains('sidebar--open') && !sidebar.contains(e.target) && e.target !== mobileMenuBtn) {
+      sidebar.classList.remove('sidebar--open');
+    }
+  });
 }
 
 // ============================================================
@@ -234,6 +288,8 @@ function setupSyncHook() {
           hp:               p.hp,
           hp_max:           p.hp_max,
           attributes:       p.attributes,
+          talents:          p.talents ?? {},
+          skill_points:     p.skill_points ?? 5,
         },
         stats: p.stats,
         settings: state.settings,
@@ -250,6 +306,11 @@ function setupSyncHook() {
         achievements:  p.achievements  ?? [],
         activeBadgeId: p.activeBadgeId ?? null,
       });
+
+      // 4. Sync Cosmetics (v3.0)
+      if (p.cosmetics) {
+        await saveCosmetics(_currentUser.uid, p.cosmetics);
+      }
 
       console.log('☁️ [Sync] Estado salvo no Firestore em background.');
     } catch (err) {
@@ -276,6 +337,9 @@ export async function renderHUDFromPlayer(player) {
   // v2.5 — Dynamic Sidebar Medallion
   const state = loadState();
   renderSidebarMedallion(state.player.activeBadgeId);
+
+  // v3.0 — Profile Widget hydration
+  initProfileWidget(player, state);
 }
 
 /** Adapts Firestore player shape to the HUD renderer's expected shape */
@@ -361,7 +425,8 @@ function setupAuthForms() {
     }
   });
 
-  document.getElementById('form-login').dataset.wired = '1';
+  const loginForm = document.getElementById('form-login');
+  if (loginForm) loginForm.dataset.wired = '1';
 }
 
 function switchAuthTab(tab) {
@@ -425,7 +490,14 @@ function checkTimeOfDay() {
 function applySettings(settings = {}) {
   setSoundEnabled(settings.sound_enabled ?? true);
   setSoundVolume((settings.sound_volume ?? 18) / 100);
-  applyTheme(settings.theme ?? 'dark');
+  // v3.0: apply cosmetic theme first; fallback to legacy dark/light
+  const state = loadState();
+  const cosTheme = state?.player?.cosmetics?.active_theme;
+  if (cosTheme) {
+    applyThemeV3(cosTheme);
+  } else {
+    applyTheme(settings.theme ?? 'dark');
+  }
 }
 
 export function applyTheme(theme) {
@@ -442,7 +514,7 @@ function setupThemeToggleButton(currentTheme = 'dark') {
     const curr = document.documentElement.getAttribute('data-theme') ?? 'dark';
     const next = curr === 'dark' ? 'light' : 'dark';
     applyTheme(next);
-    playClick();
+    playSound('ui_click');
     if (_currentUser) {
       await savePlayer(_currentUser.uid, { 'settings.theme': next });
     }
@@ -593,13 +665,31 @@ function setupBellButton(player) {
 }
 
 // ============================================================
-//   PROFILE MODAL
+//   PROFILE BUTTON → v3.0 Profile Drawer
 // ============================================================
 function setupProfileButton() {
-  document.getElementById('player-card')?.addEventListener('click', openProfileModal);
-  document.getElementById('player-card')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') openProfileModal();
+  const widget = document.getElementById('profile-widget');
+  if (!widget) return;
+
+  widget.addEventListener('click', openProfileDrawer);
+  widget.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openProfileDrawer();
+    }
   });
+}
+
+function renderHUDFromPlayer(player) {
+  const hpFill = document.getElementById('hp-fill');
+  const hpText = document.getElementById('hp-text');
+  const xpFill = document.getElementById('xp-fill');
+  const { hp, maxHP, xp, maxXp } = player.stats;
+  const hpPct = (hp / maxHP) * 100;
+  const xpPct = (xp / maxXp) * 100;
+  if (hpFill) hpFill.style.width = `${Math.min(100, Math.max(0, hpPct))}%`;
+  if (hpText) hpText.textContent = `${Math.floor(hp)} / ${Math.floor(maxHP)}`;
+  if (xpFill) xpFill.style.width = `${Math.min(100, Math.max(0, xpPct))}%`;
 }
 
 function openProfileModal() {
@@ -636,8 +726,6 @@ function openProfileModal() {
         <span class="rank-badge rank-badge--${(prog.rank ?? 'adormecido').toLowerCase()}">${prog.rank ?? 'Adormecido'}</span>
       </div>
       <div class="stats-grid">
-        <div class="stat-box"><div class="stat-box__value">${prog.fragmentos_total ?? 0}</div><div class="stat-box__label">Fragmentos</div></div>
-        <div class="stat-box"><div class="stat-box__value">${rankInfo.fragmentos_to_next}</div><div class="stat-box__label">Para Ascender</div></div>
         <div class="stat-box"><div class="stat-box__value">${stats.quests_completed ?? 0}</div><div class="stat-box__label">Quests</div></div>
         <div class="stat-box"><div class="stat-box__value">${stats.bosses_defeated ?? 0}</div><div class="stat-box__label">Bosses</div></div>
         <div class="stat-box"><div class="stat-box__value">${stats.workouts_completed ?? 0}</div><div class="stat-box__label">Treinos</div></div>
@@ -702,8 +790,8 @@ function renderAchievements() {
   const unlockedCount    = unlockedIDsValid.length;
 
   // --- First call: check for new unlocks based on current state ---
-  const newlyUnlocked = checkBadgeUnlocks(state);
-  if (newlyUnlocked.length > 0) {
+  const { newBadgeIds, newTitleIds } = checkBadgeUnlocks(state);
+  if (newBadgeIds.length > 0 || newTitleIds.length > 0) {
     saveState(state);
     // Persist to Firestore asynchronously
     if (_currentUser) {
@@ -711,9 +799,13 @@ function renderAchievements() {
         achievements:  state.player.achievements,
         activeBadgeId: state.player.activeBadgeId,
       }).catch(console.error);
+      // Also sync cosmetics (unlocked_titles may have changed)
+      if (state.player.cosmetics) {
+        saveCosmetics(_currentUser.uid, state.player.cosmetics).catch(console.error);
+      }
     }
     // Show toast for each newly unlocked badge
-    newlyUnlocked.forEach(id => {
+    newBadgeIds.forEach(id => {
       const b = getBadgeById(id);
       if (b) showBadgeUnlockedToast(b);
     });
@@ -1089,16 +1181,35 @@ if ('serviceWorker' in navigator) {
 }
 
 // ============================================================
-//   STARTUP — Only auth gate, everything else triggered by onAuthChanged
+//   STARTUP — Immediate execution for ESM
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  // Wire auth forms immediately (before Firebase resolves)
+
+// Wire auth forms immediately on module load
+try {
   setupAuthForms();
+  setupModal();
+  setupLevelUpClose();
+} catch (e) {
+  console.error('[Boot] Critical: Failed to wire core forms:', e);
+}
 
-  // Start time-of-day checker
-  checkTimeOfDay();
-  setInterval(checkTimeOfDay, 60 * 60 * 1000); // re-check hourly
-
-  // Firebase auth observer
-  setupAuthGate();
-});
+// Full application boot
+(function boot() {
+  window.requestAnimationFrame(() => {
+    try {
+      // Start time-of-day checker
+      checkTimeOfDay();
+      setInterval(checkTimeOfDay, 60 * 60 * 1000);
+      
+      // Firebase auth observer
+      setupAuthGate();
+      
+      // Initialize audio UI
+      initAudioPlayerUI();
+      
+      console.log('— Shadow Slave Life OS v3.1.9.1 Awakened —');
+    } catch (err) {
+      console.error('[Boot] Application initialization failure:', err);
+    }
+  });
+})();

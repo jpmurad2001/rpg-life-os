@@ -19,7 +19,9 @@ import { calcRank, formatDropResult, rollQuestDrop } from '../engine/drop_engine
 import { getLootTable, addToInventory } from '../firebase/db.js';
 import { auth } from '../firebase/firebase.js';
 
-import { playBossAttack, playBossDefeat } from '../engine/audio.js';
+import { playSound } from '../engine/audio.js';
+import { BOSS_GALLERY } from '../config/assets_gallery.js';
+import { earnCurrencyBatch } from '../firebase/db.js';
 
 // ============================================================
 //   SPRITES
@@ -59,13 +61,19 @@ function buildBossCard(boss) {
   card.style.position = 'relative'; // anchor for floating numbers
 
   const hpPct = bossHpPercent(boss) * 100;
-  const sprite = BOSS_SPRITES[boss.sprite] ?? '👾';
+  
+  // Resolver sprite (asset galeria ou emoji fallback)
+  const assetFound = BOSS_GALLERY.find(b => b.id === boss.sprite || b.path === boss.sprite);
+  const spriteHTML = assetFound
+    ? `<img src="${assetFound.path}" style="width:40px;height:40px;object-fit:contain;" />`
+    : `<span class="boss-sprite">${BOSS_SPRITES[boss.sprite] ?? '👾'}</span>`;
+
   const hpColor = hpPct > 50 ? 'var(--boss-hp-full)' : hpPct > 20 ? 'var(--boss-hp-low)' : 'var(--boss-hp-critical)';
 
   // Banner
   card.innerHTML += `
     <div class="boss-card__banner">
-      <span class="boss-sprite">${sprite}</span>
+      ${spriteHTML}
       <div>
         <div class="boss-name">${boss.name}</div>
         <div class="text-muted font-display" style="font-size:var(--fs-display);margin-top:4px">${boss.description}</div>
@@ -173,7 +181,7 @@ async function handleAttackBoss(bossId, subtaskId, subtaskEl) {
 
   // Spawn floating damage number
   spawnFloatingDamage(`-${subtask.damage} HP`, bossId);
-  playBossAttack();
+  playSound('boss_hit');
 
   // HP bar shake
   const bossCard = document.querySelector(`[data-boss-id="${bossId}"]`);
@@ -191,11 +199,17 @@ async function handleAttackBoss(bossId, subtaskId, subtaskEl) {
   const hpText = document.getElementById(`boss-hp-text-${bossId}`);
   if (hpText) hpText.textContent = `${result.boss.hp_current} / ${result.boss.hp_max}`;
 
-  showToast(`💥 Ataque! -${subtask.damage} HP do Boss  +${subtask.xp_reward} XP`, 'damage');
+  // Award Economy
+  const econDrop = rollEconomyDrop('boss');
+  if (auth.currentUser) {
+    await earnCurrencyBatch(auth.currentUser.uid, econDrop.gold, econDrop.fragments);
+  }
+
+  showToast(`💥 Ataque! -${subtask.damage} HP | +${subtask.xp_reward} XP | +${econDrop.gold}g +${econDrop.fragments}f`, 'damage');
 
   if (result.bossDefeated) {
     spawnDefeatConfetti(bossCard);
-    playBossDefeat();
+    playSound('boss_defeat');
     setTimeout(() => showToast(`🏆 BOSS DERROTADO! +${boss.xp_reward_on_defeat} XP bônus!`, 'defeat', 5000), 800);
     if (bonusLevelUp) setTimeout(() => showLevelUp(bonusLevel), 1200);
     setTimeout(() => renderBosses(), 1500);
@@ -212,10 +226,19 @@ async function handleAttackBoss(bossId, subtaskId, subtaskEl) {
   if (auth.currentUser) {
       try {
           const table = await getLootTable();
-          const pRank = calcRank(finalState.player.stats.total_xp_earned ?? finalState.player.xp);
+          const fragTotal = finalState.player.progression?.shadow_fragments_total ?? finalState.player.stats?.shadow_fragments_total ?? 0;
+          const pRank = calcRank(fragTotal);
           
           if (result.bossDefeated) {
-              // Boss defeat drops (100% guaranteed + RNG bonuses)
+              const { rollEconomyDrop } = await import('../engine/drop_engine.js');
+              const econDrop = rollEconomyDrop('boss');
+              
+              // Award currencies
+              await import('../firebase/db.js').then(m => m.earnCurrencyBatch(auth.currentUser.uid, econDrop.gold, econDrop.fragments));
+              
+              showToast(`🏆 BOSS DERROTADO! +${boss.xp_reward_on_defeat} XP | +${econDrop.gold}g | +${econDrop.fragments}f`, 'defeat', 5000);
+
+              // Boss defeat drops (Memories)
               const { rollBossDrop } = await import('../engine/drop_engine.js');
               const bossDrops = rollBossDrop({
                   lootTable: table,
@@ -231,10 +254,9 @@ async function handleAttackBoss(bossId, subtaskId, subtaskEl) {
               if (bossDrops.items.length > 0) {
                   const uiItem = formatDropResult(bossDrops.items[0]);
                   setTimeout(() => showMemoryObtainedOverlay(uiItem), 1200); 
-                  console.log('🐉 Boss Drops:', bossDrops.items.map(i => i.name));
               }
           } else {
-              // Subtask drop (35% chance since isBossSub = true)
+              // Subtask drop
               const dropResult = rollQuestDrop({
                   lootTable: table,
                   player: pRank,
@@ -245,7 +267,6 @@ async function handleAttackBoss(bossId, subtaskId, subtaskEl) {
                   const uiItem = formatDropResult(dropResult.item);
                   setTimeout(() => showMemoryObtainedOverlay(uiItem), 1200); 
                   await addToInventory(auth.currentUser.uid, dropResult.item.id, 'boss_subtask', subtaskId);
-                  console.log('💎 Boss Subtask Drop obtained:', uiItem.name);
               }
           }
       } catch (e) {
