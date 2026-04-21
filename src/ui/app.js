@@ -8,7 +8,7 @@
 // ---- Firebase ----
 import { onAuthChanged, login, register, logout, resetPassword, deleteAccount } from '../firebase/auth.js';
 import {
-  initInventory as initInventoryDB, getPlayerData as loadPlayerDataFromDB, savePlayer, initNewPlayer, migrateFromLocalStorage, getLootTable, getWeek, saveWeek, deletePlayer, saveBadgeState, saveCosmetics
+  getPlayerData as loadPlayerDataFromDB, savePlayer, initNewPlayer, migrateFromLocalStorage, getLootTable, getWeek, saveWeek, deletePlayer, saveBadgeState, saveCosmetics
 } from '../firebase/db.js';
 
 // ---- Engine ----
