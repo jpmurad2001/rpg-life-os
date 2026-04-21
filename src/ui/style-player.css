@@ -52,9 +52,12 @@
   .audio-bar { bottom: 64px; }
 }
 
-/* Desktop: barra cobre toda a largura */
+/* Desktop: barra ocupa apenas o espaço à direita da sidebar */
 @media (min-width: 768px) {
-  .audio-bar { bottom: 0; }
+  .audio-bar { 
+    bottom: 0; 
+    left: var(--sidebar-width);
+  }
 }
 
 /* ============================================================
