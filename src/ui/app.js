@@ -72,7 +72,7 @@ const VIEWS = {
   battle:       { title: '⚔️ Battle Ground',          init: initBattle      },
   taverna:      { title: '🏰 Taverna — Finanças',     init: initTaverna     },
   bosses:       { title: '🐉 Modo Campanha',           init: initCampaignMap },
-  inventory:    { title: '💎 Memórias',               init: initInventory   },
+  inventory:    { title: '💎 Inventário',              init: initInventory   },
   achievements: { title: '🏆 Conquistas',             init: renderAchievements },
   board:        { title: '📋 Quadro de Missões',      init: initBoard       },  // v2.1 Diamond
   pomodoro:     { title: '⏳ Reino dos Sonhos',       init: initPomodoro    },  // v2.2

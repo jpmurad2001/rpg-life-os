@@ -35,6 +35,7 @@
   <link rel="stylesheet" href="src/ui/style-badges.css?v=2.5.1" />   <!-- v2.5 Marcos do Despertar -->
   <link rel="stylesheet" href="src/ui/style-identity.css" />        <!-- v3.0 O Despertar da Identidade -->
   <link rel="stylesheet" href="src/ui/style-v31.css" />             <!-- v3.1 Forja & Mercado -->
+  <link rel="stylesheet" href="src/ui/style-inventory.css" />        <!-- v3.2 Inventário & Loadout -->
 
   <!-- Icons -->
   <link rel="icon" type="image/png" href="assets/sprites/icon-192.png" />
@@ -250,7 +251,7 @@
         </button>
         <button class="nav-btn" id="nav-inventory" data-view="inventory" aria-current="false">
           <span class="nav-icon">💎</span>
-          <span class="nav-label">Memórias</span>
+          <span class="nav-label">Inventário</span>
         </button>
         <button class="nav-btn" id="nav-achievements" data-view="achievements" aria-current="false">
           <span class="nav-icon">🏆</span>
@@ -462,11 +463,12 @@
 
       </section>
 
-      <!-- ---- VIEW: INVENTORY (Memórias) ---- -->
+      <!-- ---- VIEW: INVENTORY (Inventário — Loadout + Bolsa) ---- -->
       <section id="view-inventory" class="view" data-view="inventory"
-               aria-label="Inventário — Memórias" hidden>
+               aria-label="Inventário — Equipamentos e Itens" hidden>
         <div class="view-inner">
-          <div class="inventory-grid" id="inventory-grid">
+          <!-- Conteúdo injetado pelo inventory.js: Loadout + Bag -->
+          <div id="inventory-grid" style="display:flex;flex-direction:column;gap:var(--space-5)">
             <div class="inventory-empty">🌑 Carregando...</div>
           </div>
         </div>
@@ -706,7 +708,7 @@
       </button>
       <button class="bottom-nav__btn" data-view="inventory" id="m-nav-inventory">
         <span class="bottom-nav__icon">💎</span>
-        <span class="bottom-nav__label">Memórias</span>
+        <span class="bottom-nav__label">Inventário</span>
       </button>
       <button class="bottom-nav__btn" data-view="analytics" id="m-nav-analytics">
         <span class="bottom-nav__icon">🔭</span>
