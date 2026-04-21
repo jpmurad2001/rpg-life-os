@@ -23,3 +23,6 @@ backups/
 # Logs
 *.log
 npm-debug.log*
+
+# Agent & Skills (Ignorar scripts e memória da IA)
+.agent/

@@ -12,6 +12,7 @@
       "**/*.py",
       "**/*.sh",
       ".git/**",
+      ".agent/**",
       "tmp/**",
       "backups/**",
       "node_modules/**",
