@@ -152,8 +152,11 @@ function _renderBag(inventory) {
   const panel = document.getElementById('bag-panel');
   if (!panel) return;
 
-  const memoriaCount = inventory.length;
-  const ecoCount     = ECHOES_CATALOG.length;
+  const memoriasInv = inventory.filter(entry => !ECHOES_CATALOG.find(e => e.id === entry.loot_id));
+  const ecosInv     = inventory.filter(entry => ECHOES_CATALOG.find(e => e.id === entry.loot_id));
+
+  const memoriaCount = memoriasInv.length;
+  const ecoCount     = ecosInv.length;
 
   panel.innerHTML = `
     <div class="bag-tabs">
@@ -169,11 +172,11 @@ function _renderBag(inventory) {
     <div class="bag-content">
       <div class="bag-section ${_activeBagTab === 'memorias' ? 'bag-section--active' : ''}"
            id="bag-section-memorias">
-        ${_buildMemoriasHTML(inventory)}
+        ${_buildMemoriasHTML(memoriasInv)}
       </div>
       <div class="bag-section ${_activeBagTab === 'ecos' ? 'bag-section--active' : ''}"
            id="bag-section-ecos">
-        ${_buildEcosHTML()}
+        ${_buildEcosHTML(ecosInv)}
       </div>
     </div>
   `;
@@ -271,22 +274,35 @@ function _buildMemoriasHTML(inventory) {
   return `${header}<div class="inventory-grid">${cards}</div>`;
 }
 
-function _buildEcosHTML() {
+function _buildEcosHTML(ecosInv) {
+  if (ecosInv.length === 0) {
+    return `
+      <div class="inventory-empty">
+        🌑 Nenhum Eco obtido ainda.<br/>
+        <span style="font-size:0.85rem;color:var(--text-muted)">
+          Ecos são criaturas raras que podem ser dominadas ao longo da sua jornada.
+        </span>
+      </div>`;
+  }
+
   const header = `
     <div class="inventory-section-header">
       Ecos do Vazio
-      <span class="inventory-section-header__count">${ECHOES_CATALOG.length} descobertos</span>
+      <span class="inventory-section-header__count">${ecosInv.length} obtido${ecosInv.length !== 1 ? 's' : ''}</span>
     </div>`;
 
-  const cards = ECHOES_CATALOG.map(eco => `
+  const cards = ecosInv.map(entry => {
+    const eco = ECHOES_CATALOG.find(e => e.id === entry.loot_id);
+    if (!eco) return '';
+    return `
     <div class="echo-card" data-eco-id="${eco.id}" title="${eco.lore}">
       <img class="echo-card__sprite"
            src="${eco.sprite}" alt="${eco.name}" loading="lazy"
            onerror="this.style.display='none'">
       <div class="echo-card__name">${eco.name}</div>
       <span class="rank-badge rank-badge--${eco.rank.toLowerCase()}">${eco.rank}</span>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   return `${header}<div class="echo-grid">${cards}</div>`;
 }
@@ -328,7 +344,9 @@ function _showItemActionModal(item, type, obtainedAt) {
     `,
     onConfirm: () => {
       closeModal();
-      _showEquipModal(item, type);
+      setTimeout(() => {
+        _showEquipModal(item, type);
+      }, 50);
     },
     onCancel: closeModal,
   });
