@@ -33,6 +33,7 @@ import { initQuests }       from '../modules/quests.js';
 import { initBattle }       from '../modules/battle.js';
 import { initTaverna }      from '../modules/taverna.js';
 import { initCampaignMap }  from '../modules/campaign_map.js';
+import { renderTemples }     from '../modules/temples.js';
 import { initInventory }    from '../modules/inventory.js';
 import { initBoard }        from '../modules/board.js';      // v2.1 Diamond
 import { initPomodoro }     from '../modules/pomodoro.js';  // v2.2 Reino dos Sonhos
@@ -71,7 +72,7 @@ const VIEWS = {
   quests:       { title: '📜 Quests Semanais',       init: initQuests      },
   battle:       { title: '⚔️ Battle Ground',          init: initBattle      },
   taverna:      { title: '🏰 Taverna — Finanças',     init: initTaverna     },
-  bosses:       { title: '🐉 Modo Campanha',           init: initCampaignMap },
+  bosses:       { title: '🐉 Pesadelos',               init: initPesadelos    },
   inventory:    { title: '💎 Inventário',              init: initInventory   },
   achievements: { title: '🏆 Conquistas',             init: renderAchievements },
   board:        { title: '📋 Quadro de Missões',      init: initBoard       },  // v2.1 Diamond
@@ -79,6 +80,48 @@ const VIEWS = {
   talents:      { title: '✨ Habilidades de Aspecto', init: initTalents     },  // v2.3
   analytics:    { title: '🔮 Tear do Destino',        init: initAnalytics   },  // v2.4
 };
+
+// ============================================================
+//   PESADELOS INIT  (Campaign Map + Temples — v3.3)
+// ============================================================
+function initPesadelos() {
+  // Init the campaign map (original bosses logic)
+  initCampaignMap();
+
+  // Init temples view
+  renderTemples();
+
+  // Wire Pesadelos tabs
+  const tabs     = document.querySelectorAll('.pesadelos-tab');
+  const sections = document.querySelectorAll('.pesadelos-section');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.pesTab;
+
+      tabs.forEach(t => {
+        t.classList.remove('pesadelos-tab--active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      sections.forEach(s => s.classList.remove('pesadelos-section--active'));
+
+      tab.classList.add('pesadelos-tab--active');
+      tab.setAttribute('aria-selected', 'true');
+
+      const targetSection = document.getElementById(`pes-section-${target}`);
+      if (targetSection) targetSection.classList.add('pesadelos-section--active');
+
+      // Lazy-render temples on first switch
+      if (target === 'templos') {
+        const tv = document.getElementById('temples-view');
+        if (tv && !tv.dataset.rendered) {
+          renderTemples();
+          tv.dataset.rendered = '1';
+        }
+      }
+    });
+  });
+}
 
 // ============================================================
 //   AUTH GATE

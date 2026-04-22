@@ -36,6 +36,7 @@
   <link rel="stylesheet" href="src/ui/style-identity.css" />        <!-- v3.0 O Despertar da Identidade -->
   <link rel="stylesheet" href="src/ui/style-v31.css" />             <!-- v3.1 Forja & Mercado -->
   <link rel="stylesheet" href="src/ui/style-inventory.css" />        <!-- v3.2 Inventário & Loadout -->
+  <link rel="stylesheet" href="src/ui/style-temples.css" />          <!-- v3.3 Templos da Dualidade -->
 
   <!-- Icons -->
   <link rel="icon" type="image/png" href="assets/sprites/icon-192.png" />
@@ -247,7 +248,7 @@
         </button>
         <button class="nav-btn" id="nav-bosses" data-view="bosses" aria-current="false">
           <span class="nav-icon">🐉</span>
-          <span class="nav-label">Bosses</span>
+          <span class="nav-label">Pesadelos</span>
         </button>
         <button class="nav-btn" id="nav-inventory" data-view="inventory" aria-current="false">
           <span class="nav-icon">💎</span>
@@ -423,42 +424,68 @@
         </div>
       </section>
 
-      <!-- ---- VIEW: BOSSES / CAMPANHA v1.3 ---- -->
+      <!-- ---- VIEW: BOSSES / PESADELOS v3.3 ---- -->
       <section id="view-bosses" class="view" data-view="bosses"
-               aria-label="Campanhas — Modo Pesadelo" hidden>
+               aria-label="Pesadelos — Campanhas e Templos" hidden>
 
-        <!-- Nível 1: Lista de Campanhas -->
-        <div id="campaign-list-view" class="view-inner">
-          <div class="campaign-list" id="campaign-list"></div>
-          <button class="btn-rp btn-rp--primary" id="btn-new-campaign">🐉 Nova Campanha</button>
+        <!-- TABS: Criaturas do Pesadelo | Templos da Dualidade -->
+        <div class="view-inner" style="padding-bottom:0">
+          <div class="pesadelos-tabs" role="tablist">
+            <button class="pesadelos-tab pesadelos-tab--active"
+                    data-pes-tab="criaturas" role="tab"
+                    aria-selected="true" id="pes-tab-criaturas">
+              🐉 Criaturas do Pesadelo
+            </button>
+            <button class="pesadelos-tab"
+                    data-pes-tab="templos" role="tab"
+                    aria-selected="false" id="pes-tab-templos">
+              ⚜ Templos da Dualidade
+            </button>
+          </div>
         </div>
 
-        <!-- Nível 2: Mapa Visual (substituí a lista ao entrar num mapa) -->
-        <div id="campaign-map-view" class="campaign-map-view hidden">
+        <!-- SEÇÃO: Criaturas do Pesadelo (conteúdo original de Campanhas) -->
+        <div class="pesadelos-section pesadelos-section--active" id="pes-section-criaturas">
 
-          <!-- Topbar: Voltar + Boss HP + Botão Encontro -->
-          <div class="map-boss-topbar">
-            <button class="btn-rp btn-rp--ghost" id="btn-back-to-campaigns"
-                    style="font-size:var(--fs-xxs); flex-shrink:0;">◀ Campanhas</button>
-            <span class="map-boss-topbar__sprite" id="map-boss-sprite">👾</span>
-            <div class="map-boss-topbar__name" id="map-boss-name">...</div>
-            <div class="map-boss-topbar__hp">
-              <div class="map-boss-topbar__hp-text" id="map-boss-hp-text">— / —</div>
-              <div class="map-boss-topbar__hp-bar">
-                <div class="map-boss-topbar__hp-fill" id="map-boss-hp-fill" style="width:100%"></div>
+          <!-- Nível 1: Lista de Campanhas -->
+          <div id="campaign-list-view" class="view-inner">
+            <div class="campaign-list" id="campaign-list"></div>
+            <button class="btn-rp btn-rp--primary" id="btn-new-campaign">🐉 Nova Campanha</button>
+          </div>
+
+          <!-- Nível 2: Mapa Visual -->
+          <div id="campaign-map-view" class="campaign-map-view hidden">
+
+            <!-- Topbar: Voltar + Boss HP + Botão Encontro -->
+            <div class="map-boss-topbar">
+              <button class="btn-rp btn-rp--ghost" id="btn-back-to-campaigns"
+                      style="font-size:var(--fs-xxs); flex-shrink:0;">◀ Campanhas</button>
+              <span class="map-boss-topbar__sprite" id="map-boss-sprite">👾</span>
+              <div class="map-boss-topbar__name" id="map-boss-name">...</div>
+              <div class="map-boss-topbar__hp">
+                <div class="map-boss-topbar__hp-text" id="map-boss-hp-text">— / —</div>
+                <div class="map-boss-topbar__hp-bar">
+                  <div class="map-boss-topbar__hp-fill" id="map-boss-hp-fill" style="width:100%"></div>
+                </div>
               </div>
+              <button class="btn-rp btn-rp--ghost" id="btn-add-node"
+                      style="font-size:var(--fs-xxs);flex-shrink:0;white-space:nowrap;">⚔️ + Encontro</button>
             </div>
-            <!-- Botão Encontro ao lado do HP -->
-            <button class="btn-rp btn-rp--ghost" id="btn-add-node"
-                    style="font-size:var(--fs-xxs);flex-shrink:0;white-space:nowrap;">⚔️ + Encontro</button>
-          </div>
 
-          <!-- Canvas do Mapa (imagem de fundo + nós + SVG) -->
-          <div class="campaign-map campaign-map--no-image" id="campaign-map-canvas">
-            <svg class="campaign-map__svg" id="campaign-map-svg"
-                 xmlns="http://www.w3.org/2000/svg"></svg>
-          </div>
+            <!-- Canvas do Mapa -->
+            <div class="campaign-map campaign-map--no-image" id="campaign-map-canvas">
+              <svg class="campaign-map__svg" id="campaign-map-svg"
+                   xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
 
+          </div>
+        </div>
+
+        <!-- SEÇÃO: Templos da Dualidade -->
+        <div class="pesadelos-section" id="pes-section-templos">
+          <div class="view-inner">
+            <div id="temples-view"></div>
+          </div>
         </div>
 
       </section>
@@ -704,7 +731,7 @@
       </button>
       <button class="bottom-nav__btn" data-view="bosses" id="m-nav-bosses">
         <span class="bottom-nav__icon">🐉</span>
-        <span class="bottom-nav__label">Bosses</span>
+        <span class="bottom-nav__label">Pesadelos</span>
       </button>
       <button class="bottom-nav__btn" data-view="inventory" id="m-nav-inventory">
         <span class="bottom-nav__icon">💎</span>
