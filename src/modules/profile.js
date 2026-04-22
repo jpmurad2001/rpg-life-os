@@ -17,9 +17,15 @@ import { rankIndex } from '../engine/drop_engine.js';
 //   THEME DEFINITIONS
 // ============================================================
 export const THEMES = [
-  { id: 'abyssal-dark', name: 'Abyssal Dark', desc: 'Obsidiana + Azul Espectral', icon: '🌑' },
-  { id: 'blood-mode',   name: 'Blood Mode',   desc: 'Carmesim + Sombra Vampírica', icon: '🩸' },
-  { id: 'void-mode',    name: 'Void Mode',    desc: 'Roxo Cósmico + Corrupção',    icon: '🌌' },
+  { id: 'dark',         name: 'Dark Mode',    desc: 'O Despertar Sombrio' },
+  { id: 'light',        name: 'Light Mode',   desc: 'Luz da Manhã' },
+  { id: 'abyssal-dark', name: 'Abyssal Dark', desc: 'Obsidiana + Azul Espectral' },
+  { id: 'blood-mode',   name: 'Blood Mode',   desc: 'Carmesim + Sombra Vampírica' },
+  { id: 'void-mode',    name: 'Void Mode',    desc: 'Roxo Cósmico + Corrupção' },
+  { id: 'divino',       name: 'Tema Divino',  desc: 'Aura Dourada + Cristal' },
+  { id: 'corrompido',   name: 'Corrompido',   desc: 'Roxo Pofundo + Crimson' },
+  { id: 'esmeralda',    name: 'Tema Esmeralda', desc: 'Verde Místico + Floresta' },
+  { id: 'night-sky',    name: 'Night Sky',    desc: 'Preto Total + Estrelas Fracas' }
 ];
 
 // ============================================================

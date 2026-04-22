@@ -90,9 +90,38 @@
 /* ============================================================
    EFEITOS DE BLUR PARA OS PANELS NOS TEMAS
    ============================================================ */
+[data-theme="night-sky"] {
+    --color-bg-base: transparent;
+    --color-bg-surface: rgba(10, 10, 10, 0.85);
+    --color-bg-panel: rgba(5, 5, 5, 0.95);
+    --color-bg-element: rgba(20, 20, 20, 0.7);
+    --color-bg-hover: rgba(35, 35, 35, 0.8);
+    
+    --text-primary: #e6e6e6;
+    --text-secondary: #a3a3a3;
+    --text-muted: #666666;
+    --text-gold: #cccccc;
+    
+    --color-primary: #888888;
+    --color-primary-dark: #555555;
+    --color-gold: #aaaaaa;
+    --color-border: rgba(136, 136, 136, 0.3);
+    --color-border-bright: #888888;
+}
+
+[data-theme="night-sky"] body {
+    background: url('../../assets/bg/bg_theme_night_sky.png') no-repeat center center fixed;
+    background-size: cover;
+    color: var(--text-primary);
+}
+
+/* ============================================================
+   EFEITOS DE BLUR PARA OS PANELS NOS TEMAS
+   ============================================================ */
 [data-theme="divino"] .sidebar, [data-theme="divino"] .panel, [data-theme="divino"] .page-header,
 [data-theme="corrompido"] .sidebar, [data-theme="corrompido"] .panel, [data-theme="corrompido"] .page-header,
-[data-theme="esmeralda"] .sidebar, [data-theme="esmeralda"] .panel, [data-theme="esmeralda"] .page-header {
+[data-theme="esmeralda"] .sidebar, [data-theme="esmeralda"] .panel, [data-theme="esmeralda"] .page-header,
+[data-theme="night-sky"] .sidebar, [data-theme="night-sky"] .panel, [data-theme="night-sky"] .page-header {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     background-color: var(--color-bg-panel) !important;
@@ -100,6 +129,7 @@
 
 [data-theme="divino"] .main-content, [data-theme="divino"] #main-content,
 [data-theme="corrompido"] .main-content, [data-theme="corrompido"] #main-content,
-[data-theme="esmeralda"] .main-content, [data-theme="esmeralda"] #main-content {
+[data-theme="esmeralda"] .main-content, [data-theme="esmeralda"] #main-content,
+[data-theme="night-sky"] .main-content, [data-theme="night-sky"] #main-content {
     background-color: transparent !important;
 }

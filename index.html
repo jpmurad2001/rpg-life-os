@@ -804,8 +804,25 @@
     <div class="profile-drawer__section-label">&#x1F3A8; Tema da Interface</div>
     <div class="theme-selector" role="group" aria-label="Selecionar tema">
 
-      <button class="theme-option" data-theme-id="abyssal-dark"
-              aria-label="Abyssal Dark">
+      <button class="theme-option" data-theme-id="dark" aria-label="Dark Mode">
+        <div class="theme-option__swatch" aria-hidden="true" style="background:#000;"></div>
+        <div class="theme-option__info">
+          <div class="theme-option__name">&#x1F319; Dark Mode</div>
+          <div class="theme-option__desc">O Despertar Sombrio</div>
+        </div>
+        <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
+      </button>
+
+      <button class="theme-option" data-theme-id="light" aria-label="Light Mode">
+        <div class="theme-option__swatch" aria-hidden="true" style="background:#fff; border-color: #333"></div>
+        <div class="theme-option__info">
+          <div class="theme-option__name">&#x2600;&#xFE0F; Light Mode</div>
+          <div class="theme-option__desc">Luz da Manhã</div>
+        </div>
+        <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
+      </button>
+
+      <button class="theme-option" data-theme-id="abyssal-dark" aria-label="Abyssal Dark">
         <div class="theme-option__swatch" aria-hidden="true"></div>
         <div class="theme-option__info">
           <div class="theme-option__name">&#x1F311; Abyssal Dark</div>
@@ -814,8 +831,7 @@
         <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
       </button>
 
-      <button class="theme-option" data-theme-id="blood-mode"
-              aria-label="Blood Mode">
+      <button class="theme-option" data-theme-id="blood-mode" aria-label="Blood Mode">
         <div class="theme-option__swatch" aria-hidden="true"></div>
         <div class="theme-option__info">
           <div class="theme-option__name">&#x1F578;&#xFE0F; Blood Mode</div>
@@ -824,12 +840,47 @@
         <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
       </button>
 
-      <button class="theme-option" data-theme-id="void-mode"
-              aria-label="Void Mode">
+      <button class="theme-option" data-theme-id="void-mode" aria-label="Void Mode">
         <div class="theme-option__swatch" aria-hidden="true"></div>
         <div class="theme-option__info">
           <div class="theme-option__name">&#x1F30C; Void Mode</div>
           <div class="theme-option__desc">Roxo Cósmico + Corrupção</div>
+        </div>
+        <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
+      </button>
+
+      <button class="theme-option" data-theme-id="divino" aria-label="Divino">
+        <div class="theme-option__swatch" aria-hidden="true" style="background: linear-gradient(135deg, #e4d7a8, #cfa830);"></div>
+        <div class="theme-option__info">
+          <div class="theme-option__name">&#x269C;&#xFE0F; Tema Divino</div>
+          <div class="theme-option__desc">Aura Dourada + Cristal</div>
+        </div>
+        <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
+      </button>
+
+      <button class="theme-option" data-theme-id="corrompido" aria-label="Corrompido">
+        <div class="theme-option__swatch" aria-hidden="true" style="background: linear-gradient(135deg, #321151, #dc3140);"></div>
+        <div class="theme-option__info">
+          <div class="theme-option__name">&#x1F318; Tema Corrompido</div>
+          <div class="theme-option__desc">Roxo Pofundo + Crimson</div>
+        </div>
+        <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
+      </button>
+
+      <button class="theme-option" data-theme-id="esmeralda" aria-label="Esmeralda">
+        <div class="theme-option__swatch" aria-hidden="true" style="background: linear-gradient(135deg, #072a20, #0a8a65);"></div>
+        <div class="theme-option__info">
+          <div class="theme-option__name">&#x1f332; Tema Esmeralda</div>
+          <div class="theme-option__desc">Verde Místico + Floresta</div>
+        </div>
+        <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
+      </button>
+
+      <button class="theme-option" data-theme-id="night-sky" aria-label="Night Sky">
+        <div class="theme-option__swatch" aria-hidden="true" style="background: linear-gradient(135deg, #020202, #1a1a1a);"></div>
+        <div class="theme-option__info">
+          <div class="theme-option__name">&#x1F303; Night Sky</div>
+          <div class="theme-option__desc">Preto Total + Estrelas Fracas</div>
         </div>
         <span class="theme-option__check" aria-hidden="true">&#x2714;</span>
       </button>

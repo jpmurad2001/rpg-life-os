@@ -585,38 +585,19 @@ function applySettings(settings = {}) {
   }
 }
 
-const THEMES = ['dark', 'light', 'divino', 'corrompido', 'esmeralda'];
-const THEME_LABELS = {
-  'dark': '☀️ Light Mode',
-  'light': '⚜️ Tema Divino',
-  'divino': '🌑 Tema Corrompido',
-  'corrompido': '🌲 Tema Esmeralda',
-  'esmeralda': '🌙 Dark Mode'
-};
-
 export function applyTheme(theme) {
-  const validTheme = THEMES.includes(theme) ? theme : 'dark';
-  document.documentElement.setAttribute('data-theme', validTheme);
-  const btn = document.getElementById('btn-theme-toggle');
-  if (btn) btn.textContent = THEME_LABELS[validTheme];
+  // Delegate completely to profile.js logic (app.js should not manage themes locally anymore to prevent bugs)
+  applyThemeV3(theme);
 }
 
-function setupThemeToggleButton(currentTheme = 'dark') {
+function setupThemeToggleButton() {
   const btn = document.getElementById('btn-theme-toggle');
   if (!btn) return;
-  const validTheme = THEMES.includes(currentTheme) ? currentTheme : 'dark';
-  btn.textContent = THEME_LABELS[validTheme];
-  btn.addEventListener('click', async () => {
-    const curr = document.documentElement.getAttribute('data-theme') ?? 'dark';
-    const currIdx = THEMES.indexOf(curr);
-    const nextIdx = currIdx === -1 || currIdx === THEMES.length - 1 ? 0 : currIdx + 1;
-    const next = THEMES[nextIdx];
-    
-    applyTheme(next);
+  // Make the button open the Profile Drawer (where theme selector is centralized)
+  btn.textContent = '🎨 Escolher Tema';
+  btn.addEventListener('click', () => {
     playSound('ui_click');
-    if (_currentUser) {
-      await savePlayer(_currentUser.uid, { 'settings.theme': next });
-    }
+    openProfileDrawer();
   });
 }
 
