@@ -1,0 +1,105 @@
+/* ============================================================
+   RPG LIFE OS — TEMAS EXTRAS (Divino, Corrompido, Esmeralda)
+   Adiciona novos esquemas de cores e papéis de parede.
+   ============================================================ */
+
+/* ============================================================
+   1. TEMA DIVINO (Ouro e Luz)
+   ============================================================ */
+[data-theme="divino"] {
+    --color-bg-base: transparent;
+    --color-bg-surface: rgba(255, 255, 255, 0.75);
+    --color-bg-panel: rgba(250, 245, 235, 0.85);
+    --color-bg-element: rgba(255, 255, 255, 0.6);
+    --color-bg-hover: rgba(255, 240, 200, 0.8);
+    
+    --text-primary: #4a3c11;
+    --text-secondary: #705f28;
+    --text-muted: #968652;
+    --text-gold: #b38a00;
+    
+    --color-primary: #d4af37;
+    --color-primary-dark: #b89320;
+    --color-gold: #fbc02d;
+    --color-border: rgba(212, 175, 55, 0.5);
+    --color-border-bright: #d4af37;
+}
+
+[data-theme="divino"] body {
+    background: url('../../assets/bg/bg_theme_divine.png') no-repeat center center fixed;
+    background-size: cover;
+    color: var(--text-primary);
+}
+
+/* ============================================================
+   2. TEMA CORROMPIDO (Abismo e Magia Negra)
+   ============================================================ */
+[data-theme="corrompido"] {
+    --color-bg-base: transparent;
+    --color-bg-surface: rgba(20, 8, 30, 0.8);
+    --color-bg-panel: rgba(15, 6, 25, 0.9);
+    --color-bg-element: rgba(35, 15, 50, 0.6);
+    --color-bg-hover: rgba(50, 20, 75, 0.8);
+    
+    --text-primary: #f0e6ff;
+    --text-secondary: #c9b3e6;
+    --text-muted: #8e73b5;
+    --text-gold: #ff66ff;
+    
+    --color-primary: #9d00ff;
+    --color-primary-dark: #6a00cc;
+    --color-gold: #d900ff;
+    --color-border: rgba(157, 0, 255, 0.5);
+    --color-border-bright: #9d00ff;
+}
+
+[data-theme="corrompido"] body {
+    background: url('../../assets/bg/bg_theme_corrupted.png') no-repeat center center fixed;
+    background-size: cover;
+    color: var(--text-primary);
+}
+
+/* ============================================================
+   3. TEMA ESMERALDA (Natureza Cristalina)
+   ============================================================ */
+[data-theme="esmeralda"] {
+    --color-bg-base: transparent;
+    --color-bg-surface: rgba(8, 25, 15, 0.8);
+    --color-bg-panel: rgba(5, 20, 10, 0.9);
+    --color-bg-element: rgba(15, 45, 25, 0.6);
+    --color-bg-hover: rgba(25, 65, 40, 0.8);
+    
+    --text-primary: #e6ffed;
+    --text-secondary: #b3e6c4;
+    --text-muted: #7aa388;
+    --text-gold: #00ff88;
+    
+    --color-primary: #00cc6a;
+    --color-primary-dark: #00994d;
+    --color-gold: #00ff88;
+    --color-border: rgba(0, 255, 136, 0.5);
+    --color-border-bright: #00ff88;
+}
+
+[data-theme="esmeralda"] body {
+    background: url('../../assets/bg/bg_theme_emerald.png') no-repeat center center fixed;
+    background-size: cover;
+    color: var(--text-primary);
+}
+
+/* ============================================================
+   EFEITOS DE BLUR PARA OS PANELS NOS TEMAS
+   ============================================================ */
+[data-theme="divino"] .sidebar, [data-theme="divino"] .panel, [data-theme="divino"] .page-header,
+[data-theme="corrompido"] .sidebar, [data-theme="corrompido"] .panel, [data-theme="corrompido"] .page-header,
+[data-theme="esmeralda"] .sidebar, [data-theme="esmeralda"] .panel, [data-theme="esmeralda"] .page-header {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background-color: var(--color-bg-panel) !important;
+}
+
+[data-theme="divino"] .main-content, [data-theme="divino"] #main-content,
+[data-theme="corrompido"] .main-content, [data-theme="corrompido"] #main-content,
+[data-theme="esmeralda"] .main-content, [data-theme="esmeralda"] #main-content {
+    background-color: transparent !important;
+}

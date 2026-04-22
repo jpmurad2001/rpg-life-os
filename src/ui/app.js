@@ -585,19 +585,33 @@ function applySettings(settings = {}) {
   }
 }
 
+const THEMES = ['dark', 'light', 'divino', 'corrompido', 'esmeralda'];
+const THEME_LABELS = {
+  'dark': '☀️ Light Mode',
+  'light': '⚜️ Tema Divino',
+  'divino': '🌑 Tema Corrompido',
+  'corrompido': '🌲 Tema Esmeralda',
+  'esmeralda': '🌙 Dark Mode'
+};
+
 export function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+  const validTheme = THEMES.includes(theme) ? theme : 'dark';
+  document.documentElement.setAttribute('data-theme', validTheme);
   const btn = document.getElementById('btn-theme-toggle');
-  if (btn) btn.textContent = theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+  if (btn) btn.textContent = THEME_LABELS[validTheme];
 }
 
 function setupThemeToggleButton(currentTheme = 'dark') {
   const btn = document.getElementById('btn-theme-toggle');
   if (!btn) return;
-  btn.textContent = currentTheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+  const validTheme = THEMES.includes(currentTheme) ? currentTheme : 'dark';
+  btn.textContent = THEME_LABELS[validTheme];
   btn.addEventListener('click', async () => {
     const curr = document.documentElement.getAttribute('data-theme') ?? 'dark';
-    const next = curr === 'dark' ? 'light' : 'dark';
+    const currIdx = THEMES.indexOf(curr);
+    const nextIdx = currIdx === -1 || currIdx === THEMES.length - 1 ? 0 : currIdx + 1;
+    const next = THEMES[nextIdx];
+    
     applyTheme(next);
     playSound('ui_click');
     if (_currentUser) {
