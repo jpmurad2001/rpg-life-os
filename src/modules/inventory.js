@@ -404,9 +404,6 @@ function _showEquipModal(item, type) {
 
   // Listeners nos botões de slot (dentro do modal)
   setTimeout(() => {
-    const cancelBtn = document.getElementById('modal-confirm');
-    if (cancelBtn) cancelBtn.style.display = 'none';
-
     document.querySelectorAll('.equip-slot-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const slotId = btn.dataset.slotId;

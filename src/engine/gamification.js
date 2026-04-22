@@ -468,12 +468,16 @@ export function openModal({ title, bodyHTML, confirmLabel = 'Confirmar', cancelL
 
     if (titleEl) titleEl.textContent = title || 'Modal';
     if (bodyEl) bodyEl.innerHTML = bodyHTML || '';
-    if (cancelEl) cancelEl.textContent = cancelLabel;
+    if (cancelEl) {
+        cancelEl.textContent = cancelLabel;
+        cancelEl.style.display = cancelLabel ? '' : 'none';
+    }
 
     if (oldConfirm) {
         const newConfirm = oldConfirm.cloneNode(false);
         newConfirm.id = 'modal-confirm';
         newConfirm.className = 'btn-rp btn-rp--primary';
+        newConfirm.style.display = confirmLabel ? '' : 'none';
         newConfirm.textContent = confirmLabel;
         oldConfirm.replaceWith(newConfirm);
 
