@@ -38,10 +38,12 @@
   <link rel="stylesheet" href="src/ui/style-inventory.css" />        <!-- v3.2 Inventário & Loadout -->
   <link rel="stylesheet" href="src/ui/style-temples.css" />          <!-- v3.3 Templos da Dualidade -->
   <link rel="stylesheet" href="src/ui/style-themes.css" />           <!-- v3.4 Temas Extras -->
+  <link rel="stylesheet" href="src/ui/style-hubs.css" />             <!-- v4.0 Hub World Navigation -->
+  <link rel="stylesheet" href="src/ui/style-splash.css" />           <!-- v4.3 Splash + Transitions -->
 
   <!-- Icons -->
-  <link rel="icon" type="image/png" href="assets/sprites/icon-192.png" />
-  <link rel="apple-touch-icon" href="assets/sprites/icon-192.png" />
+  <link rel="icon" type="image/png" href="app_icon_512.png" />
+  <link rel="apple-touch-icon" href="app_icon_512.png" />
 </head>
 
 <body>
@@ -278,7 +280,7 @@
       </nav>
 
       <div class="sidebar__footer">
-        <span class="version-badge">Platina v3.2.1</span>
+        <span class="version-badge">Hub v4.0.0</span>
         <button class="theme-toggle-btn" id="btn-theme-toggle" aria-label="Trocar tema">&#x2600;&#xFE0F; Light Mode</button>
       </div>
     </aside>
@@ -292,6 +294,7 @@
       <header class="page-header" id="page-header">
         <div class="page-header__left">
           <button class="btn-icon mobile-only" id="btn-mobile-menu" aria-label="Menu">☰</button>
+          <button class="view-back-btn" id="btn-view-back" aria-label="Voltar" style="display:none">◀ Voltar</button>
           <h1 class="page-title" id="page-title">📜 Quests Semanais</h1>
         </div>
         <div class="page-header__right">
@@ -319,7 +322,11 @@
         <div class="view-inner">
           <div class="week-header">
             <button class="btn-rp btn-rp--ghost" id="btn-prev-week" aria-label="Semana anterior">◀</button>
-            <h2 class="week-label" id="week-label">Semana 11 · 2026</h2>
+            <div class="date-picker-wrap" style="position: relative; display: flex; align-items: center; gap: 8px;">
+              <h2 class="week-label" id="week-label">Semana 11 · 2026</h2>
+              <span style="font-size: 1.2rem; cursor: pointer; opacity: 0.8;">📅</span>
+              <input type="week" id="week-picker" style="position: absolute; opacity: 0; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer;" />
+            </div>
             <button class="btn-rp btn-rp--ghost" id="btn-next-week" aria-label="Próxima semana">▶</button>
             <button class="btn-rp btn-rp--danger" id="btn-weekly-reset">🔄 Reset</button>
           </div>
@@ -394,7 +401,11 @@
           </div>
           <div class="month-selector">
             <button class="btn-rp btn-rp--ghost" id="btn-prev-month">◄</button>
-            <span class="month-label" id="month-label">Março 2026</span>
+            <div class="date-picker-wrap" style="position: relative; display: flex; align-items: center; gap: 8px;">
+              <span class="month-label" id="month-label">Março 2026</span>
+              <span style="font-size: 1.2rem; cursor: pointer; opacity: 0.8;">📅</span>
+              <input type="month" id="month-picker" style="position: absolute; opacity: 0; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer;" />
+            </div>
             <button class="btn-rp btn-rp--ghost" id="btn-next-month">►</button>
           </div>
           <div class="budget-bar-wrap" id="budget-bar-wrap">
@@ -660,6 +671,182 @@
 
         </div>
       </section>
+
+      <!-- ============================================================
+           HUB WORLD VIEWS — Map Pin navigation
+           v4.1 Map Pin Update
+           ============================================================ -->
+
+      <!-- ---- HUB: CITADEL MAP ---- -->
+      <section id="view-citadel" class="view" data-view="citadel"
+               aria-label="Mapa da Cidadela" hidden>
+        <div class="hub-view">
+
+          <!-- Video background (loop) with static image fallback -->
+          <video class="hub-video-bg" id="video-citadel"
+                 autoplay loop muted playsinline
+                 aria-hidden="true">
+            <source src="assets/hubs/videos/citadel_map.webm" type="video/webm" />
+            <!-- mp4 fallback (encode se necessário) -->
+            <source src="assets/hubs/citadel_map.webp" type="image/webp" />
+          </video>
+          <!-- Static fallback shown until video loads -->
+          <img class="hub-view__bg" id="img-citadel-fallback"
+               src="assets/hubs/citadel_map.webp"
+               alt="Mapa da Cidadela das Sombras" draggable="false" />
+          <!-- Dark gradient overlay for pin contrast -->
+          <div class="hub-video-overlay" aria-hidden="true"></div>
+
+          <div class="hub-title-overlay">Cidadela das Sombras</div>
+
+          <!-- Map Pins -->
+          <div class="hub-pins" role="group" aria-label="Locais da Cidadela">
+
+            <button class="hub-pin" id="pin-taverna"
+                    data-nav="taverna"
+                    aria-label="Ir para a Taverna (Finanças)">
+              <div class="hub-pin__icon">🍺</div>
+              <span class="hub-pin__label">Taverna</span>
+            </button>
+
+            <button class="hub-pin" id="pin-guilda"
+                    data-nav="guilda-interior"
+                    aria-label="Ir para o Interior da Guilda">
+              <div class="hub-pin__icon">⚔️</div>
+              <span class="hub-pin__label">Guilda</span>
+            </button>
+
+            <button class="hub-pin" id="pin-mar"
+                    data-nav="mar-da-alma-interior"
+                    aria-label="Ir para o Mar da Alma">
+              <div class="hub-pin__icon">🌀</div>
+              <span class="hub-pin__label">Mar da Alma</span>
+            </button>
+
+            <button class="hub-pin" id="pin-dungeon"
+                    data-nav="bosses"
+                    aria-label="Ir para os Pesadelos (Dungeon)">
+              <div class="hub-pin__icon">🐉</div>
+              <span class="hub-pin__label">Pesadelos</span>
+            </button>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- HUB: GUILDA INTERIOR ---- -->
+      <section id="view-guilda-interior" class="view" data-view="guilda-interior"
+               aria-label="Interior da Guilda" hidden>
+        <div class="hub-view">
+
+          <video class="hub-video-bg" id="video-guilda"
+                 autoplay loop muted playsinline
+                 aria-hidden="true">
+            <source src="assets/hubs/videos/guild_interior.webm" type="video/webm" />
+            <source src="assets/hubs/guild_interior.webp" type="image/webp" />
+          </video>
+          <img class="hub-view__bg" id="img-guilda-fallback"
+               src="assets/hubs/guild_interior.webp"
+               alt="Interior da Guilda dos Caçadores" draggable="false" />
+          <div class="hub-video-overlay" aria-hidden="true"></div>
+
+          <div class="hub-title-overlay">Guilda dos Caçadores</div>
+
+          <!-- Back button -->
+          <button class="hub-back-btn" id="hub-back-guilda"
+                  data-back="citadel"
+                  aria-label="Voltar ao Mapa da Cidadela">
+            ◀ Cidadela
+          </button>
+
+          <!-- Map Pins -->
+          <div class="hub-pins" role="group" aria-label="Locais da Guilda">
+
+            <button class="hub-pin" id="pin-quests"
+                    data-nav="quests"
+                    aria-label="Quadro de Missões">
+              <div class="hub-pin__icon">📜</div>
+              <span class="hub-pin__label">Missões</span>
+            </button>
+
+            <button class="hub-pin" id="pin-battle"
+                    data-nav="battle"
+                    aria-label="Sala de Treinamento">
+              <div class="hub-pin__icon">🛡️</div>
+              <span class="hub-pin__label">Treino</span>
+            </button>
+
+            <button class="hub-pin" id="pin-board"
+                    data-nav="board"
+                    aria-label="Missões de Alta Dificuldade">
+              <div class="hub-pin__icon">📋</div>
+              <span class="hub-pin__label">Projetos</span>
+            </button>
+
+            <button class="hub-pin" id="pin-achievements"
+                    data-nav="achievements"
+                    aria-label="Mural de Reconhecimento">
+              <div class="hub-pin__icon">🏆</div>
+              <span class="hub-pin__label">Conquistas</span>
+            </button>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- HUB: MAR DA ALMA INTERIOR ---- -->
+      <section id="view-mar-da-alma-interior" class="view" data-view="mar-da-alma-interior"
+               aria-label="Interior do Mar da Alma" hidden>
+        <div class="hub-view">
+
+          <video class="hub-video-bg" id="video-mar"
+                 autoplay loop muted playsinline
+                 aria-hidden="true">
+            <source src="assets/hubs/videos/soul_sea_interior.webm" type="video/webm" />
+            <source src="assets/hubs/soul_sea_interior.webp" type="image/webp" />
+          </video>
+          <img class="hub-view__bg" id="img-mar-fallback"
+               src="assets/hubs/soul_sea_interior.webp"
+               alt="Interior do Mar da Alma" draggable="false" />
+          <div class="hub-video-overlay" aria-hidden="true"></div>
+
+          <div class="hub-title-overlay">Mar da Alma</div>
+
+          <!-- Back button -->
+          <button class="hub-back-btn" id="hub-back-mar"
+                  data-back="citadel"
+                  aria-label="Voltar ao Mapa da Cidadela">
+            ◀ Cidadela
+          </button>
+
+          <!-- Map Pins -->
+          <div class="hub-pins" role="group" aria-label="Locais do Mar da Alma">
+
+            <button class="hub-pin" id="pin-analytics"
+                    data-nav="analytics"
+                    aria-label="Painel do Destino">
+              <div class="hub-pin__icon">🔮</div>
+              <span class="hub-pin__label">Destino</span>
+            </button>
+
+            <button class="hub-pin" id="pin-talents"
+                    data-nav="talents"
+                    aria-label="Monumento de Talentos">
+              <div class="hub-pin__icon">✨</div>
+              <span class="hub-pin__label">Talentos</span>
+            </button>
+
+            <button class="hub-pin" id="pin-inventory"
+                    data-nav="inventory"
+                    aria-label="Inventário">
+              <div class="hub-pin__icon">💎</div>
+              <span class="hub-pin__label">Inventário</span>
+            </button>
+
+          </div>
+        </div>
+      </section>
+
 
       <!-- ---- VIEW: ANALYTICS (v2.4 Diamond — Tear do Destino) ---- -->
       <section id="view-analytics" class="view" data-view="analytics"
@@ -989,7 +1176,7 @@
   <!-- ============================================================
        SCRIPTS
        ============================================================ -->
-  <script type="module" src="src/ui/app.js?v=3.1.9.1"></script>
+  <script type="module" src="src/ui/app.js?v=4.0.0"></script>
 
 </body>
 </html>

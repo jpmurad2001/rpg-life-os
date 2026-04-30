@@ -481,7 +481,7 @@ function buildColumn(col, boardId) {
 
   wrapper.innerHTML = `
     <div class="board-column__header">
-      <span class="board-column__title">${col.title}</span>
+      <span class="board-column__title" data-editable="true" title="Clique para renomear">${col.title}</span>
       <span class="board-column__count">${col.cards.length}</span>
     </div>
     <div class="board-column__cards" data-col-id="${col.id}">
@@ -522,6 +522,45 @@ function buildColumn(col, boardId) {
   wrapper.querySelector('.board-add-card-btn').addEventListener('click', () => {
     openAddCardModal(boardId, col.id);
   });
+
+  // ---- INLINE COLUMN RENAME ----
+  const titleEl = wrapper.querySelector('.board-column__title');
+  if (titleEl) {
+    titleEl.addEventListener('click', () => {
+      if (wrapper.querySelector('.board-column__title-input')) return;
+      const currentTitle = col.title;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'board-column__title-input';
+      input.value = currentTitle;
+      input.maxLength = 40;
+      input.setAttribute('aria-label', 'Renomear coluna');
+      titleEl.replaceWith(input);
+      input.focus();
+      input.select();
+      const saveRename = () => {
+        const newTitle = input.value.trim();
+        if (newTitle && newTitle !== currentTitle) {
+          renameColumn(boardId, col.id, newTitle);
+          showToast(`📋 Coluna renomeada: "${newTitle}"`, 'info', 1500);
+          playClick();
+          renderBoard();
+        } else {
+          const span = document.createElement('span');
+          span.className = 'board-column__title';
+          span.dataset.editable = 'true';
+          span.title = 'Clique para renomear';
+          span.textContent = currentTitle;
+          input.replaceWith(span);
+        }
+      };
+      input.addEventListener('blur', saveRename, { once: true });
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = currentTitle; input.blur(); }
+      });
+    });
+  }
 
   return wrapper;
 }

@@ -1,0 +1,294 @@
+/* ============================================================
+   SHADOW SLAVE LIFE OS — Splash Screen
+   style-splash.css — v4.3 Cinematic Loading
+
+   Tela de loading pós-login com crossfade cinematográfico.
+   Login → Splash → Hub: zero cortes secos.
+   ============================================================ */
+
+/* ============================================================
+   FADE TRANSITION SYSTEM
+   Aplicado à auth-screen e ao app-shell para crossfades suaves.
+   ============================================================ */
+
+/* Auth screen agora usa opacity para fade, não display:none */
+#auth-screen {
+  transition: opacity 600ms ease;
+}
+#auth-screen.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* App shell fade-in ao aparecer */
+#app-shell {
+  transition: opacity 500ms ease;
+}
+#app-shell.fade-in-start {
+  opacity: 0;
+}
+
+/* ============================================================
+   SPLASH SCREEN — Tela cheia pós-login
+   ============================================================ */
+#splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 8000; /* acima do app-shell, abaixo do auth */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #050308;
+  opacity: 1;
+  transition: opacity 800ms ease;
+  pointer-events: all;
+  gap: 0;
+}
+
+/* Foggy background (igual ao auth screen) */
+#splash-screen::before,
+#splash-screen::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+}
+#splash-screen::before {
+  width: 600px; height: 350px;
+  background: radial-gradient(circle, rgba(90, 20, 140, 0.35) 0%, transparent 70%);
+  top: -80px; left: -100px;
+  animation: splashFog 16s ease-in-out infinite alternate;
+}
+#splash-screen::after {
+  width: 500px; height: 280px;
+  background: radial-gradient(circle, rgba(50, 10, 100, 0.25) 0%, transparent 70%);
+  bottom: -60px; right: -80px;
+  animation: splashFog 12s ease-in-out infinite alternate-reverse;
+}
+@keyframes splashFog {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(20px, -15px) scale(1.1); }
+  100% { transform: translate(-15px, 25px) scale(0.95); }
+}
+
+/* Fade-out state — triggered by JS when loading is done */
+#splash-screen.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================================
+   SPLASH ICON — Ícone do app pulsando
+   ============================================================ */
+.splash-icon-wrap {
+  position: relative;
+  margin-bottom: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Halo girando atrás do ícone */
+.splash-icon-wrap::before {
+  content: '';
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: rgba(140, 80, 255, 0.6);
+  border-right-color: rgba(100, 160, 255, 0.3);
+  animation: splashSpin 2.4s linear infinite;
+}
+
+/* Halo interno, sentido oposto */
+.splash-icon-wrap::after {
+  content: '';
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  border-bottom-color: rgba(180, 120, 255, 0.4);
+  border-left-color: rgba(80, 120, 255, 0.2);
+  animation: splashSpin 1.8s linear infinite reverse;
+}
+
+@keyframes splashSpin {
+  to { transform: rotate(360deg); }
+}
+
+.splash-icon {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  animation: splashPulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(120, 60, 220, 0.55))
+          drop-shadow(0 0 50px rgba(80, 40, 180, 0.25));
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes splashPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 20px rgba(120, 60, 220, 0.55))
+            drop-shadow(0 0 50px rgba(80, 40, 180, 0.25));
+  }
+  50% {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 30px rgba(150, 80, 255, 0.75))
+            drop-shadow(0 0 70px rgba(100, 60, 220, 0.35));
+  }
+}
+
+/* ============================================================
+   SPLASH TITLE — Shadow Slave Life OS
+   ============================================================ */
+.splash-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  color: #d4af37;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 14px rgba(212, 175, 55, 0.5),
+    0 2px 4px rgba(0,0,0,0.9);
+  margin-bottom: 0.5rem;
+  text-align: center;
+  line-height: 2;
+}
+
+/* ============================================================
+   LOADING BAR — barra de progresso estética
+   ============================================================ */
+.splash-bar-wrap {
+  width: 240px;
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(120, 80, 220, 0.2);
+  overflow: hidden;
+  margin-top: 2.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.splash-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #6d28d9, #a855f7, #818cf8);
+  background-size: 200% 100%;
+  animation: splashBarShimmer 1.4s linear infinite;
+  width: 40%;
+  border-radius: 0;
+  /* Indeterminate animation — move left to right */
+  transform: translateX(-100%);
+  animation: splashBarScroll 1.6s ease-in-out infinite;
+}
+
+@keyframes splashBarScroll {
+  0%   { transform: translateX(-100%); opacity: 0.8; }
+  50%  { opacity: 1; }
+  100% { transform: translateX(350%); opacity: 0.8; }
+}
+
+/* ============================================================
+   LOADING MESSAGE — texto dinâmico
+   ============================================================ */
+.splash-message {
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  color: #6b7280;
+  letter-spacing: 2px;
+  text-align: center;
+  min-height: 1.4rem;
+  /* Fade entre mensagens */
+  transition: opacity 300ms ease;
+}
+
+.splash-message.fade {
+  opacity: 0;
+}
+
+/* Dots animados após a mensagem */
+.splash-dots {
+  display: inline-block;
+  animation: splashDots 1.4s steps(4) infinite;
+}
+
+@keyframes splashDots {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
+}
+
+/* ============================================================
+   HUB VIDEO BACKGROUNDS
+   ============================================================ */
+.hub-video-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+  /* Fade-in quando carrega */
+  opacity: 0;
+  transition: opacity 1000ms ease;
+}
+
+.hub-video-bg.loaded {
+  opacity: 1;
+}
+
+/* Fallback: imagem estática por baixo do vídeo durante carregamento */
+.hub-view {
+  background-color: #050308;
+}
+
+/* O conteúdo (pins, overlays) fica acima do vídeo */
+.hub-title-overlay,
+.hub-pins,
+.hub-back-btn,
+.hub-profile-btn,
+.hub-edit-btn,
+.hub-save-btn,
+.hub-reset-btn,
+.hub-edit-toast {
+  z-index: 10;
+}
+
+/* Scanline overlay agora acima do vídeo */
+.hub-view::after {
+  z-index: 2;
+}
+
+/* Sobreposição escura sutil para contraste dos pins */
+.hub-video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to bottom,
+    rgba(3, 2, 10, 0.25) 0%,
+    rgba(3, 2, 10, 0.08) 40%,
+    rgba(3, 2, 10, 0.30) 100%
+  );
+  pointer-events: none;
+}
+
+/* ============================================================
+   TRANSITION CROSSFADE — Views entram com fade suave
+   ============================================================ */
+.view--active {
+  animation: viewFadeIn 250ms ease both;
+}
+
+@keyframes viewFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

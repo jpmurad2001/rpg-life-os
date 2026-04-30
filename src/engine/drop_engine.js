@@ -72,12 +72,16 @@ function getEligibleItems(lootTable, playerRank, source) {
   return lootTable.filter(item => {
     if (!item.is_active) return false;
 
-    // O item precisa indicar que a fonte (quest ou boss) pode dropá-lo
-    // v3.1: boss_subtask também pode dropar itens de 'quest'
-    const eligibleSources = [...item.eligible_for];
-    if (eligibleSources.includes('quest')) eligibleSources.push('boss_subtask');
-    
-    if (!eligibleSources.includes(source)) return false;
+    // Normaliza eligible_for: 'farming' é sinônimo de 'quest' (dados legados do Firestore)
+    // boss_subtask também pode dropar itens de 'quest'/'farming'
+    const rawSources = Array.isArray(item.eligible_for) ? item.eligible_for : [];
+    const eligibleSources = new Set(rawSources);
+
+    // Normalização de aliases
+    if (eligibleSources.has('farming')) eligibleSources.add('quest');
+    if (eligibleSources.has('quest'))   eligibleSources.add('boss_subtask');
+
+    if (!eligibleSources.has(source)) return false;
 
     // O jogador precisa ter atingido o rank mínimo para receber o item
     const minRankIdx = rankIndex(item.min_rank_to_drop ?? 'Adormecido');

@@ -39,6 +39,7 @@ import { initBoard }        from '../modules/board.js';      // v2.1 Diamond
 import { initPomodoro }     from '../modules/pomodoro.js';  // v2.2 Reino dos Sonhos
 import { initTalents }      from '../modules/talents.js';   // v2.3 Habilidades de Aspecto
 import { initAnalytics }    from '../modules/analytics.js'; // v2.4 Tear do Destino
+import { initHubPins }      from '../modules/hub_pins.js';  // v4.2 Pin Editor
 
 // ---- Badge System (v2.5) ----
 import {
@@ -56,6 +57,9 @@ import {
 // ---- Audio Player (BGM + Spotify) ----
 import { initAudioPlayer } from './audio_player_ui.js';
 
+// ---- Splash Screen + Transitions (v4.3) ----
+import { showSplash, hideSplash } from './splash.js';
+
 // ============================================================
 //   GLOBAL STATE (in-memory, synced to Firestore)
 // ============================================================
@@ -69,17 +73,64 @@ export function getPlayerData()   { return _playerData; }
 //   VIEW CONFIG
 // ============================================================
 const VIEWS = {
-  quests:       { title: '📜 Quests Semanais',       init: initQuests      },
-  battle:       { title: '⚔️ Battle Ground',          init: initBattle      },
-  taverna:      { title: '🏰 Taverna — Finanças',     init: initTaverna     },
-  bosses:       { title: '🐉 Pesadelos',               init: initPesadelos    },
-  inventory:    { title: '💎 Inventário',              init: initInventory   },
-  achievements: { title: '🏆 Conquistas',             init: renderAchievements },
-  board:        { title: '📋 Quadro de Missões',      init: initBoard       },  // v2.1 Diamond
-  pomodoro:     { title: '⏳ Reino dos Sonhos',       init: initPomodoro    },  // v2.2
-  talents:      { title: '✨ Habilidades de Aspecto', init: initTalents     },  // v2.3
-  analytics:    { title: '🔮 Tear do Destino',        init: initAnalytics   },  // v2.4
+  quests:       { title: '📜 Quests Semanais',       init: initQuests,      hubParent: 'guilda-interior' },
+  battle:       { title: '⚔️ Battle Ground',          init: initBattle,      hubParent: 'guilda-interior' },
+  taverna:      { title: '🏰 Taverna — Finanças',     init: initTaverna,     hubParent: 'citadel'        },
+  bosses:       { title: '🐉 Pesadelos',               init: initPesadelos,   hubParent: 'citadel'        },
+  inventory:    { title: '💎 Inventário',              init: initInventory,   hubParent: 'mar-da-alma-interior' },
+  achievements: { title: '🏆 Conquistas',             init: renderAchievements, hubParent: 'guilda-interior' },
+  board:        { title: '📋 Quadro de Missões',      init: initBoard,       hubParent: 'guilda-interior' },  // v2.1 Diamond
+  pomodoro:     { title: '⏳ Reino dos Sonhos',       init: initPomodoro,    hubParent: 'guilda-interior' },  // v2.2
+  talents:      { title: '✨ Habilidades de Aspecto', init: initTalents,     hubParent: 'mar-da-alma-interior' },  // v2.3
+  analytics:    { title: '🔮 Tear do Destino',        init: initAnalytics,   hubParent: 'mar-da-alma-interior' },  // v2.4
+  // Hub views (no sidebar needed)
+  'citadel':            { title: 'Cidadela das Sombras', init: null, isHub: true },
+  'guilda-interior':    { title: 'Guilda dos Caçadores', init: null, isHub: true },
+  'mar-da-alma-interior': { title: 'Mar da Alma',        init: null, isHub: true },
 };
+
+// ============================================================
+//   HUB NAVIGATION STATE
+// ============================================================
+let _currentHubParent = null; // Track which hub the user came from
+const HUB_VIEWS = ['citadel', 'guilda-interior', 'mar-da-alma-interior'];
+
+/**
+ * Determines if a view name is a hub/intermediate screen.
+ */
+function isHubView(viewName) {
+  return HUB_VIEWS.includes(viewName);
+}
+
+/**
+ * Applies or removes hub-mode class on app-shell.
+ * Hub mode hides sidebar, bottom-nav, page-header.
+ */
+function setHubMode(on) {
+  const shell = document.getElementById('app-shell');
+  if (on) {
+    shell?.classList.add('hub-mode');
+  } else {
+    shell?.classList.remove('hub-mode');
+  }
+}
+
+/**
+ * Updates the back button in the page header for functional views.
+ * Shows it with the correct hub parent, hides it on hub views.
+ */
+function updateViewBackButton(viewName) {
+  const backBtn = document.getElementById('btn-view-back');
+  if (!backBtn) return;
+  const viewCfg = VIEWS[viewName];
+  if (viewCfg?.hubParent && !isHubView(viewName)) {
+    backBtn.style.display = '';
+    backBtn.dataset.backTo = viewCfg.hubParent;
+  } else {
+    backBtn.style.display = 'none';
+    delete backBtn.dataset.backTo;
+  }
+}
 
 // ============================================================
 //   PESADELOS INIT  (Campaign Map + Temples — v3.3)
@@ -141,12 +192,25 @@ function setupAuthGate() {
 
 function showAuthScreen() {
   document.getElementById('auth-screen')?.classList.remove('hidden');
+  document.getElementById('auth-screen')?.classList.remove('fade-out');
   document.getElementById('app-shell')?.classList.add('hidden');
 }
 
 function showAppShell() {
-  document.getElementById('auth-screen')?.classList.add('hidden');
-  document.getElementById('app-shell')?.classList.remove('hidden');
+  const shell = document.getElementById('app-shell');
+  if (!shell) return;
+  shell.classList.remove('hidden');
+  // Start with opacity 0 so hub is ready but invisible during splash
+  shell.style.opacity = '0';
+  // Fade in after a brief moment (splash will cover this anyway)
+  requestAnimationFrame(() => {
+    shell.style.transition = 'opacity 0ms';
+    shell.style.opacity = '0';
+    requestAnimationFrame(() => {
+      shell.style.transition = '';
+      shell.style.opacity = '1';
+    });
+  });
 }
 
 async function syncFirestoreToLocalState(uid, playerFirestore) {
@@ -215,22 +279,29 @@ async function _onUserLogin(user) {
   try {
     setAuthMessage('🌑 Entrando no Vazio...', 'loading');
 
+    // v4.3 — Mostra splash imediatamente, crossfade do auth
+    showSplash();
+
     let player = await loadPlayerDataFromDB(user.uid);
 
     if (!player) {
-      // First-time login: init profile
       player = await initNewPlayer(user.uid, user.displayName ?? 'Caçador');
-      // Try migrating localStorage data
       const migrated = await migrateFromLocalStorage(user.uid);
       if (migrated) showToast('📦 Dados anteriores migrados!', 'info', 4000);
     }
-    
-    await syncFirestoreToLocalState(user.uid, player);
 
+    await syncFirestoreToLocalState(user.uid, player);
     _playerData = player;
 
-    showAppShell();
-    initAudioPlayer(); // música persiste entre navegações
+    // Prepara o app shell SEM exibir (splash ainda está na frente)
+    document.getElementById('auth-screen')?.classList.add('hidden');
+    const shell = document.getElementById('app-shell');
+    if (shell) {
+      shell.style.opacity = '0';
+      shell.classList.remove('hidden');
+    }
+
+    initAudioPlayer();
     applySettings(player.settings);
     checkTimeOfDay();
     await renderHUDFromPlayer(player);
@@ -245,7 +316,6 @@ async function _onUserLogin(user) {
     checkDailyHP(user.uid, player);
     setupSyncHook();
 
-    // v3.0 — Inject profile module dependencies
     initProfileDeps({
       getCurrentUser: () => _currentUser,
       getPlayerData:  () => _playerData,
@@ -254,15 +324,69 @@ async function _onUserLogin(user) {
       },
     });
 
+    navigateTo('citadel');
+    initHubPins();
+    initHubVideos();
 
-    navigateTo('quests');
+    // v4.3 — Splash faz fade-out, revela o hub por baixo de forma cinemática
+    // Primeiro, faz o shell apparecer (opacity 0 -> 1) enquanto splash sai
+    if (shell) {
+      shell.style.transition = 'opacity 600ms ease';
+      shell.style.opacity = '1';
+    }
 
-    console.log('[App] Booted v4.0 — Caçador:', user.displayName, '| Rank:', player.progression?.rank);
+    await hideSplash(); // aguarda o fade-out do splash (850ms)
+
+    // Limpa o style inline após a transição
+    if (shell) { shell.style.transition = ''; shell.style.opacity = ''; }
+
+    console.log('[App] Booted v4.3 Cinematic — Caçador:', user.displayName, '| Rank:', player.progression?.rank);
   } catch (e) {
     console.error('[App] Erro ao carregar perfil:', e);
     setAuthMessage('❌ Erro ao carregar perfil. Tente novamente.', 'error');
+    await hideSplash().catch(() => {});
     showAuthScreen();
   }
+}
+
+// ============================================================
+//   HUB VIDEO FADE-IN
+//   Quando o vídeo está pronto para reproduzir, aplica classe
+//   que faz fade-in sobre a imagem de fallback estática.
+// ============================================================
+function initHubVideos() {
+  const videoMap = [
+    { videoId: 'video-citadel',  imgId: 'img-citadel-fallback' },
+    { videoId: 'video-guilda',   imgId: 'img-guilda-fallback'  },
+    { videoId: 'video-mar',      imgId: 'img-mar-fallback'     },
+  ];
+
+  videoMap.forEach(({ videoId, imgId }) => {
+    const video = document.getElementById(videoId);
+    const img   = document.getElementById(imgId);
+    if (!video) return;
+
+    const onReady = () => {
+      video.classList.add('loaded');
+      // Fade out static fallback image once video is playing
+      if (img) {
+        img.style.transition = 'opacity 800ms ease';
+        img.style.opacity = '0';
+      }
+    };
+
+    // canplay fires when enough data is buffered
+    video.addEventListener('canplay', onReady, { once: true });
+
+    // If already ready (cached)
+    if (video.readyState >= 3) onReady();
+
+    // Force play (some browsers need this after dynamic DOM insertion)
+    video.play().catch(() => {
+      // Autoplay blocked — still show static image, no problem
+      console.info('[Hub] Autoplay bloqueado para', videoId, '— usando imagem estática.');
+    });
+  });
 }
 
 // ============================================================
@@ -272,13 +396,28 @@ function navigateTo(viewName) {
   if (!VIEWS[viewName]) return;
   playSound('ui_click');
 
-  setActiveNav(viewName);
-  switchView(viewName);
-  setPageTitle(VIEWS[viewName].title);
+  const isHub = isHubView(viewName);
+
+  if (isHub) {
+    // Hub: sidebar permanece visível, apenas esconde o page-header
+    // (o hub tem sua própria barra de título overlay)
+    const shell = document.getElementById('app-shell');
+    shell?.classList.add('hub-mode');
+    switchView(viewName);
+    setActiveNav('');  // nenhum nav-btn ativo nos hubs
+  } else {
+    // Functional view: restaura page-header e mostra sidebar normalmente
+    const shell = document.getElementById('app-shell');
+    shell?.classList.remove('hub-mode');
+    setActiveNav(viewName);
+    switchView(viewName);
+    setPageTitle(VIEWS[viewName].title);
+    updateViewBackButton(viewName);
+  }
 
   if (viewName === 'achievements') clearAchievementBadge();
 
-  const initFn = VIEWS[viewName].init;
+  const initFn = VIEWS[viewName]?.init;
   if (initFn) initFn();
 }
 
@@ -311,6 +450,30 @@ function setupNav() {
       sidebar.classList.remove('sidebar--open');
     }
   });
+
+  // ---- HUB WORLD NAVIGATION ----
+  // Wire all hub pins (data-nav attribute) — substituímos as hub-zone pelos hub-pin
+  document.querySelectorAll('.hub-pin[data-nav]').forEach(pin => {
+    pin.addEventListener('click', () => {
+      navigateTo(pin.dataset.nav);
+    });
+  });
+
+  // Wire all hub back buttons (data-back attribute)
+  document.querySelectorAll('.hub-back-btn[data-back]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      navigateTo(btn.dataset.back);
+    });
+  });
+
+  // Wire the view back button in page-header
+  const viewBackBtn = document.getElementById('btn-view-back');
+  if (viewBackBtn) {
+    viewBackBtn.addEventListener('click', () => {
+      const target = viewBackBtn.dataset.backTo || 'citadel';
+      navigateTo(target);
+    });
+  }
 }
 
 // ============================================================

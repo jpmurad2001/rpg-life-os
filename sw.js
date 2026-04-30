@@ -3,7 +3,7 @@
  * Enables offline support and caching for PWA.
  */
 
-const CACHE_NAME = 'rpg-life-os-v41';
+const CACHE_NAME = 'rpg-life-os-v43-cinematic';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -14,7 +14,17 @@ const ASSETS_TO_CACHE = [
     './src/ui/style-phase3.css',
     './src/ui/style-badges.css',
     './src/ui/style-identity.css',    // v3.0
-    './src/ui/app.js?v=3.1.7',
+    './src/ui/style-themes.css',
+    './src/ui/style-hubs.css',          // v4.0 Hub World
+    './src/ui/style-splash.css',        // v4.3 Splash + Transitions
+    './src/ui/app.js?v=4.3.0',
+    './src/ui/splash.js',
+    './assets/hubs/citadel_map.webp',
+    './assets/hubs/guild_interior.webp',
+    './assets/hubs/soul_sea_interior.webp',
+    './assets/hubs/videos/citadel_map.webm',
+    './assets/hubs/videos/guild_interior.webm',
+    './assets/hubs/videos/soul_sea_interior.webm',
     './src/engine/core.js',
     './src/engine/gamification.js',
     './src/engine/audio.js',

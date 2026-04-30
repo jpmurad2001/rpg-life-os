@@ -418,6 +418,13 @@ function _showEquipModal(item, type) {
 //   LÓGICA DE EQUIPAR / DESEQUIPAR
 // ============================================================
 function _equipItem(slotId, item, type) {
+  // Remove o item de qualquer outro slot em que já esteja equipado
+  for (const [key, equipped] of Object.entries(_equippedSlots)) {
+    if (equipped && equipped.item.id === item.id) {
+      _equippedSlots[key] = null;
+    }
+  }
+
   _equippedSlots[slotId] = { item, type };
   _renderLoadout();
 

@@ -90,10 +90,14 @@ export function renderQuests() {
 
     // Week label
     const weekEl = document.getElementById('week-label');
+    const weekPicker = document.getElementById('week-picker');
     if (weekEl) {
         weekEl.textContent = `Semana ${weekId.split('W')[1]} · ${weekId.split('-')[0]}`;
         if (!isCurrentWeek) weekEl.style.opacity = '0.7';
         else weekEl.style.opacity = '1';
+    }
+    if (weekPicker) {
+        weekPicker.value = weekId; // Sync native picker to current browsing week (format: YYYY-Www)
     }
 
     // Weekly progress
@@ -537,6 +541,17 @@ export function initQuests() {
             const base = _browsingWeekId || loadState().quests.current_week_id;
             _browsingWeekId = _getWeekIdOffset(base, +1);
             renderQuests();
+        });
+    }
+
+    const weekPicker = document.getElementById('week-picker');
+    if (weekPicker && !weekPicker.dataset.wired) {
+        weekPicker.dataset.wired = '1';
+        weekPicker.addEventListener('change', (e) => {
+            if (e.target.value) {
+                _browsingWeekId = e.target.value;
+                renderQuests();
+            }
         });
     }
 }

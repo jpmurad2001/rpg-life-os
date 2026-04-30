@@ -10,16 +10,10 @@
     "lang": "pt-BR",
     "icons": [
         {
-            "src": "assets/sprites/icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "maskable any"
-        },
-        {
-            "src": "assets/sprites/icon-512.png",
+            "src": "app_icon_512.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "maskable any"
+            "purpose": "any maskable"
         }
     ],
     "categories": [

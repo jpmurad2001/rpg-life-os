@@ -221,13 +221,64 @@ export async function addToInventory(uid, lootId, source, sourceId) {
 //   LOOT TABLE (cache global)
 // ============================================================
 
+/**
+ * Normaliza o image_url de uma Memória da loot_table.
+ *
+ * Regras (em ordem de prioridade):
+ *  1. URLs absolutas (http/https) → Firebase Storage ou CDN → retorna intacta.
+ *  2. Caminhos legados "assets/sprites_memorias/…" → remove "assets/" redundante.
+ *  3. Caminhos sem prefixo "assets/" → adiciona prefixo.
+ */
+function _normalizeImageUrl(raw) {
+  if (!raw) return null;
+
+  // 1. URL absoluta — Firebase Storage, CDN, etc. Preservar sem tocar.
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  const clean = raw.replace(/^\/+/, '');
+
+  // 2. Legado: "assets/sprites_memorias/" → "sprites_memorias/"
+  if (clean.startsWith('assets/sprites_memorias/')) {
+    return clean.replace('assets/sprites_memorias/', 'sprites_memorias/');
+  }
+
+  // 3. Já tem prefixo correto
+  if (clean.startsWith('assets/') || clean.startsWith('sprites_memorias/')) {
+    return clean;
+  }
+
+  // 4. Caminho sem prefixo → assume relativo a assets/
+  return `assets/${clean}`;
+}
+
 export async function getLootTable(forceRefresh = false) {
   if (_cache.lootTable && !forceRefresh) return _cache.lootTable;
+
   const snap = await getDocs(
     query(collection(db, 'loot_table'), where('is_active', '==', true))
   );
-  _cache.lootTable = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  console.log(`[DB] loot_table carregada: ${_cache.lootTable.length} Memórias`);
+
+  const all = snap.docs.map(d => {
+    const data = d.data();
+    if (data.image_url) data.image_url = _normalizeImageUrl(data.image_url);
+    return { id: d.id, ...data };
+  });
+
+  // Garante que apenas Memórias com sprite configurado entram na pool de drops.
+  // Itens sem image_url seriam exibidos como ícone emoji — aceitável no inventário
+  // mas excluídos do pool de drops para manter a imersão visual.
+  const withSprite    = all.filter(item => !!item.image_url);
+  const withoutSprite = all.filter(item => !item.image_url);
+
+  if (withoutSprite.length > 0) {
+    console.warn(
+      `[DB] loot_table: ${withoutSprite.length} Memória(s) sem sprite ignorada(s) do pool de drops:`,
+      withoutSprite.map(i => i.id)
+    );
+  }
+
+  _cache.lootTable = withSprite;
+  console.log(`[DB] loot_table carregada: ${withSprite.length} Memórias com sprite (${withoutSprite.length} sem sprite excluídas)`);
   return _cache.lootTable;
 }
 

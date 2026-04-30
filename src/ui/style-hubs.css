@@ -1,0 +1,661 @@
+/* ============================================================
+   SHADOW SLAVE LIFE OS — Hub World Navigation
+   style-hubs.css — v4.1 Map Pin Update
+
+   A sidebar COEXISTE com os hubs.
+   Navegação via marcadores (pins) sobre as imagens — sem
+   zonas invisíveis mal posicionadas.
+   ============================================================ */
+
+/* ============================================================
+   HUB WORLD LAYOUT
+   A main-content simplesmente exibe o hub como qualquer view.
+   Sem hub-mode que esconde a sidebar.
+   ============================================================ */
+.hub-view {
+  position: relative;
+  width: 100%;
+  /* Ocupa a altura menos o page-header (56px) */
+  height: calc(100dvh - 56px);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #050308;
+}
+
+.hub-view__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Subtle scanline overlay */
+.hub-view::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.05) 2px,
+    rgba(0,0,0,0.05) 4px
+  );
+  z-index: 1;
+}
+
+/* ============================================================
+   MAP PIN CONTAINER
+   ============================================================ */
+.hub-pins {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none; /* container não bloqueia mouse */
+}
+
+/* ============================================================
+   MAP PIN — O marcador clicável individual
+   Posicionado via top/left % na seção correspondente.
+   ============================================================ */
+.hub-pin {
+  position: absolute;
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  /* Centraliza o pin em torno do ponto (transform no eixo X) */
+  transform: translateX(-50%);
+}
+
+/* --- Ícone do pin (a bolinha/ícone flutuante) --- */
+.hub-pin__icon {
+  width: 34px;
+  height: 34px;
+  background: rgba(8, 5, 25, 0.82);
+  border: 2px solid rgba(120, 190, 255, 0.55);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+  box-shadow:
+    0 0 10px rgba(80, 160, 255, 0.35),
+    0 3px 8px rgba(0,0,0,0.7);
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
+  /* Animação leve de float */
+  animation: pinFloat 3s ease-in-out infinite;
+}
+
+/* Ponteiro triangular embaixo do pin */
+.hub-pin__icon::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid rgba(120, 190, 255, 0.55);
+  pointer-events: none;
+}
+
+@keyframes pinFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-4px); }
+}
+
+/* --- Label do pin (sempre visível, compacto) --- */
+.hub-pin__label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  color: #d8e8ff;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: rgba(5, 3, 18, 0.88);
+  border: 1px solid rgba(100, 160, 255, 0.3);
+  padding: 3px 7px;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+
+/* --- Estado hover --- */
+.hub-pin:hover .hub-pin__icon {
+  background: rgba(20, 12, 55, 0.95);
+  border-color: rgba(140, 210, 255, 0.9);
+  box-shadow:
+    0 0 20px rgba(100, 180, 255, 0.55),
+    0 0 40px rgba(80, 140, 255, 0.2),
+    0 4px 10px rgba(0,0,0,0.8);
+  transform: translateY(-3px);
+  animation: none; /* Para a animação no hover */
+}
+
+.hub-pin:hover .hub-pin__label {
+  border-color: rgba(140, 210, 255, 0.6);
+  color: #f0f8ff;
+}
+
+/* --- Focus acessível --- */
+.hub-pin:focus-visible .hub-pin__icon {
+  outline: 2px solid rgba(140, 210, 255, 0.9);
+  outline-offset: 3px;
+}
+
+/* ============================================================
+   CITADEL MAP — Posição dos pins
+   Analisando o mapa:
+   - Taverna: prédio esquerdo (fumaça na chaminé)  ~26% left, ~55% top
+   - Guilda: prédio direito maior (mais ao centro-direito) ~63% left, ~38% top
+   - Portal/Mar da Alma: fonte glowing no centro ~50% left, ~72% top
+   - Pesadelos/Dungeon: caverna/rochas à direita ~80% left, ~62% top
+   ============================================================ */
+#pin-taverna    { left: 27%;  top: 52%; }
+#pin-guilda     { left: 63%;  top: 36%; }
+#pin-mar        { left: 50%;  top: 68%; }
+#pin-dungeon    { left: 80%;  top: 60%; }
+
+/* Delay diferente para cada pin (efeito natural) */
+#pin-taverna .hub-pin__icon  { animation-delay: 0s; }
+#pin-guilda  .hub-pin__icon  { animation-delay: 0.7s; }
+#pin-mar     .hub-pin__icon  { animation-delay: 1.4s; }
+#pin-dungeon .hub-pin__icon  { animation-delay: 2.1s; }
+
+/* ============================================================
+   GUILD INTERIOR — Posição dos pins
+   Analisando o interior:
+   - Quadro de Missões: quadro de cortiça à esquerda ~20% left, ~60% top
+   - Sala de Treinamento: manequim/armaduras ao centro-esq ~38% left, ~55% top
+   - Missões Alta Dificuldade: mesa/escrivaninha central ~57% left, ~62% top
+   - Mural de Reconhecimento: prateleira de troféus à direita ~84% left, ~52% top
+   ============================================================ */
+#pin-quests       { left: 19%;  top: 57%; }
+#pin-battle       { left: 37%;  top: 52%; }
+#pin-board        { left: 57%;  top: 60%; }
+#pin-achievements { left: 84%;  top: 50%; }
+
+#pin-quests       .hub-pin__icon { animation-delay: 0s; }
+#pin-battle       .hub-pin__icon { animation-delay: 0.5s; }
+#pin-board        .hub-pin__icon { animation-delay: 1s; }
+#pin-achievements .hub-pin__icon { animation-delay: 1.5s; }
+
+/* ============================================================
+   SOUL SEA INTERIOR — Posição dos pins
+   ============================================================ */
+#pin-analytics  { left: 22%;  top: 50%; }
+#pin-talents    { left: 50%;  top: 45%; }
+#pin-inventory  { left: 78%;  top: 50%; }
+
+#pin-analytics .hub-pin__icon { animation-delay: 0s; }
+#pin-talents   .hub-pin__icon { animation-delay: 0.6s; }
+#pin-inventory .hub-pin__icon { animation-delay: 1.2s; }
+
+/* ============================================================
+   HUB TITLE OVERLAY — header superior central
+   Agora dentro do hub-view, não conflita com page-header da sidebar
+   ============================================================ */
+.hub-title-overlay {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.46rem;
+  color: #ccc0e0;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-shadow: 0 0 14px rgba(140, 100, 255, 0.6), 0 2px 4px rgba(0,0,0,0.95);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   HUB BACK BUTTON — hubs intermediários
+   ============================================================ */
+.hub-back-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(5, 3, 20, 0.85);
+  border: 2px solid rgba(100, 160, 255, 0.45);
+  color: #90b8e0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.8);
+  transition: all 100ms ease;
+}
+
+.hub-back-btn:hover {
+  background: rgba(18, 10, 48, 0.95);
+  border-color: rgba(120, 190, 255, 0.85);
+  color: #c8e0ff;
+}
+
+.hub-back-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+/* ============================================================
+   VIEW BACK BUTTON — no page-header das views funcionais
+   ============================================================ */
+.view-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 2px solid rgba(100, 200, 255, 0.3);
+  color: #9090c0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.42rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.6);
+  transition: all 100ms ease;
+}
+
+.view-back-btn:hover {
+  background: rgba(20, 10, 50, 0.6);
+  border-color: rgba(100, 200, 255, 0.6);
+  color: #c0d8ff;
+}
+
+.view-back-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* ============================================================
+   HUB PROFILE BUTTON — top-right dentro do hub
+   ============================================================ */
+.hub-profile-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background: rgba(5, 3, 20, 0.82);
+  border: 2px solid rgba(160, 120, 255, 0.38);
+  color: #c8c0e0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  padding: 5px 9px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 100ms ease;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.8);
+}
+
+.hub-profile-btn:hover {
+  background: rgba(18, 10, 48, 0.95);
+  border-color: rgba(160, 120, 255, 0.75);
+}
+
+/* ============================================================
+   APP-SHELL: Hub coexiste com sidebar
+   Apenas remove o page-header interno do hub (ele tem o próprio)
+   Sidebar FICA visível.
+   ============================================================ */
+
+/* O hub view ocupa o main-content normalmente, sem alterar o grid */
+#view-citadel.view--active,
+#view-guilda-interior.view--active,
+#view-mar-da-alma-interior.view--active {
+  display: block;
+  overflow: hidden;
+}
+
+/* Quando o hub está ativo, oculta o page-header (o hub tem sua própria barra) */
+#app-shell.hub-mode .page-header {
+  display: none !important;
+}
+
+/* Hub view preenche o espaço sem header */
+#app-shell.hub-mode .view--active {
+  height: calc(100dvh);
+  overflow: hidden;
+}
+
+/* ============================================================
+   TRANSIÇÃO DE VIEWS — fade suave
+   ============================================================ */
+.view--active {
+  animation: hubFadeIn 120ms ease both;
+}
+
+@keyframes hubFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ============================================================
+   NIGHT MODE — Pin adapta cores para a paleta roxa noturna
+   ============================================================ */
+[data-time="night"] .hub-pin__icon {
+  background: rgba(5, 2, 18, 0.90);
+  border-color: rgba(130, 80, 220, 0.6);
+  box-shadow:
+    0 0 12px rgba(100, 50, 200, 0.4),
+    0 3px 8px rgba(0,0,0,0.8);
+}
+
+[data-time="night"] .hub-pin__icon::after {
+  border-top-color: rgba(130, 80, 220, 0.6);
+}
+
+[data-time="night"] .hub-pin__label {
+  background: rgba(4, 2, 14, 0.92);
+  border-color: rgba(100, 60, 200, 0.4);
+  color: #b8a8e0;
+}
+
+[data-time="night"] .hub-pin:hover .hub-pin__icon {
+  border-color: rgba(160, 100, 255, 0.95);
+  box-shadow:
+    0 0 22px rgba(120, 60, 255, 0.6),
+    0 0 45px rgba(80, 30, 200, 0.25),
+    0 4px 10px rgba(0,0,0,0.9);
+}
+
+[data-time="night"] .hub-back-btn {
+  background: rgba(4, 2, 14, 0.90);
+  border-color: rgba(100, 60, 200, 0.5);
+  color: #8070b8;
+}
+
+[data-time="night"] .hub-back-btn:hover {
+  border-color: rgba(140, 80, 255, 0.85);
+  color: #c0a8f0;
+}
+
+/* ============================================================
+   NIGHT MODE — UX Fix: Legibilidade (sem backdrop-blur agressivo)
+   ============================================================ */
+[data-time="night"] .modal-overlay {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(2, 1, 8, 0.94);
+}
+
+[data-time="night"] .modal-window {
+  background: #0d0818;
+  border-color: #2a1560;
+}
+
+[data-time="night"] .panel,
+[data-time="night"] .panel--dark,
+[data-time="night"] .day-card,
+[data-time="night"] .board-column,
+[data-time="night"] .board-card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: #0c0818;
+}
+
+[data-time="night"] .form-input,
+[data-time="night"] .form-select,
+[data-time="night"] .form-textarea {
+  background: #07040f;
+  color: #d4c8e8;
+  border-color: #1e1038;
+}
+
+/* ============================================================
+   BOARD — Inline Column Title Rename
+   ============================================================ */
+.board-column__title-input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--color-gold-dark);
+  color: var(--text-gold);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  width: 100%;
+  padding: 2px 4px;
+  outline: none;
+  letter-spacing: 1px;
+  min-width: 80px;
+}
+
+.board-column__title-input:focus {
+  border-bottom-color: var(--color-gold);
+  background: rgba(255, 215, 0, 0.04);
+}
+
+.board-column__title[data-editable="true"] {
+  cursor: text;
+  border-bottom: 1px dashed transparent;
+  padding-bottom: 1px;
+  transition: border-color 100ms;
+}
+
+.board-column__title[data-editable="true"]:hover {
+  border-bottom-color: var(--color-border-bright);
+}
+
+/* ============================================================
+   HUB PIN EDIT MODE
+   Ativado quando o utilizador clica em ⋯ Editar Pins
+   ============================================================ */
+
+/* --- Edit / Save / Reset buttons (injetados via JS) --- */
+.hub-edit-btn,
+.hub-save-btn,
+.hub-reset-btn {
+  position: absolute;
+  bottom: 14px;
+  z-index: 20;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.36rem;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 5px 11px;
+  cursor: pointer;
+  border: 2px solid;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.75);
+  transition: all 80ms ease;
+  line-height: 1.4;
+}
+
+/* Edit — left side */
+.hub-edit-btn {
+  left: 14px;
+  background: rgba(10, 6, 30, 0.88);
+  border-color: rgba(120, 180, 255, 0.45);
+  color: #88b8e8;
+}
+.hub-edit-btn:hover {
+  background: rgba(20, 12, 55, 0.96);
+  border-color: rgba(140, 200, 255, 0.85);
+  color: #c0dcff;
+}
+
+/* Save — left side (aparece no lugar do Edit) */
+.hub-save-btn {
+  left: 14px;
+  background: rgba(10, 30, 10, 0.90);
+  border-color: rgba(80, 200, 100, 0.55);
+  color: #70cc88;
+}
+.hub-save-btn:hover {
+  background: rgba(10, 50, 15, 0.96);
+  border-color: rgba(80, 220, 120, 0.9);
+  color: #a8f0b8;
+}
+
+/* Reset — um pouco à direita do save */
+.hub-reset-btn {
+  left: 110px;
+  background: rgba(30, 8, 8, 0.88);
+  border-color: rgba(200, 80, 80, 0.45);
+  color: #cc8888;
+}
+.hub-reset-btn:hover {
+  background: rgba(50, 10, 10, 0.96);
+  border-color: rgba(220, 100, 100, 0.85);
+  color: #ffaaaa;
+}
+
+.hub-reset-btn:active,
+.hub-save-btn:active,
+.hub-edit-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+/* --- Grid overlay em edit mode (ajuda a posicionar) --- */
+.hub-view.hub-edit-mode::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(100, 200, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 200, 255, 0.06) 1px, transparent 1px);
+  background-size: 10% 10%;
+}
+
+/* --- Pin em modo editável --- */
+.hub-view.hub-edit-mode .hub-pin {
+  cursor: grab;
+}
+
+.hub-pin--editable .hub-pin__icon {
+  border-color: rgba(255, 200, 80, 0.7);
+  box-shadow:
+    0 0 14px rgba(255, 180, 40, 0.45),
+    0 3px 8px rgba(0,0,0,0.7);
+  animation: none; /* para o float no modo edição */
+}
+
+.hub-pin--editable .hub-pin__label {
+  border-color: rgba(255, 200, 80, 0.5);
+  color: #fff0c0;
+}
+
+/* Handle visual no canto do pin (só em modo edit) */
+.hub-pin--editable .hub-pin__icon::before {
+  content: '⤫';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: rgba(255, 200, 80, 0.8);
+  pointer-events: none;
+  animation: handleBlink 1.2s steps(1) infinite;
+}
+
+@keyframes handleBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* --- Dragging state --- */
+.hub-pin--dragging {
+  cursor: grabbing !important;
+  z-index: 30;
+}
+
+.hub-pin--dragging .hub-pin__icon {
+  border-color: rgba(255, 220, 100, 0.95);
+  box-shadow:
+    0 0 24px rgba(255, 180, 40, 0.65),
+    0 0 50px rgba(255, 140, 20, 0.2),
+    0 6px 16px rgba(0,0,0,0.85);
+  transform: scale(1.18) translateY(-4px);
+}
+
+/* --- Toast de feedback dentro do hub --- */
+.hub-edit-toast {
+  position: absolute;
+  bottom: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  color: #e8f8e8;
+  background: rgba(5, 3, 18, 0.92);
+  border: 1px solid rgba(100, 200, 120, 0.4);
+  padding: 5px 14px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.7);
+}
+
+.hub-edit-toast--visible {
+  opacity: 1;
+}
+
+/* ============================================================
+   RESPONSIVE — Mobile
+   ============================================================ */
+@media (max-width: 767px) {
+  .hub-view {
+    height: calc(100dvh - 56px - 68px); /* header + bottom-nav */
+  }
+
+  .hub-pin__icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+
+  .hub-pin__label {
+    font-size: 0.32rem;
+    padding: 2px 5px;
+  }
+
+  .hub-title-overlay {
+    font-size: 0.36rem;
+    letter-spacing: 2px;
+  }
+
+  .hub-back-btn {
+    font-size: 0.34rem;
+    padding: 4px 8px;
+  }
+
+  .hub-reset-btn {
+    left: 90px;
+  }
+}

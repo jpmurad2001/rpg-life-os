@@ -50,6 +50,11 @@ export function renderTaverna() {
   const monthName = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   _setText('month-label', monthName.charAt(0).toUpperCase() + monthName.slice(1));
 
+  const monthPicker = document.getElementById('month-picker');
+  if (monthPicker) {
+      monthPicker.value = currentMonthId; // Sync native picker to YYYY-MM
+  }
+
   // Summary cards
   if (summary) {
     _setText('total-receipts', formatBRL(summary.total_receipts));
@@ -416,4 +421,18 @@ export function initTaverna() {
   document.getElementById('btn-add-expense')?.addEventListener('click', openAddExpenseModal);
   document.getElementById('btn-prev-month')?.addEventListener('click', () => navigateMonth(-1));
   document.getElementById('btn-next-month')?.addEventListener('click', () => navigateMonth(+1));
+  
+  const monthPicker = document.getElementById('month-picker');
+  if (monthPicker && !monthPicker.dataset.wired) {
+      monthPicker.dataset.wired = '1';
+      monthPicker.addEventListener('change', (e) => {
+          if (e.target.value) {
+              currentMonthId = e.target.value;
+              let state = loadState();
+              ensureMonth(state, currentMonthId);
+              saveState(state);
+              renderTaverna();
+          }
+      });
+  }
 }
