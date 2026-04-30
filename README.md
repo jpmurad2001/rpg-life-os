@@ -18,7 +18,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Firebase-Firestore-orange?style=for-the-badge&logo=firebase" alt="Firebase"/>
   &nbsp;
-  <img src="https://img.shields.io/badge/version-Platina_v3.4.0-b9f2ff?style=for-the-badge" alt="Version"/>
+  <img src="https://img.shields.io/badge/version-Cinematic_v4.3.0-6d28d9?style=for-the-badge" alt="Version"/>
 </p>
 
 ---
@@ -39,6 +39,7 @@ Inspirado no sistema de progressão do universo *Shadow Slave* — com Ranks de 
 | 🏋️ **Treino** | Registre sessões de exercício com templates. Ganhe HP e progressão por série completada. |
 | 🏰 **Taverna** | Controle receitas, despesas e orçamento mensal inspirado no gerenciamento de recursos. |
 | 🗺️ **Modo Campanha** | Mapa visual interativo com nós SVG dinâmicos. Encontre e derrote Bosses das categorias Nightmare. |
+| 🏰 **Hub World Cinemático** | Navegação imersiva point-and-click por Zonas (Cidadela, Guilda, Mar da Alma) com backgrounds em vídeo (loop 4k) e transições crossfade. |
 | 👹 **Ecos e Memórias** | **Sistema de Loot v2**: Colete Ecos (companions) e Memórias (itens) ao derrotar bosses. Equipe-os em slots específicos de Atributo. |
 | 🏛️ **Templos da Dualidade** | **Endgame Hardcore**: Escolha entre Deuses (Virtudes) e Daemons (Pecados) para desafios extremos de disciplina e foco. |
 | 🎨 **Design System 2.0** | Centralizador de Temas com 9 variações visuais (Divino, Corrompido, Esmeralda, Night Sky, etc). |
@@ -121,6 +122,8 @@ python -m http.server 8000
 - [x] **v3.2 - Legião de Sombras**: Implementação do sistema de Ecos e multiplicadores por slots (STR, INT, AVE, ART, CAR).
 - [x] **v3.3 - Templos da Dualidade**: Inclusão de 14 entidades (Deuses e Daemons) com sistema de Altar e Panteão.
 - [x] **v3.4 - Múltiplos Horizontes**: Centralização de 9 temas de design premium e limpeza de UI core.
+- [x] **v4.2 - Mapeamento Dinâmico**: Editor de Pins (`hub_pins.js`) com sistema drag-and-drop para mapeamento dos hubs.
+- [x] **v4.3 - Cinematic Hub World**: Navegação imersiva via Hubs de vídeo, Loading Screen imersiva, crossfade engines, correção de Normalização de Loot (apenas Memórias com Sprite).
 
 ---
 
