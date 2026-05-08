@@ -469,6 +469,13 @@ function saveTemplate(templateId) {
   }
 
   saveState(state);
+
+  // v5.1 — Persist template to Firestore
+  if (typeof window._saveTemplateFirestore === 'function') {
+    const saved = state.battle_ground.templates.find(t => t.name === name);
+    if (saved) window._saveTemplateFirestore(saved.id, saved);
+  }
+
   showToast(templateId ? '💾 Template atualizado!' : '⚔️ Template criado!', 'info');
   renderBattle();
 }

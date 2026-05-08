@@ -8,7 +8,9 @@
 // ---- Firebase ----
 import { onAuthChanged, login, register, logout, resetPassword, deleteAccount } from '../firebase/auth.js';
 import {
-  getPlayerData as loadPlayerDataFromDB, savePlayer, initNewPlayer, migrateFromLocalStorage, getLootTable, getWeek, saveWeek, deletePlayer, saveBadgeState, saveCosmetics
+  getPlayerData as loadPlayerDataFromDB, savePlayer, initNewPlayer, migrateFromLocalStorage,
+  getLootTable, getWeek, saveWeek, deletePlayer, saveBadgeState, saveCosmetics,
+  fetchAllUserData, saveBoard, deleteBoardFromFirestore, createBoardInFirestore, getTemplates, saveTemplate as saveTemplateToFirestore,
 } from '../firebase/db.js';
 
 // ---- Engine ----
@@ -213,13 +215,13 @@ function showAppShell() {
   });
 }
 
-async function syncFirestoreToLocalState(uid, playerFirestore) {
+async function syncFirestoreToLocalState(uid, playerFirestore, firestoreBoards, firestoreTemplates, weekFirestore) {
   const local = loadState();
-  
+
   // 1. Sync Player
   const pData = playerFirestore.progression || {};
   const stats = playerFirestore.stats || {};
-  local.player.name = playerFirestore.display_name || 'Caçador';
+  local.player.name = playerFirestore.display_name || 'Ca\u00e7ador';
   local.player.xp = pData.fragmentos || 0;
   local.player.hp = pData.hp || 100;
   local.player.hp_max = pData.hp_max || 100;
@@ -228,47 +230,44 @@ async function syncFirestoreToLocalState(uid, playerFirestore) {
     local.player.attributes.ART = pData.attributes.ART || local.player.attributes.ART;
     local.player.attributes.AVE = pData.attributes.AVE || local.player.attributes.AVE;
   }
-  
-  // Talent Sync
-  if (pData.talents) {
-    local.player.talents = pData.talents;
-  }
-  if (pData.skill_points !== undefined) {
-    local.player.skill_points = pData.skill_points;
-  }
+  if (pData.talents) local.player.talents = pData.talents;
+  if (pData.skill_points !== undefined) local.player.skill_points = pData.skill_points;
   local.player.stats.total_xp_earned = pData.fragmentos_total || 0;
   local.player.stats.quests_completed = stats.quests_completed || 0;
   local.player.stats.bosses_defeated = stats.bosses_defeated || 0;
   local.player.stats.workouts_completed = stats.workouts_completed || 0;
-  if (playerFirestore.settings) {
-    local.settings = { ...local.settings, ...playerFirestore.settings };
-  }
+  if (playerFirestore.settings) local.settings = { ...local.settings, ...playerFirestore.settings };
 
-  // 2. Sync Badge State (v2.5)
-  if (Array.isArray(playerFirestore.achievements)) {
-    local.player.achievements = playerFirestore.achievements;
-  }
-  if (playerFirestore.activeBadgeId !== undefined) {
-    local.player.activeBadgeId = playerFirestore.activeBadgeId ?? null;
-  }
+  // 2. Badges (v2.5)
+  if (Array.isArray(playerFirestore.achievements)) local.player.achievements = playerFirestore.achievements;
+  if (playerFirestore.activeBadgeId !== undefined) local.player.activeBadgeId = playerFirestore.activeBadgeId ?? null;
 
-  // 3. Sync Cosmetics (v3.0)
+  // 3. Cosmetics (v3.0)
   if (playerFirestore.cosmetics && typeof playerFirestore.cosmetics === 'object') {
-    local.player.cosmetics = {
-      ...local.player.cosmetics,
-      ...playerFirestore.cosmetics,
-    };
+    local.player.cosmetics = { ...local.player.cosmetics, ...playerFirestore.cosmetics };
   }
 
-  // 3. Sync Current Week
-  const weekId = getWeekId();
-  const weekFirestore = await getWeek(uid, weekId);
+  // 4. Current Week Quests
   if (weekFirestore) {
+    const weekId = weekFirestore.id ?? getWeekId();
     local.quests.weeks[weekId] = weekFirestore;
     local.quests.current_week_id = weekId;
   }
 
-  // Save silently (bypass the outward sync hook to prevent loops)
+  // 5. Boards — Firestore is canonical source of truth
+  if (Array.isArray(firestoreBoards)) {
+    local.boards = firestoreBoards;
+    console.log(`[Sync] Boards carregados do Firestore: ${firestoreBoards.length} boards`);
+  }
+
+  // 6. Training Templates — Firestore is canonical source of truth
+  if (Array.isArray(firestoreTemplates) && firestoreTemplates.length > 0) {
+    local.battle_ground = local.battle_ground || {};
+    local.battle_ground.templates = firestoreTemplates;
+    console.log(`[Sync] Templates carregados do Firestore: ${firestoreTemplates.length} templates`);
+  }
+
+  // Save silently
   const oldHook = window._syncStateToFirestore;
   window._syncStateToFirestore = null;
   saveState(local);
@@ -277,29 +276,38 @@ async function syncFirestoreToLocalState(uid, playerFirestore) {
 
 async function _onUserLogin(user) {
   try {
-    setAuthMessage('🌑 Entrando no Vazio...', 'loading');
-
-    // v4.3 — Mostra splash imediatamente, crossfade do auth
+    setAuthMessage('\uD83C\uDF11 Entrando no Vazio...', 'loading');
     showSplash();
 
     let player = await loadPlayerDataFromDB(user.uid);
 
     if (!player) {
-      player = await initNewPlayer(user.uid, user.displayName ?? 'Caçador');
+      player = await initNewPlayer(user.uid, user.displayName ?? 'Ca\u00e7ador');
       const migrated = await migrateFromLocalStorage(user.uid);
-      if (migrated) showToast('📦 Dados anteriores migrados!', 'info', 4000);
+      if (migrated) showToast('\uD83D\uDCE6 Dados anteriores migrados!', 'info', 4000);
     }
 
-    await syncFirestoreToLocalState(user.uid, player);
+    // v5.1 — Parallel fetch de TODOS os dados do usu\u00e1rio
+    const weekId = getWeekId();
+    const { currentWeek, boards, templates } = await fetchAllUserData(user.uid, weekId)
+      .catch(err => {
+        console.error('[App] fetchAllUserData falhou parcialmente:', err);
+        return { player, currentWeek: null, boards: [], templates: [] };
+      });
+
+    await syncFirestoreToLocalState(user.uid, player, boards, templates, currentWeek);
     _playerData = player;
 
-    // Prepara o app shell SEM exibir (splash ainda está na frente)
+    // Instala o hook de sync no board.js para persistir no Firestore
+    window._currentUserUid = user.uid;
+    window._saveBoardToFirestore  = (board) => saveBoard(user.uid, board).catch(console.error);
+    window._createBoardFirestore  = (data)  => createBoardInFirestore(user.uid, data);
+    window._deleteBoardFirestore  = (id)    => deleteBoardFromFirestore(user.uid, id).catch(console.error);
+    window._saveTemplateFirestore = (id, d) => saveTemplateToFirestore(user.uid, id, d).catch(console.error);
+
     document.getElementById('auth-screen')?.classList.add('hidden');
     const shell = document.getElementById('app-shell');
-    if (shell) {
-      shell.style.opacity = '0';
-      shell.classList.remove('hidden');
-    }
+    if (shell) { shell.style.opacity = '0'; shell.classList.remove('hidden'); }
 
     initAudioPlayer();
     applySettings(player.settings);
@@ -319,31 +327,21 @@ async function _onUserLogin(user) {
     initProfileDeps({
       getCurrentUser: () => _currentUser,
       getPlayerData:  () => _playerData,
-      onNameSaved: (name) => {
-        if (_playerData) _playerData.display_name = name;
-      },
+      onNameSaved: (name) => { if (_playerData) _playerData.display_name = name; },
     });
 
     navigateTo('citadel');
     initHubPins();
     initHubVideos();
 
-    // v4.3 — Splash faz fade-out, revela o hub por baixo de forma cinemática
-    // Primeiro, faz o shell apparecer (opacity 0 -> 1) enquanto splash sai
-    if (shell) {
-      shell.style.transition = 'opacity 600ms ease';
-      shell.style.opacity = '1';
-    }
-
-    await hideSplash(); // aguarda o fade-out do splash (850ms)
-
-    // Limpa o style inline após a transição
+    if (shell) { shell.style.transition = 'opacity 600ms ease'; shell.style.opacity = '1'; }
+    await hideSplash();
     if (shell) { shell.style.transition = ''; shell.style.opacity = ''; }
 
-    console.log('[App] Booted v4.3 Cinematic — Caçador:', user.displayName, '| Rank:', player.progression?.rank);
+    console.log('[App] Booted v5.1 Firestore-First | Ca\u00e7ador:', user.displayName);
   } catch (e) {
     console.error('[App] Erro ao carregar perfil:', e);
-    setAuthMessage('❌ Erro ao carregar perfil. Tente novamente.', 'error');
+    setAuthMessage('\u274C Erro ao carregar perfil. Tente novamente.', 'error');
     await hideSplash().catch(() => {});
     showAuthScreen();
   }
@@ -482,10 +480,12 @@ function setupNav() {
 function setupSyncHook() {
   window._syncStateToFirestore = async (state) => {
     if (!_currentUser) return;
+    const uid = _currentUser.uid;
     try {
-      // 1. Sync Player Profile (Progression, Stats, Settings)
       const p = state.player;
-      await savePlayer(_currentUser.uid, {
+
+      // 1. Player profile (progression, stats, settings)
+      await savePlayer(uid, {
         display_name: p.name,
         progression: {
           fragmentos:       p.xp,
@@ -497,30 +497,33 @@ function setupSyncHook() {
           talents:          p.talents ?? {},
           skill_points:     p.skill_points ?? 5,
         },
-        stats: p.stats,
+        stats:    p.stats,
         settings: state.settings,
       });
 
-      // 2. Sync Current Week Quests
+      // 2. Current week quests
       const currentWeekId = state.quests.current_week_id;
       if (currentWeekId && state.quests.weeks[currentWeekId]) {
-        await saveWeek(_currentUser.uid, currentWeekId, state.quests.weeks[currentWeekId]);
+        await saveWeek(uid, currentWeekId, state.quests.weeks[currentWeekId]);
       }
 
-      // 3. Sync Badge State (v2.5)
-      await saveBadgeState(_currentUser.uid, {
+      // 3. Badges (v2.5)
+      await saveBadgeState(uid, {
         achievements:  p.achievements  ?? [],
         activeBadgeId: p.activeBadgeId ?? null,
       });
 
-      // 4. Sync Cosmetics (v3.0)
-      if (p.cosmetics) {
-        await saveCosmetics(_currentUser.uid, p.cosmetics);
+      // 4. Cosmetics (v3.0)
+      if (p.cosmetics) await saveCosmetics(uid, p.cosmetics);
+
+      // 5. Boards (v5.1) — persist each board individually
+      if (Array.isArray(state.boards)) {
+        await Promise.all(state.boards.map(board => saveBoard(uid, board).catch(console.error)));
       }
 
-      console.log('☁️ [Sync] Estado salvo no Firestore em background.');
+      console.log('\u2601\uFE0F [Sync] Estado salvo no Firestore.');
     } catch (err) {
-      console.error('🔴 [Sync Error] Falha ao sincronizar com Firestore:', err);
+      console.error('\uD83D\uDD34 [Sync Error] Falha ao sincronizar com Firestore:', err);
     }
   };
 }

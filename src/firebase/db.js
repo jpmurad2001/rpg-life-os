@@ -44,6 +44,11 @@ function _forgeInvDocRef(uid, id)   { return doc(db, 'users', uid, 'forge_invent
 function _marketRef(uid)            { return collection(db, 'users', uid, 'market_items'); }
 function _marketDocRef(uid, id)     { return doc(db, 'users', uid, 'market_items', id); }
 
+// v5.1 — Kanban Boards
+function _boardsRef(uid)            { return collection(db, 'users', uid, 'boards'); }
+function _boardDocRef(uid, boardId) { return doc(db, 'users', uid, 'boards', boardId); }
+
+
 // ============================================================
 //   PLAYER (documento raiz do usuário)
 // ============================================================
@@ -874,3 +879,51 @@ export async function saveMarketItem(uid, data) {
 export async function deleteMarketItem(uid, itemId) {
   await deleteDoc(_marketDocRef(uid, itemId));
 }
+
+// ============================================================
+//   v5.1 — KANBAN BOARDS
+// ============================================================
+
+export async function getBoards(uid) {
+  const snap = await getDocs(query(_boardsRef(uid), orderBy('created_at', 'asc')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function saveBoard(uid, board) {
+  const { id, ...data } = board;
+  await setDoc(_boardDocRef(uid, id), {
+    ...data,
+    uid,
+    updated_at: serverTimestamp(),
+  });
+}
+
+export async function createBoardInFirestore(uid, boardData) {
+  const ref = doc(_boardsRef(uid));
+  await setDoc(ref, {
+    ...boardData,
+    uid,
+    created_at: serverTimestamp(),
+    updated_at: serverTimestamp(),
+  });
+  return { id: ref.id, ...boardData };
+}
+
+export async function deleteBoardFromFirestore(uid, boardId) {
+  await deleteDoc(_boardDocRef(uid, boardId));
+}
+
+// ============================================================
+//   v5.1 — FULL USER DATA FETCH (boot / cross-device sync)
+// ============================================================
+
+export async function fetchAllUserData(uid, weekId) {
+  const [player, currentWeek, boards, templates] = await Promise.all([
+    getPlayerData(uid),
+    getWeek(uid, weekId),
+    getBoards(uid),
+    getTemplates(uid),
+  ]);
+  return { player, currentWeek, boards, templates };
+}
+

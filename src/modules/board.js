@@ -11,6 +11,23 @@ import { openModal, closeModal, showToast } from '../engine/gamification.js';
 import { playSound, playClick, playDrop, playWoosh } from '../engine/audio.js';
 
 // ============================================================
+//   FIRESTORE PERSISTENCE HELPER
+//   Writes to localStorage (fast cache) AND to Firestore (durable).
+// ============================================================
+function _persistBoard(state, board) {
+  saveState(state);
+  if (board && typeof window._saveBoardToFirestore === 'function') {
+    window._saveBoardToFirestore(board);
+  }
+}
+
+function _persistBoardDelete(boardId) {
+  if (typeof window._deleteBoardFirestore === 'function') {
+    window._deleteBoardFirestore(boardId);
+  }
+}
+
+// ============================================================
 //   PRIORITY CONFIG (RPG Rarity)
 // ============================================================
 export const PRIORITY_META = {
@@ -65,7 +82,7 @@ export function createBoard(title) {
     ],
   };
   state.boards.push(board);
-  saveState(state);
+  _persistBoard(state, board);
   return board;
 }
 
@@ -74,13 +91,14 @@ export function deleteBoard(boardId) {
   const state = loadState();
   state.boards = state.boards.filter(b => b.id !== boardId);
   saveState(state);
+  _persistBoardDelete(boardId);
 }
 
 /** Renames a Board */
 export function renameBoard(boardId, newTitle) {
   const state = loadState();
   const board = state.boards.find(b => b.id === boardId);
-  if (board) { board.title = newTitle.trim(); saveState(state); }
+  if (board) { board.title = newTitle.trim(); _persistBoard(state, board); }
 }
 
 /** Adds a column to a board */
@@ -89,7 +107,7 @@ export function addColumn(boardId, title) {
   const board = state.boards.find(b => b.id === boardId);
   if (!board) return;
   board.columns.push({ id: genId('col'), title: title.trim(), cards: [] });
-  saveState(state);
+  _persistBoard(state, board);
 }
 
 /** Deletes a column (and all its cards) */
@@ -98,7 +116,7 @@ export function deleteColumn(boardId, colId) {
   const board = state.boards.find(b => b.id === boardId);
   if (!board) return;
   board.columns = board.columns.filter(c => c.id !== colId);
-  saveState(state);
+  _persistBoard(state, board);
 }
 
 /** Renames a column */
@@ -106,7 +124,7 @@ export function renameColumn(boardId, colId, newTitle) {
   const state = loadState();
   const board = state.boards.find(b => b.id === boardId);
   const col   = board?.columns.find(c => c.id === colId);
-  if (col) { col.title = newTitle.trim(); saveState(state); }
+  if (col) { col.title = newTitle.trim(); _persistBoard(state, board); }
 }
 
 /** Creates a new Card inside a column */
@@ -131,7 +149,7 @@ export function addCard(boardId, colId, { title, description = '', priority = 'n
     created_at:  new Date().toISOString(),
   };
   col.cards.push(card);
-  saveState(state);
+  _persistBoard(state, board);
   return card;
 }
 
@@ -160,7 +178,7 @@ export function moveCard(boardId, cardId, fromColId, toColId, insertBeforeCardId
   } else {
     toCol.cards.push(card);
   }
-  saveState(state);
+  _persistBoard(state, board);
 }
 
 /** Duplicates a card inside the same column */
@@ -181,7 +199,7 @@ export function duplicateCard(boardId, colId, cardId) {
 
   const srcIdx = col.cards.findIndex(c => c.id === cardId);
   col.cards.splice(srcIdx + 1, 0, clone);
-  saveState(state);
+  _persistBoard(state, board);
   return clone;
 }
 
@@ -193,7 +211,7 @@ export function updateCard(boardId, colId, cardId, patch) {
   const card  = col?.cards.find(c => c.id === cardId);
   if (!card) return;
   Object.assign(card, patch);
-  saveState(state);
+  _persistBoard(state, board);
 }
 
 /** Adds a subtask to a card */
@@ -204,7 +222,7 @@ export function addSubtask(boardId, colId, cardId, text) {
   const card  = col?.cards.find(c => c.id === cardId);
   if (!card) return;
   card.subtasks.push({ id: genId('sub'), text: text.trim(), done: false });
-  saveState(state);
+  _persistBoard(state, board);
 }
 
 /** Toggles a subtask done/undone */
@@ -216,7 +234,7 @@ export function toggleSubtask(boardId, colId, cardId, subId) {
   const sub   = card?.subtasks.find(s => s.id === subId);
   if (!sub) return;
   sub.done = !sub.done;
-  saveState(state);
+  _persistBoard(state, board);
 }
 
 /** Deletes a subtask from a card */
@@ -227,7 +245,7 @@ export function deleteSubtask(boardId, colId, cardId, subId) {
   const card  = col?.cards.find(c => c.id === cardId);
   if (!card) return;
   card.subtasks = card.subtasks.filter(s => s.id !== subId);
-  saveState(state);
+  _persistBoard(state, board);
 }
 
 /** Removes a card from its column */
@@ -237,7 +255,7 @@ export function deleteCard(boardId, colId, cardId) {
   const col   = board?.columns.find(c => c.id === colId);
   if (!col) return;
   col.cards = col.cards.filter(c => c.id !== cardId);
-  saveState(state);
+  _persistBoard(state, board);
 }
 
 // ============================================================
@@ -820,7 +838,11 @@ export function renderBoard() {
       }
     });
   });
-  if (needsSave) saveState(loadState()); // flush
+  if (needsSave) {
+    const state = loadState();
+    const boardRef = state.boards.find(b => b.id === board.id);
+    if (boardRef) _persistBoard(state, boardRef);
+  }
 
   // Collect global cards (unique ids)
   const globalCards = [];
