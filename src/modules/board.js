@@ -110,7 +110,7 @@ export function renameColumn(boardId, colId, newTitle) {
 }
 
 /** Creates a new Card inside a column */
-export function addCard(boardId, colId, { title, description = '', priority = 'normal', subtasks = [] }) {
+export function addCard(boardId, colId, { title, description = '', priority = 'normal', subtasks = [], isGlobal = false, recurrence = 'none' }) {
   const state = loadState();
   const board = state.boards.find(b => b.id === boardId);
   const col   = board?.columns.find(c => c.id === colId);
@@ -120,7 +120,9 @@ export function addCard(boardId, colId, { title, description = '', priority = 'n
     id:          genId('card'),
     title:       title.trim(),
     description,
-    priority,    // 'normal' | 'epic' | 'legendary'
+    priority,
+    isGlobal,
+    recurrence,  // 'none' | 'daily' | 'weekly' | 'custom'
     subtasks:    subtasks.map(s => ({
       id:   genId('sub'),
       text: typeof s === 'string' ? s : s.text,
@@ -134,8 +136,7 @@ export function addCard(boardId, colId, { title, description = '', priority = 'n
 }
 
 /** Moves a card from one column to another within the same board */
-export function moveCard(boardId, cardId, fromColId, toColId) {
-  if (fromColId === toColId) return;
+export function moveCard(boardId, cardId, fromColId, toColId, insertBeforeCardId = null) {
   const state = loadState();
   const board = state.boards.find(b => b.id === boardId);
   if (!board) return;
@@ -144,12 +145,44 @@ export function moveCard(boardId, cardId, fromColId, toColId) {
   const toCol   = board.columns.find(c => c.id === toColId);
   if (!fromCol || !toCol) return;
 
-  const idx  = fromCol.cards.findIndex(c => c.id === cardId);
+  const idx = fromCol.cards.findIndex(c => c.id === cardId);
   if (idx < 0) return;
 
   const [card] = fromCol.cards.splice(idx, 1);
-  toCol.cards.push(card);
+
+  if (insertBeforeCardId) {
+    const targetIdx = toCol.cards.findIndex(c => c.id === insertBeforeCardId);
+    if (targetIdx >= 0) {
+      toCol.cards.splice(targetIdx, 0, card);
+    } else {
+      toCol.cards.push(card);
+    }
+  } else {
+    toCol.cards.push(card);
+  }
   saveState(state);
+}
+
+/** Duplicates a card inside the same column */
+export function duplicateCard(boardId, colId, cardId) {
+  const state = loadState();
+  const board = state.boards.find(b => b.id === boardId);
+  const col   = board?.columns.find(c => c.id === colId);
+  const card  = col?.cards.find(c => c.id === cardId);
+  if (!card) return null;
+
+  const clone = {
+    ...JSON.parse(JSON.stringify(card)),
+    id:         genId('card'),
+    title:      `${card.title} (cópia)`,
+    created_at: new Date().toISOString(),
+    subtasks:   (card.subtasks ?? []).map(s => ({ ...s, id: genId('sub'), done: false })),
+  };
+
+  const srcIdx = col.cards.findIndex(c => c.id === cardId);
+  col.cards.splice(srcIdx + 1, 0, clone);
+  saveState(state);
+  return clone;
 }
 
 /** Patches card fields (title, description, priority) */
@@ -217,6 +250,38 @@ function calcProgress(card) {
 }
 
 // ============================================================
+//   RICH DESCRIPTION RENDERER
+// ============================================================
+function renderDesc(text) {
+  if (!text) return '';
+  const escaped = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // Detect image URLs (.png .jpg .jpeg .gif .webp .svg)
+  const imgRe = /https?:\/\/[^\s]+\.(?:png|jpe?g|gif|webp|svg)(\?[^\s]*)?/gi;
+  const imgMatches = [...escaped.matchAll(imgRe)];
+  let html = escaped;
+
+  // Replace image URLs with thumbnails
+  imgMatches.forEach(m => {
+    html = html.replace(m[0],
+      `<a href="${m[0]}" target="_blank" rel="noopener" class="board-desc__imglink">
+        <img class="board-desc__img" src="${m[0]}" alt="imagem" loading="lazy"
+          onerror="this.style.display='none'" />
+      </a>`);
+  });
+
+  // Replace remaining plain URLs with clickable links
+  const urlRe = /https?:\/\/[^\s<>"]+/g;
+  html = html.replace(urlRe, u => {
+    if (u.includes('board-desc__img')) return u; // already replaced
+    return `<a href="${u}" target="_blank" rel="noopener" class="board-desc__link">${u}</a>`;
+  });
+
+  return html;
+}
+
+// ============================================================
 //   CARD DETAIL MODAL
 // ============================================================
 function openCardModal(boardId, colId, cardId) {
@@ -229,6 +294,13 @@ function openCardModal(boardId, colId, cardId) {
   const prioOptions = Object.entries(PRIORITY_META).map(([key, meta]) =>
     `<option value="${key}" ${card.priority === key ? 'selected' : ''}>${meta.icon} ${meta.label}</option>`
   ).join('');
+
+  const recurOptions = [
+    ['none', '— Sem recorrência'],
+    ['daily', '🌅 Diária'],
+    ['weekly', '📅 Semanal'],
+    ['custom', '⚙️ Personalizada'],
+  ].map(([v, l]) => `<option value="${v}" ${(card.recurrence ?? 'none') === v ? 'selected' : ''}>${l}</option>`).join('');
 
   const subtasksHTML = card.subtasks.map(sub => `
     <div class="board-subtask-row" data-sub-id="${sub.id}">
@@ -250,25 +322,33 @@ function openCardModal(boardId, colId, cardId) {
     confirmLabel: '💾 Salvar',
     bodyHTML: `
       <div class="board-modal-body">
-
         <div class="form-group">
           <label class="form-label">Título da Missão</label>
           <input class="form-input" id="bm-title" type="text"
                  value="${card.title.replace(/"/g, '&quot;')}" maxlength="80" />
         </div>
-
-        <div class="form-group">
-          <label class="form-label">Prioridade</label>
-          <select class="form-select" id="bm-priority">${prioOptions}</select>
+        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
+          <div class="form-group" style="flex:1;min-width:120px">
+            <label class="form-label">Prioridade</label>
+            <select class="form-select" id="bm-priority">${prioOptions}</select>
+          </div>
+          <div class="form-group" style="flex:1;min-width:120px">
+            <label class="form-label">Recorrência</label>
+            <select class="form-select" id="bm-recurrence">${recurOptions}</select>
+          </div>
         </div>
-
         <div class="form-group">
-          <label class="form-label">Descrição / Detalhes do Lore</label>
+          <label class="form-label">
+            <input type="checkbox" id="bm-global" ${card.isGlobal ? 'checked' : ''}
+                   style="margin-right:var(--space-2)" />
+            📌 Card Global (aparece em todas as colunas)
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descrição / Detalhes (suporta links e imagens)</label>
           <textarea class="form-input form-textarea" id="bm-desc"
-                    rows="4" placeholder="Descreva os objetivos desta missão..."
-          >${card.description}</textarea>
+                    rows="4" placeholder="Cole URLs de links ou imagens...">${card.description}</textarea>
         </div>
-
         ${progress >= 0 ? `
         <div class="bm-progress-wrap">
           <div class="bm-progress-label">
@@ -279,7 +359,6 @@ function openCardModal(boardId, colId, cardId) {
             <div class="bm-progress-fill" id="bm-progress-fill" style="width:${progress}%"></div>
           </div>
         </div>` : ''}
-
         <div class="form-group">
           <label class="form-label">📋 Subtarefas (Checklist)</label>
           <div class="board-subtasks-list" id="bm-subtasks">${subtasksHTML}</div>
@@ -289,8 +368,10 @@ function openCardModal(boardId, colId, cardId) {
             <button class="btn-rp btn-rp--ghost" id="bm-add-sub" style="font-size:var(--fs-xxs);">+ Add</button>
           </div>
         </div>
-
-        <div style="margin-top:var(--space-3); text-align:right;">
+        <div style="display:flex;justify-content:space-between;margin-top:var(--space-3);flex-wrap:wrap;gap:var(--space-2)">
+          <button class="btn-rp btn-rp--ghost" id="bm-duplicate-card"
+                  data-board="${boardId}" data-col="${colId}" data-card="${cardId}"
+                  style="font-size:var(--fs-xxs);">📋 Duplicar</button>
           <button class="btn-rp btn-rp--danger" id="bm-delete-card"
                   data-board="${boardId}" data-col="${colId}" data-card="${cardId}"
                   style="font-size:var(--fs-xxs);">🗑️ Deletar Missão</button>
@@ -298,19 +379,19 @@ function openCardModal(boardId, colId, cardId) {
       </div>
     `,
     onConfirm: () => {
-      const newTitle = document.getElementById('bm-title')?.value?.trim();
-      const newPrio  = document.getElementById('bm-priority')?.value;
-      const newDesc  = document.getElementById('bm-desc')?.value ?? '';
+      const newTitle    = document.getElementById('bm-title')?.value?.trim();
+      const newPrio     = document.getElementById('bm-priority')?.value;
+      const newDesc     = document.getElementById('bm-desc')?.value ?? '';
+      const newGlobal   = document.getElementById('bm-global')?.checked ?? false;
+      const newRecur    = document.getElementById('bm-recurrence')?.value ?? 'none';
       if (!newTitle) { showToast('⚠️ A missão precisa de um título!', 'info', 2000); return false; }
-      updateCard(boardId, colId, cardId, { title: newTitle, priority: newPrio, description: newDesc });
+      updateCard(boardId, colId, cardId, { title: newTitle, priority: newPrio, description: newDesc, isGlobal: newGlobal, recurrence: newRecur });
       showToast('✅ Missão atualizada!', 'info', 1500);
       renderBoard();
     },
   });
 
-  // Wire subtask toggle / delete after modal renders
   setTimeout(() => {
-    // Toggle subtask done
     document.querySelectorAll('.board-subtask-check').forEach(btn => {
       btn.addEventListener('click', () => {
         const { board: bId, col: cId, card: cdId, sub: sId } = btn.dataset;
@@ -319,8 +400,6 @@ function openCardModal(boardId, colId, cardId) {
         playClick();
       });
     });
-
-    // Delete subtask
     document.querySelectorAll('.board-subtask-del').forEach(btn => {
       btn.addEventListener('click', () => {
         const { board: bId, col: cId, card: cdId, sub: sId } = btn.dataset;
@@ -329,8 +408,6 @@ function openCardModal(boardId, colId, cardId) {
         _refreshSubtaskUI(bId, cId, cdId);
       });
     });
-
-    // Add new subtask
     document.getElementById('bm-add-sub')?.addEventListener('click', () => {
       const input = document.getElementById('bm-new-sub');
       const text  = input?.value?.trim();
@@ -340,12 +417,16 @@ function openCardModal(boardId, colId, cardId) {
       _refreshSubtaskUI(boardId, colId, cardId);
       playClick();
     });
-
     document.getElementById('bm-new-sub')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('bm-add-sub')?.click();
     });
-
-    // Delete card
+    document.getElementById('bm-duplicate-card')?.addEventListener('click', () => {
+      const { board: bId, col: cId, card: cdId } = document.getElementById('bm-duplicate-card').dataset;
+      duplicateCard(bId, cId, cdId);
+      showToast('📋 Missão duplicada!', 'info', 1500);
+      closeModal();
+      renderBoard();
+    });
     document.getElementById('bm-delete-card')?.addEventListener('click', () => {
       const { board: bId, col: cId, card: cdId } = document.getElementById('bm-delete-card').dataset;
       closeModal();
@@ -364,6 +445,9 @@ function openCardModal(boardId, colId, cardId) {
     });
   }, 80);
 }
+
+
+
 
 /** Refreshes the subtask list inside the open modal without closing it */
 function _refreshSubtaskUI(boardId, colId, cardId) {
@@ -421,7 +505,7 @@ function buildCard(card, boardId, colId) {
   const hasProgress = progress >= 0;
 
   const el = document.createElement('div');
-  el.className = 'board-card';
+  el.className = `board-card${card.isGlobal ? ' board-card--global' : ''}`;
   el.dataset.cardId  = card.id;
   el.dataset.colId   = colId;
   el.dataset.boardId = boardId;
@@ -429,12 +513,21 @@ function buildCard(card, boardId, colId) {
   el.setAttribute('tabindex', '0');
   el.setAttribute('aria-label', `Missão: ${card.title}. Prioridade: ${meta.label}`);
 
+  const descRendered = renderDesc(card.description);
+  const recurBadge = card.recurrence && card.recurrence !== 'none'
+    ? `<span class="board-recur-badge">${card.recurrence === 'daily' ? '🌅 Diária' : card.recurrence === 'weekly' ? '📅 Semanal' : '⚙️'}</span>`
+    : '';
+
   el.innerHTML = `
     <div class="board-card__header">
       <span class="board-priority-badge ${meta.class}">${meta.icon} ${meta.label}</span>
+      <div style="display:flex;gap:4px;align-items:center">
+        ${recurBadge}
+        ${card.isGlobal ? '<span class="board-global-badge" title="Card Global">📌</span>' : ''}
+      </div>
     </div>
     <div class="board-card__title">${card.title}</div>
-    ${card.description ? `<div class="board-card__desc">${card.description}</div>` : ''}
+    ${descRendered ? `<div class="board-card__desc board-card__desc--rich">${descRendered}</div>` : ''}
     ${hasProgress ? `
     <div class="board-card__progress-wrap">
       <div class="board-card__progress-bar">
@@ -445,7 +538,7 @@ function buildCard(card, boardId, colId) {
     </div>` : ''}
   `;
 
-  // Drag events
+  // Drag events — track position for intra-column reorder
   el.addEventListener('dragstart', e => {
     _draggingCardId    = card.id;
     _draggingFromColId = colId;
@@ -454,22 +547,45 @@ function buildCard(card, boardId, colId) {
     e.dataTransfer.effectAllowed = 'move';
     playWoosh();
   });
-
   el.addEventListener('dragend', () => {
     el.classList.remove('board-card--dragging');
+    document.querySelectorAll('.board-card--drag-over').forEach(c => c.classList.remove('board-card--drag-over'));
     _draggingCardId    = null;
     _draggingFromColId = null;
     _draggingBoardId   = null;
   });
 
+  // Hover indicator for insert position
+  el.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    document.querySelectorAll('.board-card--drag-over').forEach(c => c.classList.remove('board-card--drag-over'));
+    if (_draggingCardId && _draggingCardId !== card.id) el.classList.add('board-card--drag-over');
+  });
+  el.addEventListener('drop', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    el.classList.remove('board-card--drag-over');
+    if (!_draggingCardId || _draggingBoardId !== boardId || _draggingCardId === card.id) return;
+    moveCard(boardId, _draggingCardId, _draggingFromColId, colId, card.id);
+    playDrop();
+    renderBoard();
+  });
+
   // Click → open modal
-  el.addEventListener('click', () => openCardModal(boardId, colId, card.id));
+  el.addEventListener('click', e => {
+    if (e.target.closest('[data-nodrag]')) return;
+    openCardModal(boardId, colId, card.id);
+  });
   el.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') openCardModal(boardId, colId, card.id);
   });
 
   return el;
 }
+
+
+
 
 // ============================================================
 //   BUILD DOM — COLUMN
@@ -577,6 +693,13 @@ function openAddCardModal(boardId, colId) {
     `<option value="${key}">${meta.icon} ${meta.label}</option>`
   ).join('');
 
+  const recurOptions = [
+    ['none', '— Sem recorrência'],
+    ['daily', '🌅 Diária'],
+    ['weekly', '📅 Semanal'],
+    ['custom', '⚙️ Personalizada'],
+  ].map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+
   openModal({
     title: '⚔️ Nova Missão',
     confirmLabel: '⚔️ Criar Missão',
@@ -586,22 +709,36 @@ function openAddCardModal(boardId, colId) {
         <input class="form-input" id="nc-title" type="text"
                placeholder="Ex: Implementar sistema de autenticação..." maxlength="80" autofocus />
       </div>
-      <div class="form-group">
-        <label class="form-label">Prioridade (Raridade)</label>
-        <select class="form-select" id="nc-priority">${prioOptions}</select>
+      <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
+        <div class="form-group" style="flex:1;min-width:120px">
+          <label class="form-label">Prioridade (Raridade)</label>
+          <select class="form-select" id="nc-priority">${prioOptions}</select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:120px">
+          <label class="form-label">Recorrência</label>
+          <select class="form-select" id="nc-recurrence">${recurOptions}</select>
+        </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Descrição (opcional)</label>
+        <label class="form-label">
+          <input type="checkbox" id="nc-global" style="margin-right:var(--space-2)" />
+          📌 Card Global (aparece em todas as colunas)
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição (opcional — suporta links e imagens)</label>
         <textarea class="form-input form-textarea" id="nc-desc" rows="3"
-                  placeholder="Descreva o objetivo desta missão..."></textarea>
+                  placeholder="Cole uma URL ou descreva o objetivo..."></textarea>
       </div>
     `,
     onConfirm: () => {
-      const title = document.getElementById('nc-title')?.value?.trim();
-      const prio  = document.getElementById('nc-priority')?.value ?? 'normal';
-      const desc  = document.getElementById('nc-desc')?.value ?? '';
+      const title    = document.getElementById('nc-title')?.value?.trim();
+      const prio     = document.getElementById('nc-priority')?.value ?? 'normal';
+      const desc     = document.getElementById('nc-desc')?.value ?? '';
+      const isGlobal = document.getElementById('nc-global')?.checked ?? false;
+      const recur    = document.getElementById('nc-recurrence')?.value ?? 'none';
       if (!title) { showToast('⚠️ A missão precisa de um título!', 'info', 2000); return false; }
-      addCard(boardId, colId, { title, priority: prio, description: desc });
+      addCard(boardId, colId, { title, priority: prio, description: desc, isGlobal, recurrence: recur });
       showToast('⚔️ Missão adicionada ao quadro!', 'info', 1500);
       renderBoard();
     },
@@ -609,6 +746,9 @@ function openAddCardModal(boardId, colId) {
 
   setTimeout(() => document.getElementById('nc-title')?.focus(), 80);
 }
+
+
+
 
 // ============================================================
 //   BOARD SELECTOR (tabs)
@@ -668,9 +808,49 @@ export function renderBoard() {
   const titleEl = document.getElementById('board-active-title');
   if (titleEl) titleEl.textContent = `🗡️ ${board.title}`;
 
+  // Recurrence reset — daily cards reset subtasks each new day
+  const today = new Date().toISOString().slice(0, 10);
+  let needsSave = false;
+  board.columns.forEach(col => {
+    col.cards.forEach(card => {
+      if (card.recurrence === 'daily' && card.lastReset !== today) {
+        card.lastReset = today;
+        card.subtasks?.forEach(s => { s.done = false; });
+        needsSave = true;
+      }
+    });
+  });
+  if (needsSave) saveState(loadState()); // flush
+
+  // Collect global cards (unique ids)
+  const globalCards = [];
+  const globalIds = new Set();
+  board.columns.forEach(col => {
+    col.cards.forEach(card => {
+      if (card.isGlobal && !globalIds.has(card.id)) {
+        globalIds.add(card.id);
+        globalCards.push({ card, colId: col.id });
+      }
+    });
+  });
+
   // Render columns
   container.innerHTML = '';
-  board.columns.forEach(col => container.appendChild(buildColumn(col, board.id)));
+  board.columns.forEach(col => {
+    const colEl = buildColumn(col, board.id);
+    // Inject global cards at top (as read-only ghost previews)
+    if (globalCards.length) {
+      const cardsEl = colEl.querySelector('.board-column__cards');
+      globalCards.forEach(({ card, colId }) => {
+        if (colId === col.id) return; // skip native column — already rendered normally
+        const ghost = buildCard(card, board.id, colId);
+        ghost.classList.add('board-card--global-ghost');
+        ghost.setAttribute('title', '📌 Card Global — clique para editar na coluna original');
+        cardsEl.prepend(ghost);
+      });
+    }
+    container.appendChild(colEl);
+  });
 
   // Add column button
   const addColBtn = document.createElement('button');

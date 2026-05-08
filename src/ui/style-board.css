@@ -586,3 +586,79 @@
     gap: var(--space-2);
   }
 }
+
+/* ============================================================
+   DRAG-OVER INSERT INDICATOR
+   ============================================================ */
+.board-card--drag-over {
+  border-top: 2px solid var(--color-border-glow) !important;
+  box-shadow: 0 -3px 0 var(--color-border-glow), var(--pixel-shadow) !important;
+}
+
+/* ============================================================
+   GLOBAL CARD GHOST (appears in foreign columns)
+   ============================================================ */
+.board-card--global-ghost {
+  opacity: 0.65;
+  border-style: dashed;
+  border-color: var(--color-gold-dark);
+  background: rgba(255, 215, 0, 0.04);
+  pointer-events: auto;
+}
+
+.board-card--global-ghost:hover {
+  opacity: 0.9;
+  border-color: var(--color-gold);
+}
+
+/* ============================================================
+   GLOBAL BADGE & RECURRENCE BADGE
+   ============================================================ */
+.board-global-badge {
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--color-gold);
+  filter: drop-shadow(0 0 3px rgba(255,215,0,0.5));
+}
+
+.board-recur-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: #60a5fa;
+  background: rgba(96,165,250,0.10);
+  border: 1px solid rgba(96,165,250,0.25);
+  padding: 1px var(--space-1);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   RICH DESCRIPTION — LINKS & IMAGE EMBEDS
+   ============================================================ */
+.board-card__desc--rich {
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.board-desc__link {
+  color: #60a5fa;
+  text-decoration: underline;
+  word-break: break-all;
+}
+.board-desc__link:hover { color: #93c5fd; }
+
+.board-desc__imglink {
+  display: block;
+  margin-top: var(--space-1);
+}
+
+.board-desc__img {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+  display: block;
+}
+

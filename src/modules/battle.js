@@ -406,6 +406,12 @@ function buildTemplateForm(tmpl = {}) {
   `;
 }
 
+function secsToMmss(secs) {
+  const m = Math.floor((secs ?? 60) / 60).toString().padStart(2, '0');
+  const s = ((secs ?? 60) % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
 function buildExerciseRow(ex = {}) {
   const id = ex.id ?? genId('ex_tmp');
   return `
@@ -413,7 +419,7 @@ function buildExerciseRow(ex = {}) {
       <input class="form-input ex-name"  type="text"   placeholder="Nome"  value="${ex.name ?? ''}" />
       <input class="form-input ex-sets"  type="number" placeholder="Séries" value="${ex.sets ?? 3}" min="1" max="20" style="width:60px" />
       <input class="form-input ex-reps"  type="text"   placeholder="Reps"   value="${ex.reps ?? '10'}" style="width:60px" />
-      <input class="form-input ex-rest"  type="number" placeholder="Rest(s)" value="${ex.rest_seconds ?? 60}" min="0" max="600" style="width:60px" />
+      <input class="form-input ex-rest"  type="text"   placeholder="MM:SS" value="${secsToMmss(ex.rest_seconds)}" maxlength="5" style="width:65px" title="Formato MM:SS (ex: 01:30)" />
       <button type="button" class="btn-rp btn-rp--ghost btn-remove-ex" style="padding:var(--space-1);min-height:0">✕</button>
     </div>
   `;
@@ -431,13 +437,16 @@ function saveTemplate(templateId) {
   document.querySelectorAll('[data-ex-row]').forEach(row => {
     const exName = row.querySelector('.ex-name')?.value?.trim();
     if (!exName) return;
+    const mmss  = row.querySelector('.ex-rest')?.value?.trim() ?? '01:00';
+    const [mm, ss] = mmss.split(':').map(Number);
+    const restSec = ((isNaN(mm) ? 1 : mm) * 60) + (isNaN(ss) ? 0 : ss);
     exercises.push({
       id: genId('ex'),
       name: exName,
       sets: parseInt(row.querySelector('.ex-sets')?.value ?? '3', 10),
       reps: row.querySelector('.ex-reps')?.value?.trim() ?? '10',
       weight_kg: 0,
-      rest_seconds: parseInt(row.querySelector('.ex-rest')?.value ?? '60', 10),
+      rest_seconds: restSec,
       notes: '',
     });
   });
