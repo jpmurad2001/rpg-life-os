@@ -563,6 +563,7 @@ function buildCard(card, boardId, colId) {
     _draggingBoardId   = boardId;
     el.classList.add('board-card--dragging');
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('ghost-col', ''); // '' = real card (not a ghost reorder)
     playWoosh();
   });
   el.addEventListener('dragend', () => {
@@ -844,33 +845,122 @@ export function renderBoard() {
     if (boardRef) _persistBoard(state, boardRef);
   }
 
-  // Collect global cards (unique ids)
+  // Collect global cards (unique ids, with their home column)
   const globalCards = [];
   const globalIds = new Set();
   board.columns.forEach(col => {
     col.cards.forEach(card => {
       if (card.isGlobal && !globalIds.has(card.id)) {
         globalIds.add(card.id);
-        globalCards.push({ card, colId: col.id });
+        globalCards.push({ card, homeColId: col.id });
       }
     });
   });
+
+  // Ensure board has a ghost position map (per-column order of global card IDs)
+  // Structure: board._ghostOrder = { [colId]: [cardId, cardId, ...] }
+  if (!board._ghostOrder) board._ghostOrder = {};
 
   // Render columns
   container.innerHTML = '';
   board.columns.forEach(col => {
     const colEl = buildColumn(col, board.id);
-    // Inject global cards at top (as read-only ghost previews)
+    const cardsEl = colEl.querySelector('.board-column__cards');
+
     if (globalCards.length) {
-      const cardsEl = colEl.querySelector('.board-column__cards');
-      globalCards.forEach(({ card, colId }) => {
-        if (colId === col.id) return; // skip native column — already rendered normally
-        const ghost = buildCard(card, board.id, colId);
-        ghost.classList.add('board-card--global-ghost');
-        ghost.setAttribute('title', '📌 Card Global — clique para editar na coluna original');
-        cardsEl.prepend(ghost);
-      });
+      // Determine which global cards are guests in this column (not home)
+      const guests = globalCards.filter(({ homeColId }) => homeColId !== col.id);
+
+      if (guests.length) {
+        // Get or init the ordered list for this column
+        let order = board._ghostOrder[col.id] ?? [];
+        // Add any new global card IDs not yet in this column's order
+        guests.forEach(({ card }) => {
+          if (!order.includes(card.id)) order.push(card.id);
+        });
+        // Remove stale IDs (card no longer global)
+        order = order.filter(id => guests.some(g => g.card.id === id));
+        board._ghostOrder[col.id] = order;
+
+        // Build sorted guests array
+        const sortedGuests = order
+          .map(id => guests.find(g => g.card.id === id))
+          .filter(Boolean);
+
+        // Insert each ghost at its stored position among the real cards
+        // Strategy: append ghosts after all real cards, in their stored order.
+        // The user can drag them freely within the column area.
+        sortedGuests.forEach(({ card, homeColId }) => {
+          const ghost = buildCard(card, board.id, homeColId);
+          ghost.classList.add('board-card--global-ghost');
+          ghost.setAttribute('title', '📌 Card Global — clique para editar na coluna original');
+          ghost.setAttribute('draggable', 'true');
+          ghost.dataset.ghostForCol = col.id;
+          ghost.dataset.isGhostCard = '1';
+
+          // Allow ghost to be dragged and dropped within this column
+          ghost.addEventListener('dragstart', e => {
+            _draggingCardId    = card.id;
+            _draggingFromColId = homeColId;
+            _draggingBoardId   = board.id;
+            ghost.classList.add('board-card--dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('ghost-col', col.id);
+            playWoosh();
+          });
+          ghost.addEventListener('dragend', () => {
+            ghost.classList.remove('board-card--dragging');
+            document.querySelectorAll('.board-card--drag-over').forEach(c => c.classList.remove('board-card--drag-over'));
+            _draggingCardId    = null;
+            _draggingFromColId = null;
+            _draggingBoardId   = null;
+          });
+          ghost.addEventListener('dragover', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            document.querySelectorAll('.board-card--drag-over').forEach(c => c.classList.remove('board-card--drag-over'));
+            if (_draggingCardId && _draggingCardId !== card.id) ghost.classList.add('board-card--drag-over');
+          });
+          ghost.addEventListener('drop', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            ghost.classList.remove('board-card--drag-over');
+            if (!_draggingCardId || _draggingCardId === card.id) return;
+
+            const ghostCol = ghost.dataset.ghostForCol;
+            // If dragging a real card INTO this ghost position → normal move
+            if (e.dataTransfer.getData('ghost-col') === '') {
+              moveCard(board.id, _draggingCardId, _draggingFromColId, homeColId, card.id);
+              playDrop();
+              renderBoard();
+              return;
+            }
+
+            // Reorder ghost order within this column
+            const order = board._ghostOrder[ghostCol] ?? [];
+            const fromIdx = order.indexOf(_draggingCardId);
+            const toIdx   = order.indexOf(card.id);
+            if (fromIdx >= 0 && toIdx >= 0) {
+              order.splice(fromIdx, 1);
+              order.splice(toIdx, 0, _draggingCardId);
+              board._ghostOrder[ghostCol] = order;
+              // Persist the updated ghost order
+              const state = loadState();
+              const boardRef = state.boards.find(b => b.id === board.id);
+              if (boardRef) {
+                boardRef._ghostOrder = board._ghostOrder;
+                _persistBoard(state, boardRef);
+              }
+            }
+            playDrop();
+            renderBoard();
+          });
+
+          cardsEl.appendChild(ghost);
+        });
+      }
     }
+
     container.appendChild(colEl);
   });
 
