@@ -39,10 +39,15 @@ export const PRIORITY_META = {
 // ============================================================
 //   DRAG & DROP STATE
 // ============================================================
-let _draggingCardId = null;
+let _draggingCardId    = null;  // real card drag
 let _draggingFromColId = null;
-let _draggingBoardId = null;
-let _activeBoardId = null;   // currently displayed board
+let _draggingBoardId   = null;
+let _activeBoardId     = null;  // currently displayed board
+
+// Ghost-specific drag state (completely separate from real card drag)
+let _isDraggingGhost    = false;
+let _draggingGhostCardId = null;
+let _draggingGhostInCol  = null; // column ID where the ghost lives
 
 // ============================================================
 //   STATE SELECTORS
@@ -585,6 +590,8 @@ function buildCard(card, boardId, colId) {
     e.preventDefault();
     e.stopPropagation();
     el.classList.remove('board-card--drag-over');
+    // Ignore if a ghost is being dragged — ghost reorders are handled separately
+    if (_isDraggingGhost) return;
     if (!_draggingCardId || _draggingBoardId !== boardId || _draggingCardId === card.id) return;
     moveCard(boardId, _draggingCardId, _draggingFromColId, colId, card.id);
     playDrop();
@@ -645,6 +652,8 @@ function buildColumn(col, boardId) {
   cardsEl.addEventListener('drop', e => {
     e.preventDefault();
     wrapper.classList.remove('board-column--drop-target');
+    // Ignore ghost reorders — they are handled by ghost drop handlers
+    if (_isDraggingGhost) return;
     if (_draggingCardId && _draggingFromColId && _draggingBoardId === boardId) {
       moveCard(boardId, _draggingCardId, _draggingFromColId, col.id);
       playDrop();
@@ -898,53 +907,46 @@ export function renderBoard() {
           ghost.dataset.ghostForCol = col.id;
           ghost.dataset.isGhostCard = '1';
 
-          // Allow ghost to be dragged and dropped within this column
+          // Ghost drag events — fully isolated from real card drag state
           ghost.addEventListener('dragstart', e => {
-            _draggingCardId    = card.id;
-            _draggingFromColId = homeColId;
-            _draggingBoardId   = board.id;
+            _isDraggingGhost     = true;
+            _draggingGhostCardId = card.id;
+            _draggingGhostInCol  = col.id;
+            // DO NOT touch _draggingCardId/_draggingFromColId/_draggingBoardId
             ghost.classList.add('board-card--dragging');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('ghost-col', col.id);
             playWoosh();
           });
           ghost.addEventListener('dragend', () => {
+            _isDraggingGhost     = false;
+            _draggingGhostCardId = null;
+            _draggingGhostInCol  = null;
             ghost.classList.remove('board-card--dragging');
             document.querySelectorAll('.board-card--drag-over').forEach(c => c.classList.remove('board-card--drag-over'));
-            _draggingCardId    = null;
-            _draggingFromColId = null;
-            _draggingBoardId   = null;
           });
           ghost.addEventListener('dragover', e => {
             e.preventDefault();
             e.stopPropagation();
+            // Only accept ghosts from the same column
+            if (!_isDraggingGhost || _draggingGhostCardId === card.id || _draggingGhostInCol !== col.id) return;
             document.querySelectorAll('.board-card--drag-over').forEach(c => c.classList.remove('board-card--drag-over'));
-            if (_draggingCardId && _draggingCardId !== card.id) ghost.classList.add('board-card--drag-over');
+            ghost.classList.add('board-card--drag-over');
           });
           ghost.addEventListener('drop', e => {
             e.preventDefault();
             e.stopPropagation();
             ghost.classList.remove('board-card--drag-over');
-            if (!_draggingCardId || _draggingCardId === card.id) return;
+            // Only reorder ghosts within the same column
+            if (!_isDraggingGhost || _draggingGhostCardId === card.id || _draggingGhostInCol !== col.id) return;
 
-            const ghostCol = ghost.dataset.ghostForCol;
-            // If dragging a real card INTO this ghost position → normal move
-            if (e.dataTransfer.getData('ghost-col') === '') {
-              moveCard(board.id, _draggingCardId, _draggingFromColId, homeColId, card.id);
-              playDrop();
-              renderBoard();
-              return;
-            }
-
-            // Reorder ghost order within this column
-            const order = board._ghostOrder[ghostCol] ?? [];
-            const fromIdx = order.indexOf(_draggingCardId);
+            const order = board._ghostOrder[col.id] ?? [];
+            const fromIdx = order.indexOf(_draggingGhostCardId);
             const toIdx   = order.indexOf(card.id);
             if (fromIdx >= 0 && toIdx >= 0) {
               order.splice(fromIdx, 1);
-              order.splice(toIdx, 0, _draggingCardId);
-              board._ghostOrder[ghostCol] = order;
-              // Persist the updated ghost order
+              order.splice(toIdx, 0, _draggingGhostCardId);
+              board._ghostOrder[col.id] = order;
               const state = loadState();
               const boardRef = state.boards.find(b => b.id === board.id);
               if (boardRef) {
