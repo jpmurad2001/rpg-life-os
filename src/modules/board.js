@@ -433,13 +433,13 @@ function openCardModal(boardId, colId, cardId) {
   const questPickerHTML = `
     <div class="form-group" style="margin-top:var(--space-2)">
       <label class="form-label">📜 Vincular Quests da semana atual</label>
-      <div style="display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto;margin-top:4px">
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;margin-top:var(--space-2);padding-right:4px">
         ${pendingQuests.length === 0
-          ? '<span style="font-size:var(--fs-xxs);color:var(--text-muted)">Nenhuma quest pendente esta semana.</span>'
-          : pendingQuests.map(q => `<label style="display:flex;align-items:center;gap:6px;font-size:var(--fs-xxs);cursor:pointer">
-              <input type="checkbox" class="bm-link-quest" data-quest-id="${q.id}" data-week-id="${curWeekId}" ${linkedQ.includes(q.id) ? 'checked' : ''} />
-              <span class="task-attr-badge ${q.attribute}" style="font-size:10px;padding:1px 4px">${q.attribute}</span>
-              ${q.title}
+          ? '<span style="font-size:var(--fs-sm);color:var(--text-muted)">Nenhuma quest pendente esta semana.</span>'
+          : pendingQuests.map(q => `<label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" class="bm-link-quest" data-quest-id="${q.id}" data-week-id="${curWeekId}" ${linkedQ.includes(q.id) ? 'checked' : ''} style="width:14px;height:14px;flex-shrink:0" />
+              <span class="task-attr-badge ${q.attribute}" style="padding:2px 6px">${q.attribute}</span>
+              <span>${q.title}</span>
             </label>`).join('')
         }
       </div>
@@ -448,12 +448,12 @@ function openCardModal(boardId, colId, cardId) {
   const workoutPickerHTML = `
     <div class="form-group" style="margin-top:var(--space-2)">
       <label class="form-label">⚡ Vincular Templates de Treino</label>
-      <div style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:4px">
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:120px;overflow-y:auto;margin-top:var(--space-2)">
         ${allTemplates.length === 0
-          ? '<span style="font-size:var(--fs-xxs);color:var(--text-muted)">Nenhum template criado.</span>'
-          : allTemplates.map(t => `<label style="display:flex;align-items:center;gap:6px;font-size:var(--fs-xxs);cursor:pointer">
-              <input type="checkbox" class="bm-link-workout" data-tmpl-id="${t.id}" ${linkedW.includes(t.id) ? 'checked' : ''} />
-              ${t.name}
+          ? '<span style="font-size:var(--fs-sm);color:var(--text-muted)">Nenhum template criado.</span>'
+          : allTemplates.map(t => `<label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" class="bm-link-workout" data-tmpl-id="${t.id}" ${linkedW.includes(t.id) ? 'checked' : ''} style="width:14px;height:14px;flex-shrink:0" />
+              <span>💪 ${t.name}</span>
             </label>`).join('')
         }
       </div>
@@ -487,12 +487,12 @@ function openCardModal(boardId, colId, cardId) {
         </div>
         ${replicaColsHTML}
         <details class="bm-planning-section" style="margin-top:var(--space-3)">
-          <summary style="cursor:pointer;font-size:var(--fs-xxs);color:var(--text-muted);user-select:none">⏰ Cronograma (Time Slots)</summary>
+          <summary>⏰ Cronograma (Time Slots)</summary>
           <div id="bm-slots-list" style="margin-top:var(--space-2);display:flex;flex-direction:column;gap:var(--space-2)">${existingSlots}</div>
-          <button class="btn-rp btn-rp--ghost" id="bm-add-slot" style="font-size:var(--fs-xxs);margin-top:var(--space-2)">+ Adicionar Horário</button>
+          <button class="btn-rp btn-rp--ghost" id="bm-add-slot">+ Adicionar Horário</button>
         </details>
         <details class="bm-planning-section" style="margin-top:var(--space-2)">
-          <summary style="cursor:pointer;font-size:var(--fs-xxs);color:var(--text-muted);user-select:none">🔗 Vínculos (Quests &amp; Treinos)</summary>
+          <summary>🔗 Vínculos (Quests &amp; Treinos)</summary>
           ${questPickerHTML}
           ${workoutPickerHTML}
         </details>

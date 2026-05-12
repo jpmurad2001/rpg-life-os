@@ -676,24 +676,73 @@
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
+  padding: var(--space-1) 0;
+}
+
+/* Inputs inside slot rows */
+.bm-slot-row .form-input {
+  font-size: var(--fs-base) !important;  /* 12px — legível */
+  height: 32px;
+  letter-spacing: 0.5px;
 }
 
 .bm-planning-section {
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 6px;
-  padding: var(--space-2) var(--space-3);
-  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255,255,255,0.03);
+  transition: border-color 0.2s;
+}
+.bm-planning-section[open] {
+  border-color: rgba(var(--color-accent-rgb, 138,43,226), 0.35);
 }
 
 .bm-planning-section summary {
   list-style: none;
-  font-size: var(--fs-xxs);
-  color: var(--text-muted);
+  font-size: var(--fs-base);    /* 12px — visível */
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary, #8a8aa0);
   user-select: none;
   cursor: pointer;
+  padding: var(--space-1) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: color 0.2s;
+}
+.bm-planning-section summary::after {
+  content: '▸';
+  margin-left: auto;
+  font-size: 0.7rem;
+  opacity: 0.5;
+  transition: transform 0.2s;
+}
+.bm-planning-section[open] summary::after {
+  transform: rotate(90deg);
 }
 .bm-planning-section summary::-webkit-details-marker { display: none; }
-.bm-planning-section[open] summary { color: var(--color-accent); }
+.bm-planning-section[open] summary {
+  color: var(--color-accent, #7c3aed);
+}
+
+/* Picker labels inside planning sections */
+.bm-planning-section label {
+  font-size: var(--fs-sm) !important;    /* 10.4px — legível */
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+.bm-planning-section .form-label {
+  font-size: var(--fs-base) !important;  /* 12px */
+  margin-bottom: var(--space-2);
+}
+/* Add slot button */
+.bm-planning-section .btn-rp {
+  font-size: var(--fs-sm) !important;
+  padding: 4px 12px !important;
+  margin-top: var(--space-2);
+}
 
 /* ============================================================
    RICH DESCRIPTION — LINKS & IMAGE EMBEDS
