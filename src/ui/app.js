@@ -1025,7 +1025,11 @@ export function renderSidebarMedallion(activeBadgeId) {
 export function toggleMedallionDisplay(playerData) {
   const wrap = document.getElementById('sidebar-medallion');
   if (!wrap) return;
-  const photoUrl = playerData?.photoURL ?? playerData?.photo_url ?? null;
+
+  // Photo is stored in player.cosmetics.avatar_image (set via Profile Drawer)
+  const state    = loadState();
+  const photoUrl = state?.player?.cosmetics?.avatar_image ?? null;
+
   if (_currentMedallionMode === 'badge' && photoUrl) {
     wrap.style.transition = 'opacity 0.3s';
     wrap.style.opacity = '0';
@@ -1037,10 +1041,11 @@ export function toggleMedallionDisplay(playerData) {
       _currentMedallionMode = 'photo';
     }, 150);
   } else {
+    // Return to badge (or show default if no badge)
     wrap.style.transition = 'opacity 0.3s';
     wrap.style.opacity = '0';
     setTimeout(() => {
-      renderSidebarMedallion(loadStateForMedallion());
+      renderSidebarMedallion(state?.player?.activeBadgeId ?? null);
       wrap.style.opacity = '1';
     }, 150);
   }
