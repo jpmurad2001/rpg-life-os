@@ -406,15 +406,59 @@ function openCardModal(boardId, colId, cardId) {
       </div>
     </div>` : '';
 
-  // Build time slots UI
+  // Build time slots UI — use type=text with HH:MM pattern to avoid browser minute truncation
+  const fmtTime = v => (v ?? '').replace(/^(\d)(:\d{2})$/, '0$1$2'); // normalize single-digit hours
   const existingSlots = (card.timeSlots ?? []).map(t => `
     <div class="bm-slot-row" data-slot-id="${t.id}">
-      <input class="form-input bm-slot-start" type="time" value="${t.startTime ?? ''}" style="width:90px" />
-      <span style="color:var(--text-muted)">–</span>
-      <input class="form-input bm-slot-end" type="time" value="${t.endTime ?? ''}" style="width:90px" />
+      <input class="form-input bm-slot-start" type="text" inputmode="numeric"
+             placeholder="09:00" pattern="[0-2]\d:[0-5]\d" maxlength="5"
+             value="${fmtTime(t.startTime)}" style="width:70px;text-align:center" />
+      <span style="color:var(--text-muted)">&#8211;</span>
+      <input class="form-input bm-slot-end" type="text" inputmode="numeric"
+             placeholder="10:00" pattern="[0-2]\d:[0-5]\d" maxlength="5"
+             value="${fmtTime(t.endTime)}" style="width:70px;text-align:center" />
       <input class="form-input bm-slot-label" type="text" value="${t.label ?? ''}" placeholder="Atividade" style="flex:1;min-width:80px" />
       <button class="btn-rp btn-rp--ghost bm-slot-del" data-slot-id="${t.id}" style="padding:2px 6px;min-height:0;font-size:var(--fs-xxs)">✕</button>
     </div>`).join('');
+
+  // Build quest and workout pickers from current state
+  const liveState   = loadState();
+  const curWeekId   = liveState?.quests?.current_week_id;
+  const weekTasks   = curWeekId ? (liveState.quests.weeks?.[curWeekId]?.tasks ?? []) : [];
+  const pendingQuests = weekTasks.filter(t => t.status !== 'completed');
+  const allTemplates  = liveState?.battle_ground?.templates ?? [];
+  const linkedQ = card.linkedQuests ?? [];
+  const linkedW = card.linkedWorkouts ?? [];
+
+  const questPickerHTML = `
+    <div class="form-group" style="margin-top:var(--space-2)">
+      <label class="form-label">📜 Vincular Quests da semana atual</label>
+      <div style="display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto;margin-top:4px">
+        ${pendingQuests.length === 0
+          ? '<span style="font-size:var(--fs-xxs);color:var(--text-muted)">Nenhuma quest pendente esta semana.</span>'
+          : pendingQuests.map(q => `<label style="display:flex;align-items:center;gap:6px;font-size:var(--fs-xxs);cursor:pointer">
+              <input type="checkbox" class="bm-link-quest" data-quest-id="${q.id}" data-week-id="${curWeekId}" ${linkedQ.includes(q.id) ? 'checked' : ''} />
+              <span class="task-attr-badge ${q.attribute}" style="font-size:10px;padding:1px 4px">${q.attribute}</span>
+              ${q.title}
+            </label>`).join('')
+        }
+      </div>
+    </div>`;
+
+  const workoutPickerHTML = `
+    <div class="form-group" style="margin-top:var(--space-2)">
+      <label class="form-label">⚡ Vincular Templates de Treino</label>
+      <div style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:4px">
+        ${allTemplates.length === 0
+          ? '<span style="font-size:var(--fs-xxs);color:var(--text-muted)">Nenhum template criado.</span>'
+          : allTemplates.map(t => `<label style="display:flex;align-items:center;gap:6px;font-size:var(--fs-xxs);cursor:pointer">
+              <input type="checkbox" class="bm-link-workout" data-tmpl-id="${t.id}" ${linkedW.includes(t.id) ? 'checked' : ''} />
+              ${t.name}
+            </label>`).join('')
+        }
+      </div>
+    </div>`;
+
 
   openModal({
     title: `${PRIORITY_META[card.priority]?.icon ?? '📌'} Detalhes da Missão`,
@@ -447,6 +491,11 @@ function openCardModal(boardId, colId, cardId) {
           <div id="bm-slots-list" style="margin-top:var(--space-2);display:flex;flex-direction:column;gap:var(--space-2)">${existingSlots}</div>
           <button class="btn-rp btn-rp--ghost" id="bm-add-slot" style="font-size:var(--fs-xxs);margin-top:var(--space-2)">+ Adicionar Horário</button>
         </details>
+        <details class="bm-planning-section" style="margin-top:var(--space-2)">
+          <summary style="cursor:pointer;font-size:var(--fs-xxs);color:var(--text-muted);user-select:none">🔗 Vínculos (Quests &amp; Treinos)</summary>
+          ${questPickerHTML}
+          ${workoutPickerHTML}
+        </details>
         ${progress >= 0 ? `
         <div class="bm-progress-wrap">
           <div class="bm-progress-label"><span>⚙️ Checklist</span><span id="bm-progress-pct">${progress}%</span></div>
@@ -477,16 +526,30 @@ function openCardModal(boardId, colId, cardId) {
       const newRecur = document.getElementById('bm-recurrence')?.value ?? 'none';
       if (!newTitle) { showToast('⚠️ A missão precisa de um título!', 'info', 2000); return false; }
 
-      // Collect updated time slots from DOM
+      // Collect updated time slots — normalize HH:MM format
+      const _norm = v => {
+        if (!v) return '';
+        const m = v.trim().match(/^(\d{1,2}):(\d{2})$/);
+        if (!m) return v.trim();
+        return `${m[1].padStart(2,'0')}:${m[2]}`;
+      };
       const newSlots = [...document.querySelectorAll('#bm-slots-list .bm-slot-row')].map(row => ({
         id:        row.dataset.slotId,
-        startTime: row.querySelector('.bm-slot-start')?.value ?? '',
-        endTime:   row.querySelector('.bm-slot-end')?.value ?? '',
+        startTime: _norm(row.querySelector('.bm-slot-start')?.value),
+        endTime:   _norm(row.querySelector('.bm-slot-end')?.value),
         label:     row.querySelector('.bm-slot-label')?.value ?? '',
         done:      false,
       })).filter(s => s.startTime || s.label);
 
-      updateCard(boardId, colId, cardId, { title: newTitle, priority: newPrio, description: newDesc, recurrence: newRecur, timeSlots: newSlots });
+      // Collect linked quests and workouts
+      const newLinkedQuests   = [...document.querySelectorAll('.bm-link-quest:checked')].map(cb => cb.dataset.questId);
+      const newLinkedWorkouts = [...document.querySelectorAll('.bm-link-workout:checked')].map(cb => cb.dataset.tmplId);
+
+      updateCard(boardId, colId, cardId, {
+        title: newTitle, priority: newPrio, description: newDesc,
+        recurrence: newRecur, timeSlots: newSlots,
+        linkedQuests: newLinkedQuests, linkedWorkouts: newLinkedWorkouts,
+      });
 
       // Replicate to selected columns
       const selectedCols = [...document.querySelectorAll('.bm-replicate-col:checked')].map(cb => cb.dataset.colId);
@@ -535,13 +598,18 @@ function openCardModal(boardId, colId, cardId) {
       row.className = 'bm-slot-row';
       row.dataset.slotId = slotId;
       row.innerHTML = `
-        <input class="form-input bm-slot-start" type="time" style="width:90px" />
-        <span style="color:var(--text-muted)">–</span>
-        <input class="form-input bm-slot-end" type="time" style="width:90px" />
+        <input class="form-input bm-slot-start" type="text" inputmode="numeric"
+               placeholder="09:00" pattern="[0-2]\\d:[0-5]\\d" maxlength="5"
+               style="width:70px;text-align:center" />
+        <span style="color:var(--text-muted)">&#8211;</span>
+        <input class="form-input bm-slot-end" type="text" inputmode="numeric"
+               placeholder="10:00" pattern="[0-2]\\d:[0-5]\\d" maxlength="5"
+               style="width:70px;text-align:center" />
         <input class="form-input bm-slot-label" type="text" placeholder="Atividade" style="flex:1;min-width:80px" />
         <button class="btn-rp btn-rp--ghost bm-slot-del" data-slot-id="${slotId}" style="padding:2px 6px;min-height:0;font-size:var(--fs-xxs)">✕</button>
       `;
       list.appendChild(row);
+      row.querySelector('.bm-slot-start')?.focus();
     });
     document.getElementById('bm-slots-list')?.addEventListener('click', e => {
       const btn = e.target.closest('.bm-slot-del');
@@ -646,19 +714,30 @@ function buildCard(card, boardId, colId) {
     ? `<span class="board-recur-badge">${card.recurrence === 'daily' ? '🌅 Diária' : card.recurrence === 'weekly' ? '📅 Semanal' : '⚙️'}</span>`
     : '';
 
-  // Time slots badge
+  // Time slots badge — show HH:MM format correctly
   const slots = card.timeSlots ?? [];
-  const firstSlot = slots[0];
+  const firstSlot = slots.find(s => s.startTime);
   const slotBadge = firstSlot
     ? `<span class="board-slot-badge">⏰ ${firstSlot.startTime}${slots.length > 1 ? ` +${slots.length - 1}` : ''}</span>`
     : '';
 
-  // Linked badges
-  const linkedQ = (card.linkedQuests ?? []).length;
-  const linkedW = (card.linkedWorkouts ?? []).length;
-  const linkBadge = (linkedQ || linkedW) ? [
-    linkedQ ? `<span class="board-link-badge board-link-badge--quest">📜 ${linkedQ}</span>` : '',
-    linkedW ? `<span class="board-link-badge board-link-badge--workout">⚡ ${linkedW}</span>` : '',
+  // Linked badges — resolve live status from state
+  const _liveState  = loadState();
+  const _weekId     = _liveState?.quests?.current_week_id;
+  const _weekTasks  = _weekId ? (_liveState.quests.weeks?.[_weekId]?.tasks ?? []) : [];
+  const _sessions   = _liveState?.battle_ground?.sessions ?? [];
+  const _today      = new Date().toISOString().slice(0, 10);
+
+  const qLinks = card.linkedQuests ?? [];
+  const wLinks = card.linkedWorkouts ?? [];
+  const qDone  = qLinks.filter(id => _weekTasks.find(t => t.id === id && t.status === 'completed')).length;
+  const wDone  = wLinks.filter(id => _sessions.find(s => s.template_id === id && s.date === _today)).length;
+  const qPend  = qLinks.length - qDone;
+  const wPend  = wLinks.length - wDone;
+
+  const linkBadge = (qLinks.length || wLinks.length) ? [
+    qLinks.length ? `<span class="board-link-badge board-link-badge--quest${qPend === 0 ? ' board-link-badge--done' : ''}" title="${qDone}/${qLinks.length} quests">📜 ${qDone}/${qLinks.length}</span>` : '',
+    wLinks.length ? `<span class="board-link-badge board-link-badge--workout${wPend === 0 ? ' board-link-badge--done' : ''}" title="${wDone}/${wLinks.length} treinos">⚡ ${wDone}/${wLinks.length}</span>` : '',
   ].join('') : '';
 
   const replicaBadge = card.replicaOf ? `<span class="board-replica-badge" title="Réplica">🔁</span>` : '';
@@ -1090,5 +1169,12 @@ export function initBoard() {
     btnDel.addEventListener('click', () => {
       if (_activeBoardId) openDeleteBoardModal(_activeBoardId);
     });
+  }
+
+  // Cross-module sync: re-render board badges when quest or workout is completed
+  if (!window._boardSyncWired) {
+    window._boardSyncWired = true;
+    window.addEventListener('rpg:questComplete',   () => renderBoard());
+    window.addEventListener('rpg:workoutComplete', () => renderBoard());
   }
 }

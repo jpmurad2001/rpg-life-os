@@ -294,6 +294,9 @@ async function handleCompleteTask(weekId, taskId) {
     renderHUD(result.state);
     renderQuests();
 
+    // Notify board to refresh linked card status badges
+    window.dispatchEvent(new CustomEvent('rpg:questComplete', { detail: { taskId, weekId } }));
+
     // --- PHASE 5: Drop Engine Integration ---
     if (auth.currentUser) {
         try {

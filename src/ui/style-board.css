@@ -660,6 +660,13 @@
   background: rgba(248,113,113,0.10);
   border: 1px solid rgba(248,113,113,0.25);
 }
+/* All activities complete → green glow */
+.board-link-badge--done {
+  color: #34d399 !important;
+  background: rgba(52,211,153,0.15) !important;
+  border-color: rgba(52,211,153,0.4) !important;
+  filter: drop-shadow(0 0 4px rgba(52,211,153,0.35));
+}
 
 /* ============================================================
    PLANNING — TIME SLOT ROWS (modal)

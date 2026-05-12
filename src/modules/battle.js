@@ -363,6 +363,9 @@ function finishSession(templateId, setsDone) {
 
   // Re-render template list so user can immediately start another session
   renderBattle();
+
+  // Notify board to refresh linked card status badges
+  window.dispatchEvent(new CustomEvent('rpg:workoutComplete', { detail: { templateId } }));
 }
 
 // ============================================================
