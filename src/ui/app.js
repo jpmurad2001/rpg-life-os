@@ -915,15 +915,28 @@ function setupBellButton(player) {
 // ============================================================
 function setupProfileButton() {
   const widget = document.getElementById('profile-widget');
-  if (!widget) return;
+  if (widget) {
+    widget.addEventListener('click', openProfileDrawer);
+    widget.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openProfileDrawer();
+      }
+    });
+  }
 
-  widget.addEventListener('click', openProfileDrawer);
-  widget.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      openProfileDrawer();
-    }
-  });
+  // Medallion — click toggles between active badge and profile photo
+  const medallion = document.getElementById('sidebar-medallion');
+  if (medallion && !medallion.dataset.wiredToggle) {
+    medallion.dataset.wiredToggle = '1';
+    medallion.style.cursor = 'pointer';
+    medallion.title = 'Clique para alternar foto / badge';
+    medallion.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const state = loadState();
+      toggleMedallionDisplay(state?.player ?? {});
+    });
+  }
 }
 
 // renderHUDFromPlayer was merged into the export above to avoid duplicate declaration errors.
@@ -1156,18 +1169,7 @@ function renderAchievements() {
     });
   });
 
-  // Medallion click → achievements view
-  const medallion = document.getElementById('sidebar-medallion');
-  if (medallion && !medallion.dataset.wiredBadge) {
-    medallion.dataset.wiredBadge = '1';
-    medallion.style.cursor = 'pointer';
-    medallion.addEventListener('click', (e) => {
-      e.stopPropagation();
-      // Toggle between badge and profile photo
-      const state = loadState();
-      toggleMedallionDisplay(state.player);
-    });
-  }
+  // Medallion wiring is handled at boot via setupProfileButton()
 }
 
 /** Renders all badge cards into the grid element */
