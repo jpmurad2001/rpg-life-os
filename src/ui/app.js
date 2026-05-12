@@ -997,14 +997,47 @@ export function renderSidebarMedallion(activeBadgeId) {
     if (badge) {
       wrap.innerHTML = renderBadgeSVG(badge, { size: 60, glow: true, locked: false });
       wrap.classList.add('badge-medallion-wrap--active');
-      wrap.title = `${badge.icon} ${badge.name} (equipado)`;
+      wrap.title = `${badge.icon} ${badge.name} — clique para ver foto de perfil`;
+      _currentMedallionMode = 'badge';
       return;
     }
   }
-  // Default: D20 medallion
   wrap.innerHTML = renderDefaultMedallionSVG(60);
   wrap.classList.remove('badge-medallion-wrap--active');
   wrap.title = 'Medalhão — sem badge equipada';
+  _currentMedallionMode = 'badge';
+}
+
+/** Toggle between badge and profile photo in the sidebar medallion */
+export function toggleMedallionDisplay(playerData) {
+  const wrap = document.getElementById('sidebar-medallion');
+  if (!wrap) return;
+  const photoUrl = playerData?.photoURL ?? playerData?.photo_url ?? null;
+  if (_currentMedallionMode === 'badge' && photoUrl) {
+    wrap.style.transition = 'opacity 0.3s';
+    wrap.style.opacity = '0';
+    setTimeout(() => {
+      wrap.innerHTML = `<img src="${photoUrl}" alt="Foto de Perfil"
+        style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid var(--color-accent)" />`;
+      wrap.style.opacity = '1';
+      wrap.title = 'Foto de Perfil — clique para ver badge';
+      _currentMedallionMode = 'photo';
+    }, 150);
+  } else {
+    wrap.style.transition = 'opacity 0.3s';
+    wrap.style.opacity = '0';
+    setTimeout(() => {
+      renderSidebarMedallion(loadStateForMedallion());
+      wrap.style.opacity = '1';
+    }, 150);
+  }
+}
+
+// Internal helpers for medallion toggle
+let _currentMedallionMode = 'badge';
+function loadStateForMedallion() {
+  try { return JSON.parse(localStorage.getItem('rpg_life_os_state'))?.player?.activeBadgeId ?? null; }
+  catch { return null; }
 }
 
 /**
@@ -1130,7 +1163,9 @@ function renderAchievements() {
     medallion.style.cursor = 'pointer';
     medallion.addEventListener('click', (e) => {
       e.stopPropagation();
-      navigateTo('achievements');
+      // Toggle between badge and profile photo
+      const state = loadState();
+      toggleMedallionDisplay(state.player);
     });
   }
 }

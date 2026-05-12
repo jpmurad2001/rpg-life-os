@@ -596,31 +596,22 @@
 }
 
 /* ============================================================
-   GLOBAL CARD GHOST (appears in foreign columns)
+   REPLICA CARD (copy of another card)
    ============================================================ */
-.board-card--global-ghost {
-  opacity: 0.65;
-  border-style: dashed;
-  border-color: var(--color-gold-dark);
-  background: rgba(255, 215, 0, 0.04);
-  pointer-events: auto;
+.board-card--replica {
+  border-color: rgba(96,165,250,0.35);
+  background: rgba(96,165,250,0.03);
 }
 
-.board-card--global-ghost:hover {
-  opacity: 0.9;
-  border-color: var(--color-gold);
+.board-replica-badge {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  line-height: 1;
 }
 
 /* ============================================================
-   GLOBAL BADGE & RECURRENCE BADGE
+   RECURRENCE BADGE
    ============================================================ */
-.board-global-badge {
-  font-size: 0.75rem;
-  line-height: 1;
-  color: var(--color-gold);
-  filter: drop-shadow(0 0 3px rgba(255,215,0,0.5));
-}
-
 .board-recur-badge {
   display: inline-flex;
   align-items: center;
@@ -632,6 +623,70 @@
   padding: 1px var(--space-1);
   white-space: nowrap;
 }
+
+/* ============================================================
+   TIME SLOT BADGE (card face)
+   ============================================================ */
+.board-slot-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  color: #34d399;
+  background: rgba(52,211,153,0.10);
+  border: 1px solid rgba(52,211,153,0.25);
+  padding: 1px var(--space-1);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   LINK BADGES (quest / workout)
+   ============================================================ */
+.board-link-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  padding: 1px var(--space-1);
+  white-space: nowrap;
+}
+.board-link-badge--quest {
+  color: #fbbf24;
+  background: rgba(251,191,36,0.10);
+  border: 1px solid rgba(251,191,36,0.25);
+}
+.board-link-badge--workout {
+  color: #f87171;
+  background: rgba(248,113,113,0.10);
+  border: 1px solid rgba(248,113,113,0.25);
+}
+
+/* ============================================================
+   PLANNING — TIME SLOT ROWS (modal)
+   ============================================================ */
+.bm-slot-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.bm-planning-section {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: var(--space-2) var(--space-3);
+  background: rgba(255,255,255,0.02);
+}
+
+.bm-planning-section summary {
+  list-style: none;
+  font-size: var(--fs-xxs);
+  color: var(--text-muted);
+  user-select: none;
+  cursor: pointer;
+}
+.bm-planning-section summary::-webkit-details-marker { display: none; }
+.bm-planning-section[open] summary { color: var(--color-accent); }
 
 /* ============================================================
    RICH DESCRIPTION — LINKS & IMAGE EMBEDS

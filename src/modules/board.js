@@ -39,15 +39,10 @@ export const PRIORITY_META = {
 // ============================================================
 //   DRAG & DROP STATE
 // ============================================================
-let _draggingCardId    = null;  // real card drag
+let _draggingCardId    = null;
 let _draggingFromColId = null;
 let _draggingBoardId   = null;
-let _activeBoardId     = null;  // currently displayed board
-
-// Ghost-specific drag state (completely separate from real card drag)
-let _isDraggingGhost    = false;
-let _draggingGhostCardId = null;
-let _draggingGhostInCol  = null; // column ID where the ghost lives
+let _activeBoardId     = null;
 
 // ============================================================
 //   STATE SELECTORS
@@ -133,29 +128,63 @@ export function renameColumn(boardId, colId, newTitle) {
 }
 
 /** Creates a new Card inside a column */
-export function addCard(boardId, colId, { title, description = '', priority = 'normal', subtasks = [], isGlobal = false, recurrence = 'none' }) {
+export function addCard(boardId, colId, { title, description = '', priority = 'normal', subtasks = [], recurrence = 'none', timeSlots = [], linkedWorkouts = [], linkedQuests = [], replicaOf = null }) {
   const state = loadState();
   const board = state.boards.find(b => b.id === boardId);
   const col   = board?.columns.find(c => c.id === colId);
   if (!col) return null;
 
   const card = {
-    id:          genId('card'),
-    title:       title.trim(),
+    id:             genId('card'),
+    title:          title.trim(),
     description,
     priority,
-    isGlobal,
-    recurrence,  // 'none' | 'daily' | 'weekly' | 'custom'
-    subtasks:    subtasks.map(s => ({
+    recurrence,
+    timeSlots,
+    linkedWorkouts,
+    linkedQuests,
+    replicaOf,      // null | sourceCardId (visual indicator only)
+    subtasks:       subtasks.map(s => ({
       id:   genId('sub'),
       text: typeof s === 'string' ? s : s.text,
       done: false,
     })),
-    created_at:  new Date().toISOString(),
+    created_at:     new Date().toISOString(),
   };
   col.cards.push(card);
   _persistBoard(state, board);
   return card;
+}
+
+/** Replicates a card to one or more target columns as independent copies */
+export function replicateCard(boardId, sourceCardId, targetColIds) {
+  const state = loadState();
+  const board = state.boards.find(b => b.id === boardId);
+  if (!board) return;
+
+  // Find source card across all columns
+  let sourceCard = null;
+  for (const col of board.columns) {
+    const found = col.cards.find(c => c.id === sourceCardId);
+    if (found) { sourceCard = found; break; }
+  }
+  if (!sourceCard) return;
+
+  targetColIds.forEach(colId => {
+    const col = board.columns.find(c => c.id === colId);
+    if (!col) return;
+    const clone = {
+      ...JSON.parse(JSON.stringify(sourceCard)),
+      id:         genId('card'),
+      replicaOf:  sourceCard.id,
+      created_at: new Date().toISOString(),
+      subtasks:   (sourceCard.subtasks ?? []).map(s => ({ ...s, id: genId('sub'), done: false })),
+      timeSlots:  (sourceCard.timeSlots ?? []).map(t => ({ ...t, id: genId('ts'), done: false })),
+    };
+    col.cards.push(clone);
+  });
+
+  _persistBoard(state, board);
 }
 
 /** Moves a card from one column to another within the same board */
@@ -208,7 +237,7 @@ export function duplicateCard(boardId, colId, cardId) {
   return clone;
 }
 
-/** Patches card fields (title, description, priority) */
+/** Patches card fields */
 export function updateCard(boardId, colId, cardId, patch) {
   const state = loadState();
   const board = state.boards.find(b => b.id === boardId);
@@ -216,6 +245,30 @@ export function updateCard(boardId, colId, cardId, patch) {
   const card  = col?.cards.find(c => c.id === cardId);
   if (!card) return;
   Object.assign(card, patch);
+  _persistBoard(state, board);
+}
+
+/** Adds/removes a time slot on a card */
+export function upsertTimeSlot(boardId, colId, cardId, slot) {
+  const state = loadState();
+  const board = state.boards.find(b => b.id === boardId);
+  const col   = board?.columns.find(c => c.id === colId);
+  const card  = col?.cards.find(c => c.id === cardId);
+  if (!card) return;
+  if (!card.timeSlots) card.timeSlots = [];
+  const idx = card.timeSlots.findIndex(t => t.id === slot.id);
+  if (idx >= 0) card.timeSlots[idx] = slot;
+  else card.timeSlots.push(slot);
+  _persistBoard(state, board);
+}
+
+export function deleteTimeSlot(boardId, colId, cardId, slotId) {
+  const state = loadState();
+  const board = state.boards.find(b => b.id === boardId);
+  const col   = board?.columns.find(c => c.id === colId);
+  const card  = col?.cards.find(c => c.id === cardId);
+  if (!card) return;
+  card.timeSlots = (card.timeSlots ?? []).filter(t => t.id !== slotId);
   _persistBoard(state, board);
 }
 
@@ -340,6 +393,29 @@ function openCardModal(boardId, colId, cardId) {
 
   const progress = calcProgress(card);
 
+  // Build replication checkboxes (all columns except the card's own)
+  const otherCols = board.columns.filter(c => c.id !== colId);
+  const replicaColsHTML = otherCols.length ? `
+    <div class="form-group" style="margin-top:var(--space-2)">
+      <label class="form-label">🔁 Replicar para colunas (cópias independentes)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:4px">
+        ${otherCols.map(c => `<label style="display:flex;align-items:center;gap:6px;font-size:var(--fs-xxs);cursor:pointer">
+          <input type="checkbox" class="bm-replicate-col" data-col-id="${c.id}" />
+          ${c.title}
+        </label>`).join('')}
+      </div>
+    </div>` : '';
+
+  // Build time slots UI
+  const existingSlots = (card.timeSlots ?? []).map(t => `
+    <div class="bm-slot-row" data-slot-id="${t.id}">
+      <input class="form-input bm-slot-start" type="time" value="${t.startTime ?? ''}" style="width:90px" />
+      <span style="color:var(--text-muted)">–</span>
+      <input class="form-input bm-slot-end" type="time" value="${t.endTime ?? ''}" style="width:90px" />
+      <input class="form-input bm-slot-label" type="text" value="${t.label ?? ''}" placeholder="Atividade" style="flex:1;min-width:80px" />
+      <button class="btn-rp btn-rp--ghost bm-slot-del" data-slot-id="${t.id}" style="padding:2px 6px;min-height:0;font-size:var(--fs-xxs)">✕</button>
+    </div>`).join('');
+
   openModal({
     title: `${PRIORITY_META[card.priority]?.icon ?? '📌'} Detalhes da Missão`,
     confirmLabel: '💾 Salvar',
@@ -361,33 +437,26 @@ function openCardModal(boardId, colId, cardId) {
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">
-            <input type="checkbox" id="bm-global" ${card.isGlobal ? 'checked' : ''}
-                   style="margin-right:var(--space-2)" />
-            📌 Card Global (aparece em todas as colunas)
-          </label>
-        </div>
-        <div class="form-group">
           <label class="form-label">Descrição / Detalhes (suporta links e imagens)</label>
           <textarea class="form-input form-textarea" id="bm-desc"
-                    rows="4" placeholder="Cole URLs de links ou imagens...">${card.description}</textarea>
+                    rows="3" placeholder="Cole URLs de links ou imagens...">${card.description}</textarea>
         </div>
+        ${replicaColsHTML}
+        <details class="bm-planning-section" style="margin-top:var(--space-3)">
+          <summary style="cursor:pointer;font-size:var(--fs-xxs);color:var(--text-muted);user-select:none">⏰ Cronograma (Time Slots)</summary>
+          <div id="bm-slots-list" style="margin-top:var(--space-2);display:flex;flex-direction:column;gap:var(--space-2)">${existingSlots}</div>
+          <button class="btn-rp btn-rp--ghost" id="bm-add-slot" style="font-size:var(--fs-xxs);margin-top:var(--space-2)">+ Adicionar Horário</button>
+        </details>
         ${progress >= 0 ? `
         <div class="bm-progress-wrap">
-          <div class="bm-progress-label">
-            <span>⚙️ Checklist</span>
-            <span id="bm-progress-pct">${progress}%</span>
-          </div>
-          <div class="bm-progress-bar">
-            <div class="bm-progress-fill" id="bm-progress-fill" style="width:${progress}%"></div>
-          </div>
+          <div class="bm-progress-label"><span>⚙️ Checklist</span><span id="bm-progress-pct">${progress}%</span></div>
+          <div class="bm-progress-bar"><div class="bm-progress-fill" id="bm-progress-fill" style="width:${progress}%"></div></div>
         </div>` : ''}
         <div class="form-group">
           <label class="form-label">📋 Subtarefas (Checklist)</label>
           <div class="board-subtasks-list" id="bm-subtasks">${subtasksHTML}</div>
           <div class="board-add-subtask-row">
-            <input class="form-input" id="bm-new-sub" type="text"
-                   placeholder="Nova subtarefa..." maxlength="120" />
+            <input class="form-input" id="bm-new-sub" type="text" placeholder="Nova subtarefa..." maxlength="120" />
             <button class="btn-rp btn-rp--ghost" id="bm-add-sub" style="font-size:var(--fs-xxs);">+ Add</button>
           </div>
         </div>
@@ -402,13 +471,27 @@ function openCardModal(boardId, colId, cardId) {
       </div>
     `,
     onConfirm: () => {
-      const newTitle    = document.getElementById('bm-title')?.value?.trim();
-      const newPrio     = document.getElementById('bm-priority')?.value;
-      const newDesc     = document.getElementById('bm-desc')?.value ?? '';
-      const newGlobal   = document.getElementById('bm-global')?.checked ?? false;
-      const newRecur    = document.getElementById('bm-recurrence')?.value ?? 'none';
+      const newTitle = document.getElementById('bm-title')?.value?.trim();
+      const newPrio  = document.getElementById('bm-priority')?.value;
+      const newDesc  = document.getElementById('bm-desc')?.value ?? '';
+      const newRecur = document.getElementById('bm-recurrence')?.value ?? 'none';
       if (!newTitle) { showToast('⚠️ A missão precisa de um título!', 'info', 2000); return false; }
-      updateCard(boardId, colId, cardId, { title: newTitle, priority: newPrio, description: newDesc, isGlobal: newGlobal, recurrence: newRecur });
+
+      // Collect updated time slots from DOM
+      const newSlots = [...document.querySelectorAll('#bm-slots-list .bm-slot-row')].map(row => ({
+        id:        row.dataset.slotId,
+        startTime: row.querySelector('.bm-slot-start')?.value ?? '',
+        endTime:   row.querySelector('.bm-slot-end')?.value ?? '',
+        label:     row.querySelector('.bm-slot-label')?.value ?? '',
+        done:      false,
+      })).filter(s => s.startTime || s.label);
+
+      updateCard(boardId, colId, cardId, { title: newTitle, priority: newPrio, description: newDesc, recurrence: newRecur, timeSlots: newSlots });
+
+      // Replicate to selected columns
+      const selectedCols = [...document.querySelectorAll('.bm-replicate-col:checked')].map(cb => cb.dataset.colId);
+      if (selectedCols.length) replicateCard(boardId, cardId, selectedCols);
+
       showToast('✅ Missão atualizada!', 'info', 1500);
       renderBoard();
     },
@@ -443,6 +526,28 @@ function openCardModal(boardId, colId, cardId) {
     document.getElementById('bm-new-sub')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('bm-add-sub')?.click();
     });
+    // Time slot add/delete handlers
+    document.getElementById('bm-add-slot')?.addEventListener('click', () => {
+      const list = document.getElementById('bm-slots-list');
+      if (!list) return;
+      const slotId = `ts_${Date.now()}`;
+      const row = document.createElement('div');
+      row.className = 'bm-slot-row';
+      row.dataset.slotId = slotId;
+      row.innerHTML = `
+        <input class="form-input bm-slot-start" type="time" style="width:90px" />
+        <span style="color:var(--text-muted)">–</span>
+        <input class="form-input bm-slot-end" type="time" style="width:90px" />
+        <input class="form-input bm-slot-label" type="text" placeholder="Atividade" style="flex:1;min-width:80px" />
+        <button class="btn-rp btn-rp--ghost bm-slot-del" data-slot-id="${slotId}" style="padding:2px 6px;min-height:0;font-size:var(--fs-xxs)">✕</button>
+      `;
+      list.appendChild(row);
+    });
+    document.getElementById('bm-slots-list')?.addEventListener('click', e => {
+      const btn = e.target.closest('.bm-slot-del');
+      if (btn) btn.closest('.bm-slot-row')?.remove();
+    });
+
     document.getElementById('bm-duplicate-card')?.addEventListener('click', () => {
       const { board: bId, col: cId, card: cdId } = document.getElementById('bm-duplicate-card').dataset;
       duplicateCard(bId, cId, cdId);
@@ -523,12 +628,12 @@ function _refreshSubtaskUI(boardId, colId, cardId) {
 //   BUILD DOM — CARD
 // ============================================================
 function buildCard(card, boardId, colId) {
-  const meta     = PRIORITY_META[card.priority] ?? PRIORITY_META.normal;
-  const progress = calcProgress(card);
+  const meta      = PRIORITY_META[card.priority] ?? PRIORITY_META.normal;
+  const progress  = calcProgress(card);
   const hasProgress = progress >= 0;
 
   const el = document.createElement('div');
-  el.className = `board-card${card.isGlobal ? ' board-card--global' : ''}`;
+  el.className = `board-card${card.replicaOf ? ' board-card--replica' : ''}`;
   el.dataset.cardId  = card.id;
   el.dataset.colId   = colId;
   el.dataset.boardId = boardId;
@@ -541,12 +646,28 @@ function buildCard(card, boardId, colId) {
     ? `<span class="board-recur-badge">${card.recurrence === 'daily' ? '🌅 Diária' : card.recurrence === 'weekly' ? '📅 Semanal' : '⚙️'}</span>`
     : '';
 
+  // Time slots badge
+  const slots = card.timeSlots ?? [];
+  const firstSlot = slots[0];
+  const slotBadge = firstSlot
+    ? `<span class="board-slot-badge">⏰ ${firstSlot.startTime}${slots.length > 1 ? ` +${slots.length - 1}` : ''}</span>`
+    : '';
+
+  // Linked badges
+  const linkedQ = (card.linkedQuests ?? []).length;
+  const linkedW = (card.linkedWorkouts ?? []).length;
+  const linkBadge = (linkedQ || linkedW) ? [
+    linkedQ ? `<span class="board-link-badge board-link-badge--quest">📜 ${linkedQ}</span>` : '',
+    linkedW ? `<span class="board-link-badge board-link-badge--workout">⚡ ${linkedW}</span>` : '',
+  ].join('') : '';
+
+  const replicaBadge = card.replicaOf ? `<span class="board-replica-badge" title="Réplica">🔁</span>` : '';
+
   el.innerHTML = `
     <div class="board-card__header">
       <span class="board-priority-badge ${meta.class}">${meta.icon} ${meta.label}</span>
-      <div style="display:flex;gap:4px;align-items:center">
-        ${recurBadge}
-        ${card.isGlobal ? '<span class="board-global-badge" title="Card Global">📌</span>' : ''}
+      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+        ${replicaBadge}${recurBadge}${slotBadge}${linkBadge}
       </div>
     </div>
     <div class="board-card__title">${card.title}</div>
@@ -590,8 +711,6 @@ function buildCard(card, boardId, colId) {
     e.preventDefault();
     e.stopPropagation();
     el.classList.remove('board-card--drag-over');
-    // Ignore if a ghost is being dragged — ghost reorders are handled separately
-    if (_isDraggingGhost) return;
     if (!_draggingCardId || _draggingBoardId !== boardId || _draggingCardId === card.id) return;
     moveCard(boardId, _draggingCardId, _draggingFromColId, colId, card.id);
     playDrop();
@@ -652,8 +771,6 @@ function buildColumn(col, boardId) {
   cardsEl.addEventListener('drop', e => {
     e.preventDefault();
     wrapper.classList.remove('board-column--drop-target');
-    // Ignore ghost reorders — they are handled by ghost drop handlers
-    if (_isDraggingGhost) return;
     if (_draggingCardId && _draggingFromColId && _draggingBoardId === boardId) {
       moveCard(boardId, _draggingCardId, _draggingFromColId, col.id);
       playDrop();
@@ -748,25 +865,18 @@ function openAddCardModal(boardId, colId) {
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">
-          <input type="checkbox" id="nc-global" style="margin-right:var(--space-2)" />
-          📌 Card Global (aparece em todas as colunas)
-        </label>
-      </div>
-      <div class="form-group">
         <label class="form-label">Descrição (opcional — suporta links e imagens)</label>
         <textarea class="form-input form-textarea" id="nc-desc" rows="3"
                   placeholder="Cole uma URL ou descreva o objetivo..."></textarea>
       </div>
     `,
     onConfirm: () => {
-      const title    = document.getElementById('nc-title')?.value?.trim();
-      const prio     = document.getElementById('nc-priority')?.value ?? 'normal';
-      const desc     = document.getElementById('nc-desc')?.value ?? '';
-      const isGlobal = document.getElementById('nc-global')?.checked ?? false;
-      const recur    = document.getElementById('nc-recurrence')?.value ?? 'none';
+      const title = document.getElementById('nc-title')?.value?.trim();
+      const prio  = document.getElementById('nc-priority')?.value ?? 'normal';
+      const desc  = document.getElementById('nc-desc')?.value ?? '';
+      const recur = document.getElementById('nc-recurrence')?.value ?? 'none';
       if (!title) { showToast('⚠️ A missão precisa de um título!', 'info', 2000); return false; }
-      addCard(boardId, colId, { title, priority: prio, description: desc, isGlobal, recurrence: recur });
+      addCard(boardId, colId, { title, priority: prio, description: desc, recurrence: recur });
       showToast('⚔️ Missão adicionada ao quadro!', 'info', 1500);
       renderBoard();
     },
@@ -844,6 +954,7 @@ export function renderBoard() {
       if (card.recurrence === 'daily' && card.lastReset !== today) {
         card.lastReset = today;
         card.subtasks?.forEach(s => { s.done = false; });
+        card.timeSlots?.forEach(t => { t.done = false; });
         needsSave = true;
       }
     });
@@ -854,115 +965,10 @@ export function renderBoard() {
     if (boardRef) _persistBoard(state, boardRef);
   }
 
-  // Collect global cards (unique ids, with their home column)
-  const globalCards = [];
-  const globalIds = new Set();
-  board.columns.forEach(col => {
-    col.cards.forEach(card => {
-      if (card.isGlobal && !globalIds.has(card.id)) {
-        globalIds.add(card.id);
-        globalCards.push({ card, homeColId: col.id });
-      }
-    });
-  });
-
-  // Ensure board has a ghost position map (per-column order of global card IDs)
-  // Structure: board._ghostOrder = { [colId]: [cardId, cardId, ...] }
-  if (!board._ghostOrder) board._ghostOrder = {};
-
   // Render columns
   container.innerHTML = '';
   board.columns.forEach(col => {
     const colEl = buildColumn(col, board.id);
-    const cardsEl = colEl.querySelector('.board-column__cards');
-
-    if (globalCards.length) {
-      // Determine which global cards are guests in this column (not home)
-      const guests = globalCards.filter(({ homeColId }) => homeColId !== col.id);
-
-      if (guests.length) {
-        // Get or init the ordered list for this column
-        let order = board._ghostOrder[col.id] ?? [];
-        // Add any new global card IDs not yet in this column's order
-        guests.forEach(({ card }) => {
-          if (!order.includes(card.id)) order.push(card.id);
-        });
-        // Remove stale IDs (card no longer global)
-        order = order.filter(id => guests.some(g => g.card.id === id));
-        board._ghostOrder[col.id] = order;
-
-        // Build sorted guests array
-        const sortedGuests = order
-          .map(id => guests.find(g => g.card.id === id))
-          .filter(Boolean);
-
-        // Insert each ghost at its stored position among the real cards
-        // Strategy: append ghosts after all real cards, in their stored order.
-        // The user can drag them freely within the column area.
-        sortedGuests.forEach(({ card, homeColId }) => {
-          const ghost = buildCard(card, board.id, homeColId);
-          ghost.classList.add('board-card--global-ghost');
-          ghost.setAttribute('title', '📌 Card Global — clique para editar na coluna original');
-          ghost.setAttribute('draggable', 'true');
-          ghost.dataset.ghostForCol = col.id;
-          ghost.dataset.isGhostCard = '1';
-
-          // Ghost drag events — fully isolated from real card drag state
-          ghost.addEventListener('dragstart', e => {
-            _isDraggingGhost     = true;
-            _draggingGhostCardId = card.id;
-            _draggingGhostInCol  = col.id;
-            // DO NOT touch _draggingCardId/_draggingFromColId/_draggingBoardId
-            ghost.classList.add('board-card--dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('ghost-col', col.id);
-            playWoosh();
-          });
-          ghost.addEventListener('dragend', () => {
-            _isDraggingGhost     = false;
-            _draggingGhostCardId = null;
-            _draggingGhostInCol  = null;
-            ghost.classList.remove('board-card--dragging');
-            document.querySelectorAll('.board-card--drag-over').forEach(c => c.classList.remove('board-card--drag-over'));
-          });
-          ghost.addEventListener('dragover', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            // Only accept ghosts from the same column
-            if (!_isDraggingGhost || _draggingGhostCardId === card.id || _draggingGhostInCol !== col.id) return;
-            document.querySelectorAll('.board-card--drag-over').forEach(c => c.classList.remove('board-card--drag-over'));
-            ghost.classList.add('board-card--drag-over');
-          });
-          ghost.addEventListener('drop', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            ghost.classList.remove('board-card--drag-over');
-            // Only reorder ghosts within the same column
-            if (!_isDraggingGhost || _draggingGhostCardId === card.id || _draggingGhostInCol !== col.id) return;
-
-            const order = board._ghostOrder[col.id] ?? [];
-            const fromIdx = order.indexOf(_draggingGhostCardId);
-            const toIdx   = order.indexOf(card.id);
-            if (fromIdx >= 0 && toIdx >= 0) {
-              order.splice(fromIdx, 1);
-              order.splice(toIdx, 0, _draggingGhostCardId);
-              board._ghostOrder[col.id] = order;
-              const state = loadState();
-              const boardRef = state.boards.find(b => b.id === board.id);
-              if (boardRef) {
-                boardRef._ghostOrder = board._ghostOrder;
-                _persistBoard(state, boardRef);
-              }
-            }
-            playDrop();
-            renderBoard();
-          });
-
-          cardsEl.appendChild(ghost);
-        });
-      }
-    }
-
     container.appendChild(colEl);
   });
 

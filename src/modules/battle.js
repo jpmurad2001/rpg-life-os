@@ -350,10 +350,19 @@ function finishSession(templateId, setsDone) {
   if (leveledUp) setTimeout(() => showLevelUp(newLevel), 400);
 
   renderHUD(s2);
-  renderBattle();
 
+  // Clear the active session view — template is NEVER deleted, stays available
   const content = document.getElementById('active-session-content');
-  if (content) content.innerHTML = '<p class="empty-state">Treino finalizado! Descanse e volte mais forte. 💪</p>';
+  if (content) content.innerHTML = `
+    <div style="text-align:center;padding:var(--space-5)">
+      <div style="font-size:2rem;margin-bottom:var(--space-3)">💪</div>
+      <p class="font-display" style="color:var(--color-success);font-size:var(--fs-display)">Treino concluído!</p>
+      <p style="color:var(--text-muted);font-size:var(--fs-xxs);margin-top:var(--space-2)">+${xpEarned} XP &nbsp;·&nbsp; +${tmpl.hp_impact} HP</p>
+      <p style="color:var(--text-muted);font-size:var(--fs-xxs);margin-top:var(--space-3)">Template mantido. Clique em um template para repetir.</p>
+    </div>`;
+
+  // Re-render template list so user can immediately start another session
+  renderBattle();
 }
 
 // ============================================================
