@@ -33,7 +33,7 @@ import { calcRank, RANKS, RANK_THRESHOLDS } from '../engine/drop_engine.js';
 // ---- Modules ----
 import { initQuests }       from '../modules/quests.js';
 import { initBattle }       from '../modules/battle.js';
-import { initTaverna }      from '../modules/taverna.js';
+import { initTaverna, prefetchTavernaMonth } from '../modules/taverna.js';
 import { initCampaignMap }  from '../modules/campaign_map.js';
 import { renderTemples }     from '../modules/temples.js';
 import { initInventory }    from '../modules/inventory.js';
@@ -298,6 +298,10 @@ async function _onUserLogin(user) {
     await syncFirestoreToLocalState(user.uid, player, boards, templates, currentWeek);
     _playerData = player;
 
+    // Prefetch finanças do mês atual para a Taverna (Firestore → cache)
+    const { getMonthId } = await import('../engine/core.js');
+    prefetchTavernaMonth(user.uid, getMonthId()).catch(console.warn);
+
     // Instala o hook de sync no board.js para persistir no Firestore
     window._currentUserUid = user.uid;
     window._saveBoardToFirestore  = (board) => saveBoard(user.uid, board).catch(console.error);
@@ -338,7 +342,7 @@ async function _onUserLogin(user) {
     await hideSplash();
     if (shell) { shell.style.transition = ''; shell.style.opacity = ''; }
 
-    console.log('[App] Booted v5.1 Firestore-First | Ca\u00e7ador:', user.displayName);
+    console.log('[App] Booted v5.3 Firestore-First (Finance sync) | Caçador:', user.displayName);
   } catch (e) {
     console.error('[App] Erro ao carregar perfil:', e);
     setAuthMessage('\u274C Erro ao carregar perfil. Tente novamente.', 'error');
