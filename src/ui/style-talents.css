@@ -298,6 +298,78 @@
 .talent-tt-available  { color: var(--color-primary-hover); }
 .talent-tt-locked     { color: var(--text-muted); }
 
+/* ── Active Status Panel ── */
+.talent-status-panel {
+  width: 100%;
+  max-width: 760px;
+  background: var(--color-bg-panel);
+  border: var(--pixel-border-dark);
+  box-shadow: var(--pixel-shadow);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  animation: fadeInUp 300ms ease both;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.talent-status__header {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  color: var(--text-gold);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-1);
+}
+
+.talent-status__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-2);
+}
+
+.talent-status__row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: var(--color-bg-element);
+  border: 1px solid var(--color-border);
+  padding: var(--space-2);
+  text-align: center;
+  transition: border-color 250ms ease;
+}
+
+.talent-status__row:hover {
+  border-color: var(--color-border-bright);
+}
+
+.talent-status__icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.talent-status__label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.talent-status__value {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xxs);
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
 /* ── Mobile ── */
 @media (max-width: 767px) {
   #view-talents .view-inner {
@@ -316,4 +388,8 @@
   .talent-node { width: 56px; height: 56px; }
   .talent-node__icon { font-size: 1.4rem; }
   .talent-node__name { font-size: 5.5px; }
+
+  .talent-status__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

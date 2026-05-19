@@ -6,7 +6,7 @@
 
 import { BADGE_CATALOG } from '../config/badges.js';
 import { TITLE_CATALOG, TITLE_BY_KEY } from '../config/titles.js';
-import { calculateSkillModifiers, TALENT_DEFINITIONS } from '../modules/talents.js';
+import { calculateSkillModifiers, getActiveModifiers, TALENT_DEFINITIONS } from '../modules/talents.js';
 import { playSound } from './audio.js';
 
 // ============================================================
@@ -391,9 +391,8 @@ export function attackBoss(state, bossId, subtaskId) {
   const subtask = boss.subtasks.find(s => s.id === subtaskId);
   if (!subtask || subtask.status === 'completed') return { state, bossDefeated: false, boss };
 
-  // --- INJEÇÃO PATCH PARTE 4: MODIFICADORES E CRÍTICOS ---
-  const unlockedIds = Object.keys(state.player.talents || {}).filter(k => state.player.talents[k] === 'purchased');
-  const mods = calculateSkillModifiers(unlockedIds, TALENT_DEFINITIONS);
+  // --- MODIFIER ENGINE: Talents + Equipped Slots ---
+  const mods = getActiveModifiers(state);
 
   let finalDamage = subtask.damage * mods.bossDamageMulti;
 
@@ -487,9 +486,8 @@ export function completeTask(state, weekId, taskId) {
   task.status        = 'completed';
   task.completed_at  = new Date().toISOString();
   state.player.stats.quests_completed += 1;
-  // --- INJEÇÃO PATCH PARTE 4: DROP ENGINE (XP/GOLD/DBL DROP) ---
-  const unlockedIds = Object.keys(state.player.talents || {}).filter(k => state.player.talents[k] === 'purchased');
-  const mods = calculateSkillModifiers(unlockedIds, TALENT_DEFINITIONS);
+  // --- MODIFIER ENGINE: Talents + Equipped Slots ---
+  const mods = getActiveModifiers(state);
 
   let xpGained   = (task.xp_reward ?? 20) * mods.questXpMulti;
   let attrAmount = 1 * mods.attrXpMulti;

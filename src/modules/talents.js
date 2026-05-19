@@ -8,6 +8,7 @@
 import { loadState, saveState }  from '../engine/core.js';
 import { showToast, renderHUD }  from '../engine/gamification.js';
 import { playSound } from '../engine/audio.js';
+import { MEMORY_SLOTS } from '../engine/economy_engine.js';
 
 // ============================================================
 //   BRANCH COLORS
@@ -113,19 +114,22 @@ function _syncFromState() {
 function _syncToState() {
   const state = loadState();
   state.player.skill_points = _skillPoints;
-  
-  // Calculate Bonuses based on purchased nodes
-  const purchased = _nodes.filter(n => n.status === 'purchased');
-  
-  // Update state multipliers (additive)
-  state.player.talentBonuses = calculateSkillModifiers(Object.keys(saved), TALENT_DEFINITIONS);
 
-  // Legacy compatibility: update xpMultiplier (mapped to quest_xp)
-  state.player.xpMultiplier = state.player.talentBonuses.questXpMulti;
+  // Collect purchased node IDs from the live _nodes array
+  const purchasedIds = _nodes
+    .filter(n => n.status === 'purchased')
+    .map(n => n.id);
+
+  // Calculate and persist talent bonuses
+  const bonuses = calculateSkillModifiers(purchasedIds, TALENT_DEFINITIONS);
+  state.player.talentBonuses = bonuses;
+
+  // Legacy compatibility: xpMultiplier mapped to quest_xp
+  state.player.xpMultiplier = bonuses.questXpMulti;
 
   state.player.talents = {};
   _nodes.forEach(n => { state.player.talents[n.id] = n.status; });
-  
+
   saveState(state);
   renderHUD(state);
 }
@@ -336,6 +340,9 @@ export function renderTalents() {
 
   // Draw SVG after layout paint
   requestAnimationFrame(() => _drawConnections(svgEl, gridEl));
+
+  // Render Active Status Panel
+  renderStatusPanel();
 }
 
 // ============================================================
@@ -376,6 +383,113 @@ export function calculateSkillModifiers(unlockedSkillIds, skillTreeDef) {
   });
 
   return modifiers;
+}
+
+// ============================================================
+//   MASTER MODIFIER ENGINE
+//   Combines Talent Tree bonuses + Equipped Memory Slot bonuses
+// ============================================================
+
+/**
+ * Returns the combined modifier object from:
+ *   - Purchased talent nodes
+ *   - Equipped memory slots (from player.memory_slots in state)
+ *
+ * Formula: each bonus is additive on top of the 1.0 base multiplier.
+ * @param {Object} state - Current app state (from loadState())
+ * @returns {Object} modifiers
+ */
+export function getActiveModifiers(state) {
+  // 1. Talent bonuses (pre-computed and stored in state, or recalculated live)
+  const purchasedIds = Object.keys(state.player?.talents || {})
+    .filter(k => state.player.talents[k] === 'purchased');
+  const talentMods = state.player?.talentBonuses
+    ?? calculateSkillModifiers(purchasedIds, TALENT_DEFINITIONS);
+
+  // 2. Accumulate equipped memory slot bonuses using MEMORY_SLOTS definitions
+  const equippedSlots = state.player?.memory_slots ?? {};
+
+  let slotXpBonus      = 0;  // additive to questXpMulti
+  let slotAttrBonus    = 0;  // additive to attrXpMulti (generic)
+  let slotDropRateBonus= 0;  // additive to doubleDropChance
+
+  for (const slot of MEMORY_SLOTS) {
+    const isEquipped = equippedSlots[slot.key] != null;
+    if (!isEquipped) continue;
+
+    switch (slot.bonus_type) {
+      case 'xp_multiplier':
+        slotXpBonus += slot.bonus_value;      // e.g. +0.10
+        break;
+      case 'attr_xp_multiplier':
+        slotAttrBonus += slot.bonus_value;    // e.g. +0.15 per slot
+        break;
+      case 'drop_rate_bonus':
+        slotDropRateBonus += slot.bonus_value; // e.g. +0.05
+        break;
+    }
+  }
+
+  // 3. Merge: talent base + slot additions
+  const combined = {
+    bossDamageMulti:  talentMods.bossDamageMulti  ?? 1.0,
+    questXpMulti:     (talentMods.questXpMulti    ?? 1.0) + slotXpBonus,
+    goldDropMulti:    talentMods.goldDropMulti    ?? 1.0,
+    attrXpMulti:      (talentMods.attrXpMulti     ?? 1.0) + slotAttrBonus,
+    doubleDropChance: (talentMods.doubleDropChance ?? 0.0) + slotDropRateBonus,
+  };
+
+  console.debug(
+    `[ModifierEngine] XP×${combined.questXpMulti.toFixed(2)} ` +
+    `Attr×${combined.attrXpMulti.toFixed(2)} ` +
+    `Gold×${combined.goldDropMulti.toFixed(2)} ` +
+    `Boss×${combined.bossDamageMulti.toFixed(2)} ` +
+    `Drop+${(combined.doubleDropChance * 100).toFixed(1)}%`
+  );
+
+  return combined;
+}
+
+// ============================================================
+//   STATUS PANEL RENDER
+// ============================================================
+
+/**
+ * Renders the Active Status Panel inside #talent-status-panel.
+ * Shows combined multipliers from talents + equipment.
+ */
+export function renderStatusPanel() {
+  const panel = document.getElementById('talent-status-panel');
+  if (!panel) return;
+
+  const state = loadState();
+  if (!state?.player) return;
+
+  const mods = getActiveModifiers(state);
+
+  const xpBonus   = Math.round((mods.questXpMulti   - 1) * 100);
+  const attrBonus = Math.round((mods.attrXpMulti    - 1) * 100);
+  const goldBonus = Math.round((mods.goldDropMulti  - 1) * 100);
+  const bossBonus = Math.round((mods.bossDamageMulti - 1) * 100);
+  const dropBonus = (mods.doubleDropChance * 100).toFixed(1);
+
+  const row = (icon, label, value, color, unit = '%') =>
+    `<div class="talent-status__row">
+      <span class="talent-status__icon">${icon}</span>
+      <span class="talent-status__label">${label}</span>
+      <span class="talent-status__value" style="color:${color}">${value > 0 ? '+' : ''}${value}${unit}</span>
+    </div>`;
+
+  panel.innerHTML = `
+    <div class="talent-status__header">📊 Bônus Ativos</div>
+    <div class="talent-status__grid">
+      ${row('⭐', 'XP de Quests',    xpBonus,   'var(--color-xp)')}
+      ${row('📚', 'XP de Atributo',  attrBonus, 'var(--color-int)')}
+      ${row('💰', 'Ouro Drop',       goldBonus, 'var(--color-gold)')}
+      ${row('⚔️', 'Dano em Chefes',  bossBonus, 'var(--color-danger)')}
+      ${row('🌠', 'Chance Drop 2×', dropBonus, 'var(--color-ave)')}
+    </div>
+  `;
 }
 
 export { TALENT_DEFINITIONS };
