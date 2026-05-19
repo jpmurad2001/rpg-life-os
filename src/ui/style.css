@@ -904,10 +904,33 @@ body {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* Info block: name + optional description stacked vertically */
+.exercise-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .exercise-name {
   font-family: var(--font-display);
   font-size: var(--fs-display);
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Subtle description line below exercise name during session */
+.exercise-desc {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  opacity: 0.85;
 }
 
 .exercise-sets {

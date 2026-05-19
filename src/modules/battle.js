@@ -195,7 +195,10 @@ function openSession(templateId) {
       <div id="session-exercises">
         ${tmpl.exercises.map(ex => `
           <div class="exercise-row" data-ex-id="${ex.id}">
-            <span class="exercise-name">${ex.name}</span>
+            <div class="exercise-row__info">
+              <span class="exercise-name">${ex.name}</span>
+              ${ex.description ? `<span class="exercise-desc">${ex.description}</span>` : ''}
+            </div>
             <div class="set-counter" id="set-counter-${ex.id}">
               ${buildSetBtns(ex, setsDoneMap[ex.id])}
             </div>
@@ -427,12 +430,15 @@ function secsToMmss(secs) {
 function buildExerciseRow(ex = {}) {
   const id = ex.id ?? genId('ex_tmp');
   return `
-    <div class="exercise-editor__grid" data-ex-row="${id}">
-      <input class="form-input ex-name"  type="text"   placeholder="Nome"  value="${ex.name ?? ''}" />
-      <input class="form-input ex-sets"  type="number" placeholder="Séries" value="${ex.sets ?? 3}" min="1" max="20" style="width:60px" />
-      <input class="form-input ex-reps"  type="text"   placeholder="Reps"   value="${ex.reps ?? '10'}" style="width:60px" />
-      <input class="form-input ex-rest"  type="text"   placeholder="MM:SS" value="${secsToMmss(ex.rest_seconds)}" maxlength="5" style="width:65px" title="Formato MM:SS (ex: 01:30)" />
-      <button type="button" class="btn-rp btn-rp--ghost btn-remove-ex" style="padding:var(--space-1);min-height:0">✕</button>
+    <div class="exercise-editor__block" data-ex-row="${id}">
+      <div class="exercise-editor__grid">
+        <input class="form-input ex-name"  type="text"   placeholder="Nome do exercício"  value="${ex.name ?? ''}" />
+        <input class="form-input ex-sets"  type="number" placeholder="Séries" value="${ex.sets ?? 3}" min="1" max="20" style="width:60px" />
+        <input class="form-input ex-reps"  type="text"   placeholder="Reps"   value="${ex.reps ?? '10'}" style="width:60px" />
+        <input class="form-input ex-rest"  type="text"   placeholder="MM:SS" value="${secsToMmss(ex.rest_seconds)}" maxlength="5" style="width:65px" title="Formato MM:SS (ex: 01:30)" />
+        <button type="button" class="btn-rp btn-rp--ghost btn-remove-ex" style="padding:var(--space-1);min-height:0" title="Remover">✕</button>
+      </div>
+      <textarea class="form-input ex-desc" placeholder="Descrição / Observações (opcional)" rows="2" style="width:100%;resize:vertical;font-size:var(--fs-sm);margin-top:var(--space-1)">${ex.description ?? ''}</textarea>
     </div>
   `;
 }
@@ -455,6 +461,7 @@ function saveTemplate(templateId) {
     exercises.push({
       id: genId('ex'),
       name: exName,
+      description: row.querySelector('.ex-desc')?.value?.trim() ?? '',
       sets: parseInt(row.querySelector('.ex-sets')?.value ?? '3', 10),
       reps: row.querySelector('.ex-reps')?.value?.trim() ?? '10',
       weight_kg: 0,

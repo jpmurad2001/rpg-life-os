@@ -429,6 +429,21 @@ body::after {
     gap: var(--space-3);
 }
 
+/* Outer wrapper per exercise (grid row + description textarea) */
+.exercise-editor__block {
+    background: var(--color-bg-element);
+    border: 1px solid var(--color-border);
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    transition: border-color var(--transition-fast);
+}
+
+.exercise-editor__block:hover {
+    border-color: var(--color-border-bright);
+}
+
 .exercise-editor__grid {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr auto;
