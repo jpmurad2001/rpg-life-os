@@ -75,21 +75,30 @@ function _setText(id, text) {
 }
 
 // ============================================================
-//   RADAR CHART (Canvas 2D, Pentagonal v3.0 — Expanded)
+//   RADAR CHART (Canvas 2D, Pentagonal v3.1 — Tier System)
 // ============================================================
+
+/**
+ * TIER SYSTEM: Every 10 attribute points = 1 tier.
+ * The chart always shows the value within the current tier (0–10),
+ * keeping the polygon full and readable at any progression level.
+ * A small '×N' badge glows next to the label when tier > 1.
+ */
+const ATTR_TIER_SIZE = 10; // points per visual tier
+
 export function renderAttributeRadar(state) {
     const canvas = document.getElementById('attr-radar');
     if (!canvas) return;
 
-    const W = 260;
-    const H = 260;
+    const W = 200;
+    const H = 200;
     canvas.width = W;
     canvas.height = H;
 
     const ctx = canvas.getContext('2d');
     const cx = W / 2;
-    const cy = H / 2 + 8;
-    const radius = 100;
+    const cy = H / 2 + 6;
+    const radius = 68;
 
     // 5 axes for INT, FOR, AVE, ART, CAR (72° apart)
     const AXES = ['INT', 'FOR', 'AVE', 'ART', 'CAR'];
@@ -100,19 +109,24 @@ export function renderAttributeRadar(state) {
 
     const attrs = state.player.attributes;
 
-    // Values normalised: attr.value / (attr.value + 5), max 0.95
-    const vals = {};
+    // --- Tier-aware normalisation ---
+    // tier = floor(value / TIER_SIZE), fills the chart based on position within tier
+    const vals  = {};   // 0.0 – 1.0 for chart polygon
+    const tiers = {};   // tier index (0-based, tier 0 = ×1)
     for (const key of AXES) {
-        const attr = attrs[key] || { value: 1 };
-        const v = attr.value;
-        vals[key] = Math.min((v / Math.max(v + 5, 8)), 0.95);
+        const v = (attrs[key] || { value: 1 }).value;
+        tiers[key] = Math.floor(v / ATTR_TIER_SIZE);         // 0, 1, 2 ...
+        const posInTier = v % ATTR_TIER_SIZE;                // 0–9
+        // Normalise within tier: 1–10 range (avoid 0 to keep shape visible)
+        const effective = Math.max(1, posInTier === 0 && v > 0 ? ATTR_TIER_SIZE : posInTier);
+        vals[key] = Math.min(effective / ATTR_TIER_SIZE, 0.97);
     }
 
     ctx.clearRect(0, 0, W, H);
 
     // ---- Background pentagon grid ----
-    for (let tier = 1; tier <= 4; tier++) {
-        const r = (tier / 4) * radius;
+    for (let ring = 1; ring <= 4; ring++) {
+        const r = (ring / 4) * radius;
         ctx.beginPath();
         AXES.forEach((key, i) => {
             const a = angles[key];
@@ -121,9 +135,9 @@ export function renderAttributeRadar(state) {
             i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         });
         ctx.closePath();
-        ctx.strokeStyle = tier === 4 ? '#4a4580' : '#2a2550';
-        ctx.lineWidth = tier === 4 ? 1.5 : 1;
-        ctx.setLineDash([4, 3]);
+        ctx.strokeStyle = ring === 4 ? '#4a4580' : '#2a2550';
+        ctx.lineWidth = ring === 4 ? 1.5 : 0.8;
+        ctx.setLineDash([3, 2]);
         ctx.stroke();
         ctx.setLineDash([]);
     }
@@ -158,7 +172,7 @@ export function renderAttributeRadar(state) {
     ctx.fill();
 
     ctx.strokeStyle = '#f1c40f';
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 2;
     ctx.stroke();
 
     // ---- Vertex dots ----
@@ -169,30 +183,43 @@ export function renderAttributeRadar(state) {
         const y = cy + Math.sin(a) * r;
 
         ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.fillStyle = '#f1c40f';
         ctx.shadowColor = '#f1c40f';
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = 5;
         ctx.fill();
         ctx.shadowBlur = 0;
     }
 
-    // ---- Labels (icon + value) ----
-    ctx.font = '9px "Press Start 2P", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    const LABEL_PAD = 22;
+    // ---- Labels: icon + raw value  +  ×N tier badge ----
+    const LABEL_PAD = 18;
     for (const key of AXES) {
         const a = angles[key];
-        const attr = attrs[key] || { value: 1 };
-        const meta = ATTR_META[key] || { icon: '?', color: '#fff' };
+        const attr  = attrs[key] || { value: 1 };
+        const meta  = ATTR_META[key] || { icon: '?', color: '#fff' };
+        const tier  = tiers[key];
 
         const lx = cx + Math.cos(a) * (radius + LABEL_PAD);
         const ly = cy + Math.sin(a) * (radius + LABEL_PAD);
 
-        ctx.fillStyle = meta.color;
+        // Main label: icon + value
+        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.textAlign  = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle  = meta.color;
         ctx.fillText(`${meta.icon}${attr.value}`, lx, ly);
+
+        // Tier badge: ×N shown above/beside the label when tier ≥ 1
+        if (tier >= 1) {
+            const bx = lx + Math.cos(a) * 6 + (Math.cos(a) >= 0 ? 10 : -10);
+            const by = ly + Math.sin(a) * 6 - 8;
+            ctx.font = '6px "Press Start 2P", monospace';
+            ctx.fillStyle  = '#ffd700';
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur  = 4;
+            ctx.fillText(`×${tier + 1}`, bx, by);
+            ctx.shadowBlur = 0;
+        }
     }
 }
 
