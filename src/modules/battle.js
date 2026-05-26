@@ -44,11 +44,11 @@ function renderTemplateList(state) {
     card.dataset.id = tmpl.id;
 
     card.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)">
         <div class="template-card__name">${tmpl.name}</div>
-        <div style="display:flex;gap:4px">
-          <button class="btn-icon" data-tmpl-edit="${tmpl.id}" title="Editar" style="font-size:0.7rem">✏️</button>
-          <button class="btn-icon" data-tmpl-del="${tmpl.id}" title="Deletar" style="font-size:0.7rem;color:var(--color-danger)">✕</button>
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="btn-icon btn-tmpl-action" data-tmpl-edit="${tmpl.id}" title="Editar">✏️</button>
+          <button class="btn-icon btn-tmpl-action btn-tmpl-del" data-tmpl-del="${tmpl.id}" title="Deletar">✕</button>
         </div>
       </div>
       <div class="template-card__meta">${tmpl.exercises.length} exercícios · +${tmpl.hp_impact} HP · ${tmpl.xp_reward_per_set} XP/série</div>
@@ -433,10 +433,10 @@ function buildExerciseRow(ex = {}) {
     <div class="exercise-editor__block" data-ex-row="${id}">
       <div class="exercise-editor__grid">
         <input class="form-input ex-name"  type="text"   placeholder="Nome do exercício"  value="${ex.name ?? ''}" />
-        <input class="form-input ex-sets"  type="number" placeholder="Séries" value="${ex.sets ?? 3}" min="1" max="20" style="width:60px" />
-        <input class="form-input ex-reps"  type="text"   placeholder="Reps"   value="${ex.reps ?? '10'}" style="width:60px" />
-        <input class="form-input ex-rest"  type="text"   placeholder="MM:SS" value="${secsToMmss(ex.rest_seconds)}" maxlength="5" style="width:65px" title="Formato MM:SS (ex: 01:30)" />
-        <button type="button" class="btn-rp btn-rp--ghost btn-remove-ex" style="padding:var(--space-1);min-height:0" title="Remover">✕</button>
+        <input class="form-input ex-sets ex-num-input" type="number" placeholder="Séries" value="${ex.sets ?? 3}" min="1" max="20" />
+        <input class="form-input ex-reps ex-num-input" type="text"   placeholder="Reps"   value="${ex.reps ?? '10'}" />
+        <input class="form-input ex-rest ex-rest-input" type="text"  placeholder="MM:SS" value="${secsToMmss(ex.rest_seconds)}" maxlength="5" title="Formato MM:SS (ex: 01:30)" />
+        <button type="button" class="btn-rp btn-rp--ghost btn-remove-ex" title="Remover">✕</button>
       </div>
       <textarea class="form-input ex-desc" placeholder="Descrição / Observações (opcional)" rows="2" style="width:100%;resize:vertical;font-size:var(--fs-sm);margin-top:var(--space-1)">${ex.description ?? ''}</textarea>
     </div>

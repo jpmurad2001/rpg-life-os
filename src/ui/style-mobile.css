@@ -1,0 +1,429 @@
+/* ============================================================
+   RPG LIFE OS — Mobile-First Responsive Layer
+   style-mobile.css  v1.0
+
+   Breakpoints:
+     ≤ 430px  → xs  (iPhone SE, 12 mini, small Android)
+     ≤ 767px  → sm  (phones, portrait tablets)
+     ≥ 768px  → md  (landscape tablets, desktop) ← base for most panels
+
+   Strategy: base styles target mobile, media queries add desktop.
+   ============================================================ */
+
+/* ============================================================
+   0. EXERCISE EDITOR INPUT CLASSES
+      Replaces inline width:60px / width:65px in battle.js
+   ============================================================ */
+
+/* Small numeric inputs (sets, reps) — compact on desktop, flexible on mobile */
+.ex-num-input {
+    width: 64px;
+    min-width: 48px;
+    text-align: center;
+}
+
+/* Rest time input (MM:SS) */
+.ex-rest-input {
+    width: 70px;
+    min-width: 52px;
+    text-align: center;
+}
+
+/* Template card action buttons (edit / delete icons) */
+.btn-tmpl-action {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn-tmpl-action:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--color-border-bright);
+}
+
+.btn-tmpl-del {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+.btn-tmpl-del:hover {
+    background: rgba(231, 76, 60, 0.1);
+}
+
+/* Remove exercise button: consistent size without min-height override */
+.btn-remove-ex {
+    padding: var(--space-1) var(--space-2) !important;
+    min-height: 32px !important;
+    font-size: var(--fs-xs);
+}
+
+/* ============================================================
+   1. GLOBAL CONTAINER SAFETY
+      Prevent any element from overflowing the viewport width
+   ============================================================ */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Hard stop for horizontal overflow on root elements */
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+/* view-inner padding: tight on mobile, spacious on desktop */
+.view-inner {
+    padding: var(--space-3) var(--space-3) var(--space-5);
+}
+
+@media (min-width: 768px) {
+    .view-inner {
+        padding: var(--space-5);
+    }
+}
+
+/* ============================================================
+   2. TOUCH TARGETS — global minimum 44×44px for all tap actions
+   ============================================================ */
+@media (max-width: 767px) {
+
+    /* Primary / danger / ghost buttons */
+    .btn-rp {
+        min-height: 44px;
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--fs-xs);
+        width: 100%;            /* full-width on mobile unless overridden */
+        justify-content: center;
+    }
+
+    /* Inline icon-only buttons (delete, edit, etc.) */
+    .btn-icon,
+    .btn-sm,
+    .btn-rp--icon {
+        min-width: 44px;
+        min-height: 44px;
+        padding: var(--space-2);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Set counter buttons in active workout session */
+    .set-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+
+    /* Exercise row delete/edit icon actions */
+    .exercise-row-actions .btn-rp,
+    .exercise-row-actions button {
+        min-width: 40px;
+        min-height: 40px;
+        padding: var(--space-2);
+        width: auto;            /* don't stretch inline action buttons */
+    }
+}
+
+/* ============================================================
+   3. WORKOUT / TREINO TAB — Mobile Layout
+   ============================================================ */
+
+/* --- Template List Panel --- */
+@media (max-width: 767px) {
+    #view-battle .panel-row {
+        flex-direction: column !important;
+        gap: var(--space-3);
+    }
+
+    /* Template cards: comfortable size, full-width */
+    .template-card {
+        padding: var(--space-4);
+        margin-bottom: var(--space-2);
+    }
+
+    .template-card__name {
+        font-size: var(--fs-sm);
+    }
+
+    /* "Novo Template" button: full-width, easy tap */
+    #btn-new-template {
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
+/* --- Exercise Editor Grid: 5-col → stacked on mobile --- */
+.exercise-editor__grid {
+    /* Base (mobile): name full-width, fields in 2-col row below */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: var(--space-2);
+}
+
+/* Name input spans full width */
+.exercise-editor__grid > *:first-child {
+    grid-column: 1 / -1;
+}
+
+/* Delete button: always on its own row end */
+.exercise-editor__grid > .exercise-row-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+}
+
+@media (min-width: 768px) {
+    /* Restore 5-column grid on desktop */
+    .exercise-editor__grid {
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        grid-template-rows: auto;
+    }
+
+    .exercise-editor__grid > *:first-child {
+        grid-column: auto;
+    }
+
+    .exercise-editor__grid > .exercise-row-actions {
+        grid-column: auto;
+    }
+}
+
+/* --- Active Session: exercise rows → card layout on mobile --- */
+@media (max-width: 767px) {
+
+    /* Turn exercise-row from a 4-col grid into a 2-col card */
+    .exercise-row {
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        gap: var(--space-2) var(--space-3);
+        padding: var(--space-3);
+    }
+
+    /* Name block: first column, spans 2 rows visually */
+    .exercise-row__info {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    /* Sets counter: second column */
+    .set-counter {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+    }
+
+    /* Weight input group: full-width second row */
+    .weight-input-group,
+    .exercise-row > .weight-input {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+    }
+
+    /* exercise-name: allow wrapping (no truncation on mobile) */
+    .exercise-name {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* weight-input: wider for fat fingers */
+    .weight-input {
+        width: 80px;
+        min-height: 36px;
+        font-size: var(--fs-sm);
+        padding: var(--space-2) var(--space-2);
+    }
+
+    /* Session header actions */
+    #active-session-content .btn-rp {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    /* Workout chart: responsive width */
+    #workout-chart {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* History section */
+    #panel-history {
+        width: 100%;
+    }
+}
+
+/* ============================================================
+   4. TALENTS TAB — Scrollable container (810px fixed width)
+      Wrap in overflow-x: auto so mobile can swipe-scroll
+   ============================================================ */
+@media (max-width: 767px) {
+    #view-talents .view-inner {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        /* inner already pads; reduce to avoid double spacing */
+        padding-left: var(--space-2);
+        padding-right: var(--space-2);
+    }
+
+    /* Talent grid hint: show scroll shadow when overflowing */
+    .talent-grid-wrap {
+        /* Scale down proportionally on very small screens */
+        transform-origin: top left;
+    }
+}
+
+@media (max-width: 430px) {
+    .talent-grid-wrap {
+        /* On iPhone SE (375px) scale the 630px grid to fit in ~360px */
+        transform: scale(0.57);
+        width: 630px;          /* keep logical size for pin positions */
+        height: 990px;
+        margin-bottom: calc(-990px * 0.43); /* collapse extra height */
+    }
+}
+
+/* ============================================================
+   5. HUB WORLD — Ensure pins and image never clip nav
+   ============================================================ */
+@media (max-width: 767px) {
+    .hub-view {
+        /* Ensure the hub doesn't overflow into the bottom-nav */
+        height: calc(100dvh - var(--header-height, 56px) - var(--bottom-nav-height, 68px));
+        overflow: hidden;
+    }
+
+    /* Background image/pixel-art: cover on tiny screens */
+    .hub-view__bg {
+        object-fit: contain;   /* keep pixel art uncropped */
+        object-position: center;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+    }
+
+    /* Hub pins: increase tap area */
+    .hub-pin {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hub-pin__icon {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+}
+
+/* ============================================================
+   6. FINANCE (TAVERNA) TAB
+   ============================================================ */
+@media (max-width: 767px) {
+
+    /* Already 4→2→1 col responsive via style.css;
+       ensure add buttons are full-width */
+    #btn-add-receipt,
+    #btn-add-expense {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .month-selector {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+}
+
+/* ============================================================
+   7. QUEST / KANBAN — Panel horizontal scroll guard
+   ============================================================ */
+@media (max-width: 767px) {
+    /* Board columns already stack via .days-grid override in style.css.
+       Ensure individual cards don't overflow. */
+    .day-card,
+    .card-rp {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    /* Quest filter bar: allow wrapping */
+    .quest-filter-bar {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    .quest-filter-bar .btn-rp {
+        width: auto;           /* filter buttons stay compact */
+        min-height: 38px;
+        flex: 1 1 auto;
+    }
+}
+
+/* ============================================================
+   8. MODALS — Full-screen on mobile
+   ============================================================ */
+@media (max-width: 767px) {
+    .modal-window {
+        width: calc(100vw - var(--space-4));
+        max-width: calc(100vw - var(--space-4));
+        max-height: 90dvh;
+        overflow-y: auto;
+        margin: auto;
+    }
+
+    .modal-body {
+        padding: var(--space-3);
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .modal-footer .btn-rp {
+        width: 100%;
+    }
+}
+
+/* ============================================================
+   9. PAGE HEADER — Compact on mobile
+   ============================================================ */
+@media (max-width: 430px) {
+    .page-header {
+        padding: 0 var(--space-3);
+    }
+
+    .page-title {
+        font-size: var(--fs-xs);
+        letter-spacing: 1px;
+    }
+}
+
+/* ============================================================
+   10. ANALYTICS — Radar + KPIs stack vertically
+   ============================================================ */
+@media (max-width: 767px) {
+    .analytics-main-grid {
+        flex-direction: column !important;
+    }
+
+    .analytics-card--radar {
+        width: 100%;
+    }
+}
