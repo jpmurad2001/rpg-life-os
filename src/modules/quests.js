@@ -19,6 +19,7 @@ import {
 import { rollQuestDrop, calcRank, formatDropResult } from '../engine/drop_engine.js';
 import { getLootTable, addToInventory } from '../firebase/db.js';
 import { auth } from '../firebase/firebase.js';
+import { getActiveModifiers } from '../modules/talents.js';
 
 import {
     playSound, playWoosh, playDrop, playError
@@ -303,7 +304,11 @@ async function handleCompleteTask(weekId, taskId) {
             const table = await getLootTable();
             const fragTotal = result.state.player.progression?.shadow_fragments_total ?? result.state.player.stats?.shadow_fragments_total ?? 0;
             const pRank = calcRank(fragTotal);
-            
+
+            // Get active multipliers (talents + equipped memory slots)
+            const mods = getActiveModifiers(result.state);
+            const dropRateBonus = mods.doubleDropChance ?? 0; // Slot_DropRate + talent bonus
+
             if (result.bossDefeated && result.defeatedBoss) {
                 // Boss defeat drops (100% guaranteed + RNG bonuses)
                 const { rollBossDrop } = await import('../engine/drop_engine.js');
@@ -313,29 +318,30 @@ async function handleCompleteTask(weekId, taskId) {
                     bossRank: result.defeatedBoss.rank || 'Desperto',
                     player: pRank
                 });
-                
+
                 for (const item of bossDrops.items) {
                     await addToInventory(auth.currentUser.uid, item.id, 'boss', result.defeatedBoss.id);
                 }
-                
+
                 if (bossDrops.items.length > 0) {
                     const uiItem = formatDropResult(bossDrops.items[0]);
-                    setTimeout(() => showMemoryObtainedOverlay(uiItem), 1200); 
+                    setTimeout(() => showMemoryObtainedOverlay(uiItem), 1200);
                     console.log('🐉 Boss Drops:', bossDrops.items.map(i => i.name));
                 }
             } else {
-                // Normal quest drop (RNG)
+                // Normal quest drop (RNG) — apply Slot_DropRate bonus
                 const dropResult = rollQuestDrop({
                     lootTable: table,
                     player: pRank,
-                    isBossSub: isBossSub
+                    isBossSub: isBossSub,
+                    dropRateBonus   // passes Slot_DropRate (+5%) + talent doubleDropChance
                 });
-                
+
                 if (dropResult.dropped && dropResult.item) {
                     const uiItem = formatDropResult(dropResult.item);
-                    setTimeout(() => showMemoryObtainedOverlay(uiItem), 1200); 
+                    setTimeout(() => showMemoryObtainedOverlay(uiItem), 1200);
                     await addToInventory(auth.currentUser.uid, dropResult.item.id, 'quest', taskId);
-                    console.log('💎 Quest Drop obtained:', uiItem.name);
+                    console.log(`💎 Quest Drop! roll=${dropResult.roll.toFixed(3)} threshold=${dropResult.threshold.toFixed(3)} bonus=+${(dropRateBonus*100).toFixed(1)}%`, uiItem.name);
                 }
             }
         } catch (e) {

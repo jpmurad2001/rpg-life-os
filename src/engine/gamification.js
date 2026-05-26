@@ -75,21 +75,21 @@ function _setText(id, text) {
 }
 
 // ============================================================
-//   RADAR CHART (Canvas 2D, Pentagonal v2.6)
+//   RADAR CHART (Canvas 2D, Pentagonal v3.0 — Expanded)
 // ============================================================
 export function renderAttributeRadar(state) {
     const canvas = document.getElementById('attr-radar');
     if (!canvas) return;
 
-    const W = 160;
-    const H = 160;
+    const W = 260;
+    const H = 260;
     canvas.width = W;
     canvas.height = H;
 
     const ctx = canvas.getContext('2d');
     const cx = W / 2;
-    const cy = H / 2 + 5;
-    const radius = 55;
+    const cy = H / 2 + 8;
+    const radius = 100;
 
     // 5 axes for INT, FOR, AVE, ART, CAR (72° apart)
     const AXES = ['INT', 'FOR', 'AVE', 'ART', 'CAR'];
@@ -121,9 +121,9 @@ export function renderAttributeRadar(state) {
             i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         });
         ctx.closePath();
-        ctx.strokeStyle = tier === 4 ? '#3a3560' : '#2a2550';
+        ctx.strokeStyle = tier === 4 ? '#4a4580' : '#2a2550';
         ctx.lineWidth = tier === 4 ? 1.5 : 1;
-        ctx.setLineDash([3, 2]);
+        ctx.setLineDash([4, 3]);
         ctx.stroke();
         ctx.setLineDash([]);
     }
@@ -151,14 +151,14 @@ export function renderAttributeRadar(state) {
     ctx.closePath();
 
     const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-    grad.addColorStop(0, 'rgba(155,110,255,0.75)');
+    grad.addColorStop(0,   'rgba(155,110,255,0.80)');
     grad.addColorStop(0.6, 'rgba(93,63,211,0.55)');
-    grad.addColorStop(1, 'rgba(30,15,80,0.2)');
+    grad.addColorStop(1,   'rgba(30,15,80,0.15)');
     ctx.fillStyle = grad;
     ctx.fill();
 
     ctx.strokeStyle = '#f1c40f';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
     // ---- Vertex dots ----
@@ -169,25 +169,28 @@ export function renderAttributeRadar(state) {
         const y = cy + Math.sin(a) * r;
 
         ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
         ctx.fillStyle = '#f1c40f';
+        ctx.shadowColor = '#f1c40f';
+        ctx.shadowBlur = 6;
         ctx.fill();
+        ctx.shadowBlur = 0;
     }
 
-    // ---- Labels (emoji + value) ----
-    ctx.font = '8px "Press Start 2P", monospace';
+    // ---- Labels (icon + value) ----
+    ctx.font = '9px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const LABEL_PAD = 16;
+    const LABEL_PAD = 22;
     for (const key of AXES) {
         const a = angles[key];
         const attr = attrs[key] || { value: 1 };
         const meta = ATTR_META[key] || { icon: '?', color: '#fff' };
-        
+
         const lx = cx + Math.cos(a) * (radius + LABEL_PAD);
         const ly = cy + Math.sin(a) * (radius + LABEL_PAD);
-        
+
         ctx.fillStyle = meta.color;
         ctx.fillText(`${meta.icon}${attr.value}`, lx, ly);
     }

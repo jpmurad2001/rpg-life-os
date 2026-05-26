@@ -130,14 +130,18 @@ export function weightedRandom(items, rng = Math.random) {
  * @param {Array<Object>}  options.lootTable    - Coleção completa da loot_table
  * @param {Object}         options.player       - { rank: string, rank_index: number }
  * @param {boolean}        [options.isBossSub]  - true se a tarefa é subtarefa de um Boss
- * @param {()=>number}     [options.rng]        - RNG injetável (padrão: Math.random)
+ * @param {number}         [options.dropRateBonus] - Bônus aditivo de chance (ex: 0.05 = +5%)
+ * @param {()=>number}     [options.rng]        - RNG injectável (padrão: Math.random)
  *
  * @returns {{ dropped: boolean, item: Object|null, roll: number, threshold: number }}
  */
-export function rollQuestDrop({ lootTable, player, isBossSub = false, rng = Math.random }) {
-  const threshold = isBossSub
+export function rollQuestDrop({ lootTable, player, isBossSub = false, dropRateBonus = 0, rng = Math.random }) {
+  const baseThreshold = isBossSub
     ? BASE_DROP_CHANCE.quest_boss_sub
     : BASE_DROP_CHANCE.quest_normal;
+
+  // Apply drop rate bonus (capped at 0.75 to prevent guaranteed drops from quests)
+  const threshold = Math.min(0.75, baseThreshold + dropRateBonus);
 
   const roll = rng();
   const dropped = roll < threshold;
